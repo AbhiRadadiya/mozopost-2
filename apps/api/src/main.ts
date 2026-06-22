@@ -15,7 +15,15 @@ import { pool } from './db/pool';
 
 const app = express();
 
-app.use(cors({ origin: env.CORS_ORIGINS, credentials: true }));
+app.use(cors({
+  origin: [
+    'http://seller.mozopost.in', 
+    'http://admin.mozopost.in', 
+    'http://masteradmin.mozopost.in',
+    'http://localhost:3000'
+  ],
+  credentials: true
+}));
 app.use(express.json({ limit: '2mb' }));
 
 // ── Health check (used by deployment platforms) ──
