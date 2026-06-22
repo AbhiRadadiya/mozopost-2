@@ -99,9 +99,9 @@ authRouter.post(
     );
     if (!user) throw new ApiError(401, 'Invalid email or password');
 
-    if (user.locked_until && new Date(user.locked_until) > new Date()) {
-      throw new ApiError(423, 'Account temporarily locked due to failed login attempts. Try again later.');
-    }
+    // if (user.locked_until && new Date(user.locked_until) > new Date()) {
+    //   throw new ApiError(423, 'Account temporarily locked due to failed login attempts. Try again later.');
+    // }
 
     const valid = await bcrypt.compare(dto.password, user.password_hash);
     if (!valid) {
