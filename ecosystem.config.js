@@ -6,7 +6,7 @@ module.exports = {
       script: "npm",
       args: "start",
       env: {
-        PORT: 3001,
+        PORT: 4001,
         NODE_ENV: "production"
       }
     },
@@ -16,7 +16,7 @@ module.exports = {
       script: "npm",
       args: "start",
       env: {
-        PORT: 3000,
+        PORT: 4000,
         NEXT_PUBLIC_APP_ROLE: "seller"
       }
     },
@@ -26,7 +26,7 @@ module.exports = {
       script: "npm",
       args: "start",
       env: {
-        PORT: 3002,
+        PORT: 4002,
         NEXT_PUBLIC_APP_ROLE: "admin"
       }
     },
@@ -36,7 +36,7 @@ module.exports = {
       script: "npm",
       args: "start",
       env: {
-        PORT: 3003,
+        PORT: 4003,
         NEXT_PUBLIC_APP_ROLE: "superadmin"
       }
     }
