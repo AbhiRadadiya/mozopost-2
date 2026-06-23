@@ -3,7 +3,7 @@ import { env } from '../config/env';
 
 export const pool = new Pool({
   connectionString: env.DATABASE_URL,
-  ssl: env.DATABASE_URL.includes('localhost') ? false : { rejectUnauthorized: false },
+  ssl: env.DATABASE_URL.includes('localhost') || env.DATABASE_URL.includes('127.0.0.1') ? false : { rejectUnauthorized: false },
   max: 20,
   idleTimeoutMillis: 30000,
 });

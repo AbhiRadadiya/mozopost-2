@@ -751,16 +751,16 @@ BEGIN
                      role,status,kyc_status,email_verified)
   VALUES
     (v_tenant_id,'seller@demo.com','9876543210',
-     '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+     '$2a$10$MFS.Kd6ea0JGn2eNaXBIpuWmHsSKoggAGFgB5ZET3pU/uBCvlRMEK',
      'Arjun','Mehta','seller','active','verified',true),
     (v_tenant_id,'seller2@demo.com','9876543211',
-     '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+     '$2a$10$MFS.Kd6ea0JGn2eNaXBIpuWmHsSKoggAGFgB5ZET3pU/uBCvlRMEK',
      'Riya','Shah','seller','active','verified',true),
     (v_tenant_id,'admin@demo.com','9876500001',
-     '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+     '$2a$10$MFS.Kd6ea0JGn2eNaXBIpuWmHsSKoggAGFgB5ZET3pU/uBCvlRMEK',
      'Rajesh','Kumar','master_admin','active','verified',true),
     (v_tenant_id,'superadmin@demo.com','9876500002',
-     '$2a$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi',
+     '$2a$10$MFS.Kd6ea0JGn2eNaXBIpuWmHsSKoggAGFgB5ZET3pU/uBCvlRMEK',
      'Super','Admin','super_admin','active','verified',true)
   ON CONFLICT (email) DO UPDATE
     SET password_hash = EXCLUDED.password_hash;
