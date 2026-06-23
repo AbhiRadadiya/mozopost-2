@@ -12,8 +12,8 @@
     "dev:web": "npm run dev --workspace=apps/web",
     "build": "npm run build --workspace=apps/api && npm run build --workspace=apps/web",
     "db:push": "node packages/db/push.js",
-    "db:seed": "node packages/db/seed/run.js",
     "db:migrate": "node packages/db/migrate.js",
+    "db:seed": "node packages/db/seed/run.js",
     "install:all": "npm install"
   },
   "devDependencies": {
