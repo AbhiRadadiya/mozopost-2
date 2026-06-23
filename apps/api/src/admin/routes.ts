@@ -154,7 +154,7 @@ adminRouter.get(
         (SELECT COALESCE(SUM(total_freight),0)::float FROM orders) as total_revenue,
         (SELECT COALESCE(SUM(margin_applied),0)::float FROM orders) as total_margin,
         (SELECT COUNT(*) FROM orders WHERE status = 'delivered') as total_delivered,
-        (SELECT COUNT(*) FROM orders WHERE status LIKE 'rto%') as total_rto`,
+        (SELECT COUNT(*) FROM orders WHERE status::text LIKE 'rto%') as total_rto`,
     );
     res.json(stats);
   }),

@@ -22,12 +22,13 @@ body {
   font-family: 'Space Mono', monospace;
 }
 
-/* Reusable neobrutalism primitives as utility classes */
-.nb-card {
-  background: #fff;
-  border: 2.5px solid #000;
-  border-radius: 3px;
-  box-shadow: 4px 4px 0 #000;
+@layer components {
+  .nb-card {
+    background: #fff;
+    border: 2.5px solid #000;
+    border-radius: 3px;
+    box-shadow: 4px 4px 0 #000;
+  }
 }
 
 .nb-btn {

@@ -74,7 +74,7 @@ export async function runFraudCheck(input: FraudCheckInput): Promise<FraudResult
   // 5. RTO history for this mobile
   const rto = await queryOne<{ count: string }>(
     `SELECT COUNT(*)::text as count FROM orders
-     WHERE seller_id = $1 AND consignee_phone = $2 AND status LIKE 'rto%'`,
+     WHERE seller_id = $1 AND consignee_phone = $2 AND status::text LIKE 'rto%'`,
     [input.sellerId, input.mobile],
   );
   const rtoCount = parseInt(rto?.count || '0', 10);
