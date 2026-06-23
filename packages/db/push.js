@@ -49,7 +49,7 @@ async function main() {
 
   const client = new Client({
     connectionString: databaseUrl,
-    ssl: databaseUrl.includes('localhost') ? false : { rejectUnauthorized: false },
+    ssl: databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1') ? false : { rejectUnauthorized: false },
   });
 
   console.log('🔌 Connecting to database...');

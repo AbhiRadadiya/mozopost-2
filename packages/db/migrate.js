@@ -24,7 +24,7 @@ function loadEnv(envPath) {
 }
 
 async function main() {
-  const envPath = path.join(__dirname, '..', 'apps', 'api', '.env');
+  const envPath = path.join(__dirname, '..', '..', 'apps', 'api', '.env');
   const env = { ...loadEnv(envPath), ...process.env };
   const databaseUrl = env.DATABASE_URL;
 
@@ -50,7 +50,7 @@ async function main() {
 
   const client = new Client({
     connectionString: databaseUrl,
-    ssl: databaseUrl.includes('localhost') ? false : { rejectUnauthorized: false },
+    ssl: databaseUrl.includes('localhost') || databaseUrl.includes('127.0.0.1') ? false : { rejectUnauthorized: false },
   });
   await client.connect();
 
