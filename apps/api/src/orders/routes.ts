@@ -286,7 +286,7 @@ ordersRouter.get(
         COUNT(*) FILTER (WHERE status IN ('booked','picked')) as picked,
         COUNT(*) FILTER (WHERE status = 'in_transit') as in_transit,
         COUNT(*) FILTER (WHERE status = 'delivered') as delivered,
-        COUNT(*) FILTER (WHERE status::text LIKE 'rto%') as rto,
+        COUNT(*) FILTER (WHERE status LIKE 'rto%') as rto,
         COUNT(*) FILTER (WHERE status = 'cancelled') as cancelled,
         COUNT(*) as total,
         COALESCE(SUM(total_freight),0)::float as total_freight,

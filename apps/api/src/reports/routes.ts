@@ -26,7 +26,7 @@ reportsRouter.get(
       `SELECT
          COUNT(*)                                     AS total,
          COUNT(*) FILTER (WHERE status='delivered')  AS delivered,
-         COUNT(*) FILTER (WHERE status::text LIKE 'rto%')  AS rto,
+         COUNT(*) FILTER (WHERE status LIKE 'rto%')  AS rto,
          COUNT(*) FILTER (WHERE status='failed')     AS ndr,
          COUNT(*) FILTER (WHERE status='cancelled')  AS cancelled,
          COALESCE(SUM(total_freight),0)::float        AS total_freight,
@@ -35,7 +35,7 @@ reportsRouter.get(
            100.0 * COUNT(*) FILTER (WHERE status='delivered') / NULLIF(COUNT(*),0), 2
          )::float AS delivery_rate,
          ROUND(
-           100.0 * COUNT(*) FILTER (WHERE status::text LIKE 'rto%') / NULLIF(COUNT(*),0), 2
+           100.0 * COUNT(*) FILTER (WHERE status LIKE 'rto%') / NULLIF(COUNT(*),0), 2
          )::float AS rto_rate
        FROM orders o WHERE ${where}`,
       params,
@@ -121,8 +121,8 @@ reportsRouter.get(
          COALESCE(SUM(o.base_freight + o.cod_charge),0)::float AS courier_cost_approx,
          COALESCE(SUM(o.margin_applied),0)::float  AS total_margin,
          COALESCE(SUM(o.cod_amount) FILTER (WHERE o.payment_mode='cod'),0)::float AS total_cod,
-         COUNT(*) FILTER (WHERE o.status::text LIKE 'rto%')::int AS rto_count,
-         COALESCE(SUM(o.total_freight) FILTER (WHERE o.status::text LIKE 'rto%'),0)::float AS rto_loss,
+         COUNT(*) FILTER (WHERE o.status LIKE 'rto%')::int AS rto_count,
+         COALESCE(SUM(o.total_freight) FILTER (WHERE o.status LIKE 'rto%'),0)::float AS rto_loss,
          COALESCE(SUM(wd.disputed_amount) FILTER (WHERE wd.status NOT IN ('rejected')),0)::float AS weight_dispute_amt,
          COALESCE(SUM(wd.approved_refund_amount) FILTER (WHERE wd.status='refund_processed'),0)::float AS weight_refunded
        FROM orders o
@@ -141,15 +141,15 @@ reportsRouter.get(
          COALESCE(SUM(o.base_freight + o.cod_charge),0)::float AS courier_cost,
          COALESCE(SUM(o.margin_applied),0)::float           AS gross_profit,
          COALESCE(SUM(o.cod_amount) FILTER (WHERE o.payment_mode='cod'),0)::float AS cod_volume,
-         COUNT(o.id) FILTER (WHERE o.status::text LIKE 'rto%')::int AS rto_count,
-         COALESCE(SUM(o.total_freight) FILTER (WHERE o.status::text LIKE 'rto%'),0)::float AS rto_loss,
+         COUNT(o.id) FILTER (WHERE o.status LIKE 'rto%')::int AS rto_count,
+         COALESCE(SUM(o.total_freight) FILTER (WHERE o.status LIKE 'rto%'),0)::float AS rto_loss,
          COALESCE(SUM(wd.disputed_amount) FILTER (WHERE wd.status NOT IN ('rejected')),0)::float AS disputed_amt,
          COALESCE(SUM(wd.approved_refund_amount) FILTER (WHERE wd.status='refund_processed'),0)::float AS refunded_amt,
          ROUND(
            100.0 * COUNT(o.id) FILTER (WHERE o.status='delivered') / NULLIF(COUNT(o.id),0), 2
          )::float AS delivery_rate,
          ROUND(
-           100.0 * COUNT(o.id) FILTER (WHERE o.status::text LIKE 'rto%') / NULLIF(COUNT(o.id),0), 2
+           100.0 * COUNT(o.id) FILTER (WHERE o.status LIKE 'rto%') / NULLIF(COUNT(o.id),0), 2
          )::float AS rto_rate
        FROM sellers s
        JOIN orders o ON o.seller_id=s.id AND o.status != 'cancelled' ${where}
@@ -184,7 +184,7 @@ reportsRouter.get(
          COALESCE(SUM(o.total_freight),0)::float           AS revenue,
          COALESCE(SUM(o.base_freight),0)::float            AS base_cost,
          COALESCE(SUM(o.margin_applied),0)::float          AS margin,
-         COUNT(o.id) FILTER (WHERE o.status::text LIKE 'rto%')::int AS rto_count,
+         COUNT(o.id) FILTER (WHERE o.status LIKE 'rto%')::int AS rto_count,
          COALESCE(SUM(wd.disputed_amount) FILTER (WHERE wd.status NOT IN ('rejected')),0)::float AS disputes_amt
        FROM couriers c
        JOIN orders o ON o.courier_id=c.id AND o.status != 'cancelled' ${where}
@@ -209,7 +209,7 @@ reportsRouter.get(
          COUNT(o.id)::int AS total_orders,
          COUNT(*) FILTER (WHERE o.status='delivered')::int AS delivered,
          COUNT(*) FILTER (WHERE o.status='failed')::int AS ndr,
-         COUNT(*) FILTER (WHERE o.status::text LIKE 'rto%')::int AS rto,
+         COUNT(*) FILTER (WHERE o.status LIKE 'rto%')::int AS rto,
          ROUND(100.0*COUNT(*) FILTER (WHERE o.status='delivered')/NULLIF(COUNT(*),0),2)::float AS delivery_rate,
          ROUND(AVG(EXTRACT(EPOCH FROM (
            te_del.event_timestamp - o.created_at
@@ -249,5 +249,64 @@ reportsRouter.get(
        ORDER BY revenue DESC LIMIT 10`,
     );
     res.json({ monthly, topMerchants });
+  }),
+);
+
+/** GET /reports/analytics  — seller dashboard chart data */
+reportsRouter.get(
+  '/analytics',
+  requireRole('seller'),
+  ah(async (req: AuthedRequest, res) => {
+    const sellerId = req.user!.sellerId;
+    if (!sellerId) throw new ApiError(403, 'Not a seller');
+    const days = Math.min(parseInt((req.query.days as string) || '30', 10), 90);
+
+    const [daily, byCourier, topStates, topCities, futureCod] = await Promise.all([
+      query(
+        `SELECT DATE(created_at) AS day,
+                COUNT(*)::int AS orders,
+                COUNT(*) FILTER (WHERE status='delivered')::int AS delivered,
+                COUNT(*) FILTER (WHERE status LIKE 'rto%')::int AS rto,
+                COALESCE(SUM(total_freight),0)::float AS freight
+         FROM orders WHERE seller_id=$1 AND created_at >= NOW() - INTERVAL '${days} days'
+         GROUP BY day ORDER BY day ASC`,
+        [sellerId],
+      ),
+      query(
+        `SELECT c.name AS courier_name, c.code,
+                COUNT(o.id)::int AS orders,
+                COUNT(*) FILTER (WHERE o.status='delivered')::int AS delivered,
+                ROUND(100.0*COUNT(*) FILTER (WHERE o.status='delivered')/NULLIF(COUNT(*),0),2)::float AS delivery_rate
+         FROM orders o JOIN couriers c ON c.id=o.courier_id
+         WHERE o.seller_id=$1 AND o.created_at >= NOW() - INTERVAL '${days} days'
+         GROUP BY c.id,c.name,c.code ORDER BY orders DESC`,
+        [sellerId],
+      ),
+      query(
+        `SELECT consignee_state AS state, COUNT(*)::int AS orders,
+                ROUND(100.0*COUNT(*) FILTER (WHERE status='delivered')/NULLIF(COUNT(*),0),2)::float AS delivery_rate
+         FROM orders WHERE seller_id=$1 AND created_at >= NOW() - INTERVAL '${days} days'
+         GROUP BY consignee_state ORDER BY orders DESC LIMIT 10`,
+        [sellerId],
+      ),
+      query(
+        `SELECT consignee_city AS city, consignee_state AS state, COUNT(*)::int AS orders
+         FROM orders WHERE seller_id=$1 AND created_at >= NOW() - INTERVAL '${days} days'
+         GROUP BY consignee_city, consignee_state ORDER BY orders DESC LIMIT 10`,
+        [sellerId],
+      ),
+      // Future COD: pending delivered COD not yet settled
+      queryOne(
+        `SELECT COALESCE(SUM(cod_amount),0)::float AS upcoming_cod
+         FROM orders WHERE seller_id=$1 AND payment_mode='cod' AND status='delivered'
+         AND id NOT IN (SELECT DISTINCT order_id FROM cod_remittances WHERE seller_id=$1 AND status='settled')`,
+        [sellerId],
+      ),
+    ]);
+
+    // Best courier (highest delivery rate with >5 orders)
+    const bestCourier = byCourier.find((c: any) => c.orders >= 5) || byCourier[0] || null;
+
+    res.json({ daily, byCourier, topStates, topCities, futureCod, bestCourier });
   }),
 );
