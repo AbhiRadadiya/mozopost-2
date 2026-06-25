@@ -64,7 +64,7 @@ async function evaluateMerchantRisk(sellerId: string) {
   const seller = await queryOne<any>(
     `SELECT s.*, u.email, u.kyc_status,
             COUNT(o.id) FILTER (WHERE o.created_at > NOW()-INTERVAL '30 days')::int AS orders_30d,
-            COUNT(o.id) FILTER (WHERE o.status LIKE 'rto%' AND o.created_at > NOW()-INTERVAL '30 days')::int AS rto_30d,
+            COUNT(o.id) FILTER (WHERE o.status::text LIKE 'rto%' AND o.created_at > NOW()-INTERVAL '30 days')::int AS rto_30d,
             w.balance
      FROM sellers s
      JOIN users u ON u.id=s.user_id

@@ -230,7 +230,7 @@ adminRouter.get(
         `SELECT DATE(created_at) AS day,
                 COUNT(*)::int AS total,
                 COUNT(*) FILTER (WHERE status='delivered')::int AS delivered,
-                COUNT(*) FILTER (WHERE status LIKE 'rto%')::int AS rto,
+                COUNT(*) FILTER (WHERE status::text LIKE 'rto%')::int AS rto,
                 COUNT(*) FILTER (WHERE status='failed')::int AS ndr
          FROM orders
          WHERE created_at >= NOW() - INTERVAL '${days} days'
@@ -242,7 +242,7 @@ adminRouter.get(
                 COUNT(o.id)::int AS total,
                 COUNT(*) FILTER (WHERE o.status='delivered')::int AS delivered,
                 ROUND(100.0*COUNT(*) FILTER (WHERE o.status='delivered')/NULLIF(COUNT(*),0),2)::float AS delivery_rate,
-                COUNT(*) FILTER (WHERE o.status LIKE 'rto%')::int AS rto
+                COUNT(*) FILTER (WHERE o.status::text LIKE 'rto%')::int AS rto
          FROM couriers c
          LEFT JOIN orders o ON o.courier_id = c.id AND o.created_at >= NOW() - INTERVAL '${days} days'
          GROUP BY c.id, c.name, c.code

@@ -24,8 +24,7 @@ futureCodRouter.get('/', requireRole('seller'), ah(async (req: AuthedRequest, re
   const pending = await queryOne<any>(
     `SELECT COALESCE(SUM(cod_amount),0)::float AS total_pending_cod,
             COUNT(*) FILTER (WHERE status='delivered') AS delivered_orders
-     FROM orders WHERE seller_id=$1 AND payment_mode='cod' AND status='delivered'
-     AND id NOT IN (SELECT DISTINCT order_id FROM cod_remittances WHERE seller_id=$1 AND status='settled')`,
+     FROM orders WHERE seller_id=$1 AND payment_mode='cod' AND status='delivered'`,
     [sid],
   );
 
