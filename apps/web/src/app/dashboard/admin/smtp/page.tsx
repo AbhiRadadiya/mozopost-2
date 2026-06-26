@@ -61,7 +61,7 @@ export default function SmtpPage() {
   async function saveConfig(e: React.FormEvent) {
     e.preventDefault(); setSaving(true); setError('');
     try {
-      await api.post('/admin/smtp/configs', { ...form, port: parseInt(form.port) });
+      await api.post('/admin/smtp/configs', { ...form, port: parseInt(form.port), secure: form.secure || parseInt(form.port) === 465 });
       setShowForm(false); load();
     } catch (err) { setError(apiErrorMessage(err)); }
     finally { setSaving(false); }
@@ -257,7 +257,7 @@ export default function SmtpPage() {
                 </span>
               </div>
               <div className="text-xs text-[#94A3B8] font-mono">
-                Variables: {JSON.parse(t.variables || '[]').map((v: string) => `{{${v}}}`).join(', ') || '—'}
+                Variables: {(Array.isArray(t.variables) ? t.variables : (typeof t.variables === 'string' && t.variables.startsWith('[') ? JSON.parse(t.variables || '[]') : typeof t.variables === 'string' ? t.variables.split(',') : [])).map((v: string) => `{{${v.trim()}}}`).join(', ') || '—'}
               </div>
             </div>
           ))}

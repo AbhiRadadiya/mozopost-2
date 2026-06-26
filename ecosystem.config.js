@@ -18,7 +18,7 @@ module.exports = {
       env: {
         PORT: 4000,
         NEXT_PUBLIC_APP_ROLE: "seller",
-        NEXT_PUBLIC_API_URL: "http://localhost:4001/api/v1"
+        NEXT_PUBLIC_API_URL: "https://api.mozopost.in/api/v1" 
       }
     },
     {
@@ -29,7 +29,7 @@ module.exports = {
       env: {
         PORT: 4002,
         NEXT_PUBLIC_APP_ROLE: "admin",
-        NEXT_PUBLIC_API_URL: "http://localhost:4001/api/v1"
+        NEXT_PUBLIC_API_URL: "https://api.mozopost.in/api/v1"
       }
     },
     {
@@ -40,7 +40,7 @@ module.exports = {
       env: {
         PORT: 4003,
         NEXT_PUBLIC_APP_ROLE: "superadmin",
-        NEXT_PUBLIC_API_URL: "http://localhost:4001/api/v1"
+        NEXT_PUBLIC_API_URL: "https://api.mozopost.in/api/v1"
       }
     }
   ]
