@@ -95,15 +95,17 @@ export default function StoresPage() {
   }
 
   async function connectShopify() {
-    const domain = window.prompt("Enter your Shopify domain (e.g., mystore.myshopify.com):");
+    const domain = window.prompt(
+      "Enter your Shopify domain (e.g., mystore.myshopify.com):",
+    );
     if (!domain) return;
-    
-    const cleanDomain = domain.replace(/^https?:\/\//, '').split('/')[0];
-    if (!cleanDomain.includes('.myshopify.com')) {
-      alert('Please enter a valid .myshopify.com domain');
+
+    const cleanDomain = domain.replace(/^https?:\/\//, "").split("/")[0];
+    if (!cleanDomain.includes(".myshopify.com")) {
+      alert("Please enter a valid .myshopify.com domain");
       return;
     }
-    
+
     try {
       const { data } = await api.get(`/shopify/auth-url?shop=${cleanDomain}`);
       window.location.href = data.url;
@@ -113,7 +115,7 @@ export default function StoresPage() {
   }
 
   return (
-    <div className="animate-fade-up max-w-6xl mx-auto">
+    <div className="animate-fade-up mx-auto">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#0F172A]">

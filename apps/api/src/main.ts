@@ -25,7 +25,9 @@ import { translationRouter, adminTranslationRouter } from './address-translation
 import { adminTicketsRouter, ticketsRouter } from './tickets/routes';
 import { adminCodRouter, codRouter } from './cod/routes';
 import { settingsRouter } from './settings/routes';
+import { uploadRouter } from './upload/routes';
 import { pool } from './db/pool';
+import path from 'path';
 
 const app = express();
 
@@ -73,6 +75,8 @@ app.use('/api/v1/stores',                  storeIntegrationsRouter);
 app.use('/api/v1/tickets',                 ticketsRouter);
 app.use('/api/v1/cod',                     codRouter);
 app.use('/api/v1/settings',                settingsRouter);
+app.use('/api/v1/upload',                  uploadRouter);
+app.use('/uploads', express.static(path.join(process.cwd(), 'uploads')));
 
 // ── Shared ────────────────────────────────────────────────────
 app.use('/api/v1/couriers',                couriersRouter);

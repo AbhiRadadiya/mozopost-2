@@ -36,6 +36,7 @@ const createTicketSchema = z.object({
   type: z.string().min(1),
   subject: z.string().min(1),
   description: z.string().min(1),
+  attachmentUrl: z.string().optional().nullable(),
 });
 
 ticketsRouter.post(
@@ -46,10 +47,10 @@ ticketsRouter.post(
     const dto = createTicketSchema.parse(req.body);
 
     const row = await queryOne(
-      `INSERT INTO tickets (seller_id, type, subject, description, status, priority)
-       VALUES ($1, $2, $3, $4, 'open', 'medium')
+      `INSERT INTO tickets (seller_id, type, subject, description, status, priority, attachment_url)
+       VALUES ($1, $2, $3, $4, 'open', 'medium', $5)
        RETURNING *`,
-      [sellerId, dto.type, dto.subject, dto.description]
+      [sellerId, dto.type, dto.subject, dto.description, dto.attachmentUrl || null]
     );
 
     res.status(201).json({ ticket: row });

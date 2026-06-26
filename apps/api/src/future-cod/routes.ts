@@ -135,12 +135,17 @@ labelSettingsRouter.use(requireAuth, requireRole('seller'));
 labelSettingsRouter.get('/settings', ah(async (req: AuthedRequest, res) => {
   const sid = sellerId(req);
   let settings = await queryOne(
-    `SELECT * FROM label_settings WHERE seller_id=$1`, [sid],
+    `SELECT ls.*, s.phone AS phone_number 
+     FROM label_settings ls 
+     JOIN sellers s ON s.id = ls.seller_id 
+     WHERE ls.seller_id=$1`, [sid],
   );
   if (!settings) {
-    settings = await queryOne(
+    const fresh = await queryOne(
       `INSERT INTO label_settings (seller_id) VALUES ($1) RETURNING *`, [sid],
     );
+    const seller = await queryOne(`SELECT phone FROM sellers WHERE id=$1`, [sid]);
+    settings = { ...fresh, phone_number: seller?.phone || '' };
   }
   res.json({ settings });
 }));
@@ -155,6 +160,8 @@ const labelSettingsSchema = z.object({
   logoUrl:        z.string().url().optional().or(z.literal('')),
   brandName:      z.string().max(100).optional(),
   returnAddress:  z.string().max(500).optional(),
+  showMobile:     z.boolean().optional(),
+  labelImageUrl:  z.string().max(500).optional().or(z.literal('')),
 });
 
 labelSettingsRouter.patch('/settings', ah(async (req: AuthedRequest, res) => {
@@ -166,6 +173,7 @@ labelSettingsRouter.patch('/settings', ah(async (req: AuthedRequest, res) => {
     showLogo: 'show_logo', showBrandName: 'show_brand_name', showGst: 'show_gst',
     showReturnAddr: 'show_return_addr', labelSize: 'label_size', templateId: 'template_id',
     logoUrl: 'logo_url', brandName: 'brand_name', returnAddress: 'return_address',
+    showMobile: 'show_mobile', labelImageUrl: 'label_image_url'
   };
   for (const [k, v] of Object.entries(dto)) {
     if (v !== undefined && map[k]) {

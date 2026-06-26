@@ -18,7 +18,7 @@ settingsRouter.get('/', ah(async (req: AuthedRequest, res) => {
   const userId = req.user!.sub;
 
   const user = await queryOne(`SELECT first_name || ' ' || COALESCE(last_name, '') AS name, email, phone AS phone_number FROM users WHERE id=$1`, [userId]);
-  const seller = await queryOne(`SELECT business_name, business_type, gstin, pan, bank_account_name, bank_account_number, bank_ifsc, auto_allocate_courier FROM sellers WHERE id=$1`, [sellerId]);
+  const seller = await queryOne(`SELECT business_name, business_type, gstin, pan, bank_account_name, bank_account_number, bank_ifsc, auto_allocate_courier, company_address, return_address, same_address FROM sellers WHERE id=$1`, [sellerId]);
 
   const couriersRes = await query(
     `SELECT c.id, c.name, c.code, COALESCE(mca.priority, c.priority) AS priority, 
@@ -38,6 +38,9 @@ settingsRouter.get('/', ah(async (req: AuthedRequest, res) => {
       business_type: seller?.business_type,
       gstin: seller?.gstin,
       pan: seller?.pan,
+      company_address: seller?.company_address || '',
+      return_address: seller?.return_address || '',
+      same_address: !!seller?.same_address,
     },
     billing: {
       bank_account_name: seller?.bank_account_name,
@@ -55,7 +58,7 @@ settingsRouter.get('/', ah(async (req: AuthedRequest, res) => {
 settingsRouter.patch('/profile', ah(async (req: AuthedRequest, res) => {
   const sellerId = sellerIdOf(req);
   const userId = req.user!.sub;
-  const { name, phone_number, business_name, business_type, gstin, pan } = req.body;
+  const { name, phone_number, business_name, business_type, gstin, pan, company_address, return_address, same_address } = req.body;
 
   if (name !== undefined || phone_number !== undefined) {
     const userFields = [];
@@ -72,13 +75,16 @@ settingsRouter.patch('/profile', ah(async (req: AuthedRequest, res) => {
     }
   }
 
-  if (business_name !== undefined || business_type !== undefined || gstin !== undefined || pan !== undefined) {
+  if (business_name !== undefined || business_type !== undefined || gstin !== undefined || pan !== undefined || company_address !== undefined || return_address !== undefined || same_address !== undefined) {
     const sellerFields = [];
     const sellerParams = [];
     if (business_name !== undefined) { sellerParams.push(business_name); sellerFields.push(`business_name=$${sellerParams.length}`); }
     if (business_type !== undefined) { sellerParams.push(business_type); sellerFields.push(`business_type=$${sellerParams.length}`); }
     if (gstin !== undefined) { sellerParams.push(gstin); sellerFields.push(`gstin=$${sellerParams.length}`); }
     if (pan !== undefined) { sellerParams.push(pan); sellerFields.push(`pan=$${sellerParams.length}`); }
+    if (company_address !== undefined) { sellerParams.push(company_address); sellerFields.push(`company_address=$${sellerParams.length}`); }
+    if (return_address !== undefined) { sellerParams.push(return_address); sellerFields.push(`return_address=$${sellerParams.length}`); }
+    if (same_address !== undefined) { sellerParams.push(same_address); sellerFields.push(`same_address=$${sellerParams.length}`); }
     if (sellerFields.length) {
       sellerParams.push(sellerId);
       await query(`UPDATE sellers SET ${sellerFields.join(', ')} WHERE id=$${sellerParams.length}`, sellerParams);
