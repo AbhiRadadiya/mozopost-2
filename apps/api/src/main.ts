@@ -19,8 +19,12 @@ import { referralRouter, adminReferralRouter } from './referral/routes';
 import { futureCodRouter, adminFutureCodRouter, labelSettingsRouter } from './future-cod/routes';
 import { developerApiRouter, adminDeveloperApiRouter } from './developer-api/routes';
 import { storeIntegrationsRouter, adminStoreRouter } from './store-integrations/routes';
+import { shopifyOAuthRouter } from './store-integrations/shopify-oauth';
 import { riskRouter } from './risk/routes';
 import { translationRouter, adminTranslationRouter } from './address-translation/routes';
+import { adminTicketsRouter, ticketsRouter } from './tickets/routes';
+import { adminCodRouter, codRouter } from './cod/routes';
+import { settingsRouter } from './settings/routes';
 import { pool } from './db/pool';
 
 const app = express();
@@ -64,7 +68,11 @@ app.use('/api/v1/referrals',               referralRouter);
 app.use('/api/v1/future-cod',              futureCodRouter);
 app.use('/api/v1/labels',                  labelSettingsRouter);
 app.use('/api/v1/developer',               developerApiRouter);
+app.use('/api/v1/stores/shopify',          shopifyOAuthRouter);
 app.use('/api/v1/stores',                  storeIntegrationsRouter);
+app.use('/api/v1/tickets',                 ticketsRouter);
+app.use('/api/v1/cod',                     codRouter);
+app.use('/api/v1/settings',                settingsRouter);
 
 // ── Shared ────────────────────────────────────────────────────
 app.use('/api/v1/couriers',                couriersRouter);
@@ -81,6 +89,8 @@ app.use('/api/v1/admin/future-cod',        adminFutureCodRouter);
 app.use('/api/v1/admin/smtp',              smtpRouter);
 app.use('/api/v1/admin/developer',         adminDeveloperApiRouter);
 app.use('/api/v1/admin/stores',            adminStoreRouter);
+app.use('/api/v1/admin/tickets',           adminTicketsRouter);
+app.use('/api/v1/admin/cod',               adminCodRouter);
 
 // ── Super Admin ───────────────────────────────────────────────
 app.use('/api/v1/translations',             translationRouter);

@@ -42,6 +42,9 @@ api.interceptors.response.use(
         if (!refreshToken) throw new Error('No refresh token');
         const { data } = await axios.post(`${API_URL}/auth/refresh`, { refreshToken });
         localStorage.setItem('mozopost_access_token', data.accessToken);
+        if (data.refreshToken) {
+          localStorage.setItem('mozopost_refresh_token', data.refreshToken);
+        }
         pendingQueue.forEach((cb) => cb(data.accessToken));
         pendingQueue = [];
         originalRequest.headers.Authorization = `Bearer ${data.accessToken}`;

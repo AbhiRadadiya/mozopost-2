@@ -45,6 +45,8 @@ ndrRouter.post(
       await query(`UPDATE orders SET status = 'rto_initiated', rto_initiated_at = NOW() WHERE id = $1`, [order.id]);
     } else if (action === 'reattempt') {
       await query(`UPDATE orders SET status = 'out_for_delivery' WHERE id = $1`, [order.id]);
+    } else if (action === 'update_address') {
+      await query(`UPDATE orders SET status = 'unprocessed' WHERE id = $1`, [order.id]);
     }
 
     res.json({ message: `NDR action '${action}' recorded` });

@@ -41,6 +41,12 @@ export const env = {
   SENDGRID_API_KEY: process.env.SENDGRID_API_KEY || '',
   EMAIL_FROM: process.env.EMAIL_FROM || 'noreply@mozopost.in',
 
+  // Shopify OAuth
+  SHOPIFY_CLIENT_ID: process.env.SHOPIFY_CLIENT_ID || '',
+  SHOPIFY_CLIENT_SECRET: process.env.SHOPIFY_CLIENT_SECRET || '',
+  SHOPIFY_CALLBACK_URL: process.env.SHOPIFY_CALLBACK_URL || '',
+  APP_API_URL: process.env.APP_API_URL || 'http://localhost:3001',
+
   // Couriers — presence of these flags whether each adapter runs live or mock
   COURIERS: {
     delhivery: { apiKey: process.env.DELHIVERY_API_KEY || '', baseUrl: process.env.DELHIVERY_BASE_URL || 'https://track.delhivery.com' },

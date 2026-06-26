@@ -1,80 +1,208 @@
 'use client';
 
-import { useState } from 'react';
-import { Card, CardHead, Btn, Field, Input, Badge } from '@/components/ui';
+import { useState, useEffect } from 'react';
+import { api, apiErrorMessage } from '@/lib/api';
 
-const MOCK_TICKETS = [
-  { id:'TKT-2026-00001', type:'Weight dispute', subject:'DTDC charged 900g for 450g shipment', priority:'high', status:'open', date:'22 Jun' },
-  { id:'TKT-2026-00002', type:'Billing dispute', subject:'Overcharged fuel surcharge May', priority:'medium', status:'open', date:'21 Jun' },
-  { id:'TKT-2026-00003', type:'Shipment issue', subject:'Shipment marked delivered but not received', priority:'high', status:'closed', date:'15 Jun' },
-];
-const STATUS_COLOR: Record<string,string> = { open:'bg-c4', closed:'bg-c3', escalated:'bg-c2 text-white', in_progress:'bg-c1' };
-const PRIORITY_COLOR: Record<string,string> = { high:'bg-c2 text-white', medium:'bg-c4', low:'bg-c5', critical:'bg-c2 text-white' };
+const STATUS_COLOR: Record<string, { bg: string, text: string }> = { 
+  open: { bg: 'bg-[#FEF3C7]', text: 'text-[#92400E]' }, 
+  closed: { bg: 'bg-[#F1F5F9]', text: 'text-[#475569]' }, 
+  escalated: { bg: 'bg-[#FECACA]', text: 'text-[#991B1B]' }, 
+  in_progress: { bg: 'bg-[#DBEAFE]', text: 'text-[#1E40AF]' } 
+};
+
+const PRIORITY_COLOR: Record<string, { bg: string, text: string }> = { 
+  high: { bg: 'bg-[#FEF2F2]', text: 'text-[#DC2626]' }, 
+  medium: { bg: 'bg-[#FFFBEB]', text: 'text-[#D97706]' }, 
+  low: { bg: 'bg-[#F8F9FB]', text: 'text-[#64748B]' }, 
+  critical: { bg: 'bg-[#991B1B]', text: 'text-[#FFFFFF]' } 
+};
 
 export default function TicketsPage() {
+  const [tickets, setTickets] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  
   const [form, setForm] = useState({ type:'weight_dispute', subject:'', description:'' });
+  const [submitting, setSubmitting] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const [submitError, setSubmitError] = useState('');
+
+  useEffect(() => { load(); }, []);
+
+  async function load() {
+    setLoading(true); setError('');
+    try {
+      const { data } = await api.get('/tickets');
+      setTickets(data.tickets);
+    } catch (err) { setError(apiErrorMessage(err)); }
+    finally { setLoading(false); }
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setSubmitting(true); setSubmitError('');
+    try {
+      await api.post('/tickets', form);
+      setSubmitted(true);
+      load();
+    } catch (err) { setSubmitError(apiErrorMessage(err)); }
+    finally { setSubmitting(false); }
+  }
+
+  async function escalate(id: string) {
+    try {
+      await api.patch(`/tickets/${id}/escalate`);
+      load();
+    } catch (err) { setError(apiErrorMessage(err)); }
+  }
 
   return (
-    <div>
-      <div className="mb-4 flex items-center justify-between">
-        <h1 className="text-xl font-bold">Support Tickets</h1>
-        <Badge color="bg-c2 text-white">{MOCK_TICKETS.filter(t=>t.status==='open').length} Open</Badge>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
+    <div className="animate-fade-up max-w-6xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          {MOCK_TICKETS.map(t => (
-            <div key={t.id} className="nb-card p-4 mb-3">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <div className="font-bold">{t.id} — {t.type}</div>
-                  <div className="text-sm text-[#777]">{t.subject}</div>
-                </div>
-                <Badge color={STATUS_COLOR[t.status]}>{t.status}</Badge>
-              </div>
-              <div className="flex items-center gap-2 mb-3">
-                <Badge color={PRIORITY_COLOR[t.priority]}>{t.priority}</Badge>
-                <span className="text-xs text-[#777]">{t.date}</span>
-              </div>
-              <div className="flex gap-2">
-                <Btn variant="default">💬 Reply</Btn>
-                {t.status==='open' && <Btn variant="warn">Escalate</Btn>}
-              </div>
-            </div>
-          ))}
+          <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-3">
+            Support Tickets
+            <span className="px-2.5 py-1 bg-[#EEF2FF] text-[#4F46E5] text-[10px] font-bold uppercase tracking-widest rounded-full">
+              {tickets.filter(t=>t.status==='open').length} Open
+            </span>
+          </h1>
+          <p className="text-sm text-[#64748B] mt-1">Get help with shipments, billing, and technical issues.</p>
         </div>
-        <Card>
-          <CardHead className="bg-black text-white"><span className="font-bold">Create New Ticket</span></CardHead>
-          {submitted ? (
-            <div className="p-6 text-center">
-              <div className="text-2xl mb-2">✅</div>
-              <div className="font-bold">Ticket submitted!</div>
-              <div className="text-sm text-[#777] mt-1 mb-4">Our team will respond within 24 hours.</div>
-              <Btn variant="default" onClick={() => setSubmitted(false)}>+ New Ticket</Btn>
+      </div>
+
+      {error && (
+        <div className="mb-6 p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B]">
+          {error}
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Ticket List */}
+        <div className="space-y-4">
+          {loading ? (
+            <div className="text-center py-12 text-[#94A3B8] text-sm">Loading tickets...</div>
+          ) : tickets.length === 0 ? (
+            <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] p-12 text-center">
+              <div className="w-16 h-16 bg-[#F8F9FB] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#E5E8EF]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"></path></svg>
+              </div>
+              <h3 className="text-lg font-bold text-[#0F172A] mb-1">No tickets found</h3>
+              <p className="text-sm text-[#64748B]">You haven't created any support tickets yet.</p>
             </div>
           ) : (
-            <form className="p-4" onSubmit={e => { e.preventDefault(); setSubmitted(true); }}>
-              <Field label="Ticket type" required>
-                <select className="nb-input w-full" value={form.type} onChange={e => setForm(p=>({...p,type:e.target.value}))}>
-                  <option value="weight_dispute">Weight Dispute</option>
-                  <option value="billing_dispute">Billing Dispute</option>
-                  <option value="shipment_issue">Shipment Issue</option>
-                  <option value="ndr">NDR / Delivery Issue</option>
-                  <option value="other">Other</option>
-                </select>
-              </Field>
-              <Field label="Subject" required>
-                <Input value={form.subject} onChange={e => setForm(p=>({...p,subject:e.target.value}))} placeholder="Brief description..." required />
-              </Field>
-              <Field label="Description" required>
-                <textarea className="nb-input w-full" rows={4} value={form.description}
-                  onChange={e => setForm(p=>({...p,description:e.target.value}))}
-                  placeholder="Describe the issue in detail..." required />
-              </Field>
-              <Btn type="submit" variant="success" className="w-full justify-center">📤 Submit Ticket</Btn>
-            </form>
+            tickets.map(t => {
+              const statusStyle = STATUS_COLOR[t.status] || STATUS_COLOR.open;
+              const priorityStyle = PRIORITY_COLOR[t.priority] || PRIORITY_COLOR.low;
+              
+              return (
+                <div key={t.id} className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] p-5 hover:border-[#CBD5E1] transition-colors relative overflow-hidden group">
+                  <div className={`absolute left-0 top-0 bottom-0 w-1 ${t.status === 'open' ? 'bg-[#4F46E5]' : 'bg-[#E5E8EF]'}`} />
+                  
+                  <div className="flex items-start justify-between mb-3 pl-2">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-mono text-[10px] font-bold text-[#64748B] uppercase tracking-wider">{t.ticket_number}</span>
+                        <span className="w-1 h-1 rounded-full bg-[#CBD5E1]" />
+                        <span className="text-xs font-bold text-[#4F46E5]">{t.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                      </div>
+                      <h3 className="text-sm font-bold text-[#0F172A] pr-4">{t.subject}</h3>
+                    </div>
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest shrink-0 ${statusStyle.bg} ${statusStyle.text}`}>
+                      {t.status.replace('_', ' ')}
+                    </span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between pl-2 mt-4">
+                    <div className="flex items-center gap-3">
+                      <span className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${priorityStyle.bg} ${priorityStyle.text}`}>
+                        {t.priority}
+                      </span>
+                      <span className="text-xs font-medium text-[#94A3B8] flex items-center gap-1.5">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                        {new Date(t.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      {t.status === 'open' && (
+                        <button onClick={() => escalate(t.id)} className="px-3 py-1.5 bg-[#FFFBEB] border border-[#FEF08A] text-[#B45309] text-xs font-semibold rounded-lg hover:bg-[#FEF3C7] hover:border-[#FDE047] transition-colors">
+                          Escalate
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
           )}
-        </Card>
+        </div>
+
+        {/* Create Ticket Form */}
+        <div>
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden sticky top-6">
+            <div className="px-6 py-5 border-b border-[#E5E8EF] bg-[#F8F9FB]">
+              <h2 className="text-sm font-bold text-[#0F172A]">Create New Ticket</h2>
+            </div>
+            
+            {submitted ? (
+              <div className="p-10 text-center animate-fade-in">
+                <div className="w-16 h-16 bg-[#F0FDF4] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#BBF7D0]">
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <h3 className="text-lg font-bold text-[#0F172A] mb-1">Ticket submitted successfully</h3>
+                <p className="text-sm text-[#64748B] mb-6">Our support team will respond within 24 hours.</p>
+                <button onClick={() => { setSubmitted(false); setForm({ type:'weight_dispute', subject:'', description:'' }); }}
+                  className="px-5 py-2.5 bg-white border border-[#E5E8EF] text-[#475569] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] hover:text-[#0F172A] transition-colors shadow-sm">
+                  Create Another Ticket
+                </button>
+              </div>
+            ) : (
+              <form className="p-6" onSubmit={handleSubmit}>
+                <div className="space-y-5 mb-6">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">Ticket Type</label>
+                    <div className="relative">
+                      <select required className="w-full pl-3 pr-10 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 appearance-none cursor-pointer" 
+                        value={form.type} onChange={e => setForm(p=>({...p,type:e.target.value}))}>
+                        <option value="weight_dispute">Weight Dispute</option>
+                        <option value="billing_dispute">Billing Dispute</option>
+                        <option value="shipment_issue">Shipment Issue</option>
+                        <option value="ndr">NDR / Delivery Issue</option>
+                        <option value="other">Other</option>
+                      </select>
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#94A3B8]">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">Subject</label>
+                    <input required className="w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10" 
+                      value={form.subject} onChange={e => setForm(p=>({...p,subject:e.target.value}))} 
+                      placeholder="Briefly summarize the issue..." />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">Description</label>
+                    <textarea required className="w-full px-3 py-3 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 resize-y min-h-[120px]" 
+                      rows={5} value={form.description} onChange={e => setForm(p=>({...p,description:e.target.value}))}
+                      placeholder="Please provide all relevant details, AWB numbers, and context to help us resolve this quickly..." />
+                  </div>
+                </div>
+
+                {submitError && <div className="mb-4 p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B]">{submitError}</div>}
+                
+                <div className="pt-2 border-t border-[#E5E8EF]">
+                  <button type="submit" disabled={submitting}
+                    className="w-full flex items-center justify-center py-3 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors shadow-sm disabled:opacity-50">
+                    {submitting ? 'Submitting...' : 'Submit Ticket'}
+                  </button>
+                </div>
+              </form>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

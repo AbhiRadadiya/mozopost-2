@@ -2,20 +2,37 @@
 
 import { useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
-import { Btn, Card, CardHead, Field, Input, Badge } from '@/components/ui';
+
+const LOG_STATUS_STYLE: Record<string, string> = {
+  sent:    'bg-[#D1FAE5] text-[#065F46]',
+  failed:  'bg-[#FEE2E2] text-[#991B1B]',
+  queued:  'bg-[#FEF9C3] text-[#854D0E]',
+  bounced: 'bg-[#FEE2E2] text-[#991B1B]',
+  opened:  'bg-[#DBEAFE] text-[#1E40AF]',
+};
+
+const TABS = ['configs', 'templates', 'rules', 'logs'] as const;
+type Tab = typeof TABS[number];
+
+const TAB_LABELS: Record<Tab, string> = {
+  configs:   '⚙ SMTP Configs',
+  templates: '📧 Templates',
+  rules:     '🔔 Notification Rules',
+  logs:      '📋 Email Logs',
+};
 
 export default function SmtpPage() {
   const [configs, setConfigs] = useState<any[]>([]);
   const [templates, setTemplates] = useState<any[]>([]);
   const [rules, setRules] = useState<any[]>([]);
   const [logs, setLogs] = useState<any[]>([]);
-  const [tab, setTab] = useState<'configs'|'templates'|'rules'|'logs'>('configs');
+  const [tab, setTab] = useState<Tab>('configs');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState({ name:'', host:'', port:'587', secure:false, username:'', password:'', fromEmail:'', fromName:'Mozopost', isDefault:false });
+  const [form, setForm] = useState({ name: '', host: '', port: '587', secure: false, username: '', password: '', fromEmail: '', fromName: 'Mozopost', isDefault: false });
   const [saving, setSaving] = useState(false);
-  const [testId, setTestId] = useState<string|null>(null);
+  const [testId, setTestId] = useState<string | null>(null);
 
   useEffect(() => { load(); }, [tab]);
 
@@ -43,8 +60,7 @@ export default function SmtpPage() {
     e.preventDefault(); setSaving(true); setError('');
     try {
       await api.post('/admin/smtp/configs', { ...form, port: parseInt(form.port) });
-      setShowForm(false);
-      load();
+      setShowForm(false); load();
     } catch (err) { setError(apiErrorMessage(err)); }
     finally { setSaving(false); }
   }
@@ -53,8 +69,7 @@ export default function SmtpPage() {
     setTestId(id);
     try {
       const { data } = await api.post(`/admin/smtp/configs/${id}/test`, {});
-      alert(data.message);
-      load();
+      alert(data.message); load();
     } catch (err) { setError(apiErrorMessage(err)); }
     finally { setTestId(null); }
   }
@@ -62,148 +77,223 @@ export default function SmtpPage() {
   async function toggleRule(id: string, isActive: boolean) {
     try {
       await api.patch(`/admin/smtp/notification-rules/${id}`, { isActive });
-      setRules(r => r.map(x => x.id===id ? {...x, is_active: isActive} : x));
+      setRules(r => r.map(x => x.id === id ? { ...x, is_active: isActive } : x));
     } catch (err) { setError(apiErrorMessage(err)); }
   }
 
-  const STATUS_COLOR: Record<string,string> = { sent:'bg-c3', failed:'bg-c2 text-white', queued:'bg-c4', bounced:'bg-c2 text-white', opened:'bg-c1' };
+  const inp = "w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 placeholder:text-[#94A3B8]";
 
   return (
-    <div>
-      <h1 className="mb-4 text-xl font-bold">SMTP & Email Management</h1>
-      {error && <div className="mb-3 border-2 border-black bg-c2 p-3 text-xs font-bold text-white">⚠ {error}</div>}
+    <div className="animate-fade-up max-w-7xl mx-auto space-y-6">
+      <div>
+        <h1 className="text-2xl font-bold text-[#0F172A]">SMTP & Email Management</h1>
+        <p className="text-sm text-[#64748B] mt-1">Configure email delivery, templates, and notification rules.</p>
+      </div>
+
+      {error && <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm text-[#991B1B]">{error}</div>}
 
       {/* Tabs */}
-      <div className="flex gap-0 mb-0 border-b-2 border-black">
-        {(['configs','templates','rules','logs'] as const).map(t => (
+      <div className="flex gap-0 border-b border-[#E5E8EF]">
+        {TABS.map(t => (
           <button key={t} onClick={() => setTab(t)}
-            className={`px-5 py-2 text-xs font-bold border-2 border-b-0 border-black font-mono-nb uppercase -mb-0.5 ${tab===t?'bg-[#fffaf0]':'bg-white text-[#777]'}`}>
-            {t === 'configs' ? '⚙ SMTP Configs' : t === 'templates' ? '📧 Templates' : t === 'rules' ? '🔔 Rules' : '📋 Logs'}
+            className={`px-5 py-3 text-sm font-semibold border-b-2 transition-colors whitespace-nowrap ${tab === t ? 'border-[#4F46E5] text-[#4F46E5]' : 'border-transparent text-[#64748B] hover:text-[#0F172A]'}`}>
+            {TAB_LABELS[t]}
           </button>
         ))}
       </div>
 
-      {/* SMTP CONFIGS */}
+      {/* === SMTP CONFIGS === */}
       {tab === 'configs' && (
-        <div className="pt-4">
-          <div className="mb-3 flex justify-end">
-            <Btn variant="success" onClick={() => setShowForm(s => !s)}>+ Add SMTP Config</Btn>
+        <div className="space-y-4">
+          <div className="flex justify-end">
+            <button onClick={() => setShowForm(s => !s)}
+              className="px-5 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors shadow-sm">
+              + Add SMTP Config
+            </button>
           </div>
+
           {showForm && (
-            <Card>
-              <CardHead className="bg-c4"><span className="font-bold">New SMTP Configuration</span></CardHead>
-              <form onSubmit={saveConfig} className="p-4">
-                <div className="grid grid-cols-2 gap-3">
-                  <Field label="Config name" required><Input value={form.name} onChange={e => setForm(p=>({...p,name:e.target.value}))} required /></Field>
-                  <Field label="From name"><Input value={form.fromName} onChange={e => setForm(p=>({...p,fromName:e.target.value}))} /></Field>
-                  <Field label="SMTP host" required><Input value={form.host} onChange={e => setForm(p=>({...p,host:e.target.value}))} placeholder="smtp.gmail.com" required /></Field>
-                  <Field label="Port"><Input type="number" value={form.port} onChange={e => setForm(p=>({...p,port:e.target.value}))} /></Field>
-                  <Field label="Username" required><Input value={form.username} onChange={e => setForm(p=>({...p,username:e.target.value}))} required /></Field>
-                  <Field label="Password" required><Input type="password" value={form.password} onChange={e => setForm(p=>({...p,password:e.target.value}))} required /></Field>
-                  <Field label="From email" required><Input type="email" value={form.fromEmail} onChange={e => setForm(p=>({...p,fromEmail:e.target.value}))} required /></Field>
+            <div className="bg-white rounded-2xl border border-[#E5E8EF] shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#E5E8EF] bg-[#F8F9FB]">
+                <h2 className="text-sm font-bold text-[#0F172A]">New SMTP Configuration</h2>
+              </div>
+              <form onSubmit={saveConfig} className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">Config Name *</label>
+                    <input required value={form.name} onChange={e => setForm(p => ({ ...p, name: e.target.value }))} className={inp} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">From Name</label>
+                    <input value={form.fromName} onChange={e => setForm(p => ({ ...p, fromName: e.target.value }))} className={inp} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">SMTP Host *</label>
+                    <input required value={form.host} onChange={e => setForm(p => ({ ...p, host: e.target.value }))} placeholder="smtp.gmail.com" className={inp} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">Port</label>
+                    <input type="number" value={form.port} onChange={e => setForm(p => ({ ...p, port: e.target.value }))} className={inp} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">Username *</label>
+                    <input required value={form.username} onChange={e => setForm(p => ({ ...p, username: e.target.value }))} className={inp} />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">Password *</label>
+                    <input type="password" required value={form.password} onChange={e => setForm(p => ({ ...p, password: e.target.value }))} className={inp} />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">From Email *</label>
+                    <input type="email" required value={form.fromEmail} onChange={e => setForm(p => ({ ...p, fromEmail: e.target.value }))} className={inp} />
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 mb-3">
-                  <input type="checkbox" checked={form.isDefault} onChange={e => setForm(p=>({...p,isDefault:e.target.checked}))} id="isDefault" />
-                  <label htmlFor="isDefault" className="text-xs font-bold">Set as default SMTP</label>
+                <div className="flex items-center gap-3">
+                  <input type="checkbox" id="isDefault" checked={form.isDefault} onChange={e => setForm(p => ({ ...p, isDefault: e.target.checked }))}
+                    className="w-4 h-4 accent-[#4F46E5]" />
+                  <label htmlFor="isDefault" className="text-sm font-semibold text-[#0F172A]">Set as default SMTP config</label>
                 </div>
-                <Btn type="submit" variant="success" disabled={saving} className="w-full justify-center">
-                  {saving ? 'Saving...' : 'Save SMTP Config'}
-                </Btn>
+                <div className="flex gap-3 pt-2 border-t border-[#F1F5F9]">
+                  <button type="submit" disabled={saving}
+                    className="px-6 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors disabled:opacity-50">
+                    {saving ? 'Saving...' : 'Save SMTP Config'}
+                  </button>
+                  <button type="button" onClick={() => setShowForm(false)}
+                    className="px-6 py-2.5 bg-white border border-[#E5E8EF] text-[#475569] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] transition-colors">
+                    Cancel
+                  </button>
+                </div>
               </form>
-            </Card>
+            </div>
           )}
-          {loading ? <div className="text-sm mt-4">Loading...</div>
-          : configs.length === 0 ? <div className="mt-4 text-sm text-[#777]">No SMTP configs yet. Add one to start sending emails.</div>
-          : configs.map(c => (
-            <div key={c.id} className="nb-card p-4 mb-3">
-              <div className="flex items-start justify-between">
-                <div>
-                  <div className="font-bold">{c.name} {c.is_default && <Badge color="bg-c3 text-black">Default</Badge>}</div>
-                  <div className="text-xs text-[#777] mt-1">{c.host}:{c.port} · {c.from_email}</div>
-                  {c.last_tested_at && (
-                    <div className="text-xs mt-1">
-                      Last tested: {new Date(c.last_tested_at).toLocaleDateString('en-IN')} — <Badge color={c.test_status==='ok'?'bg-c3':'bg-c2 text-white'}>{c.test_status}</Badge>
+
+          {loading ? (
+            <div className="py-16 text-center text-sm text-[#94A3B8] animate-pulse">Loading configs...</div>
+          ) : configs.length === 0 ? (
+            <div className="bg-white rounded-2xl border border-[#E5E8EF] p-12 text-center">
+              <div className="text-3xl mb-3">📬</div>
+              <div className="text-sm font-semibold text-[#0F172A]">No SMTP configs yet</div>
+              <div className="text-xs text-[#94A3B8] mt-1">Add one above to start sending emails.</div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {configs.map(c => (
+                <div key={c.id} className="bg-white rounded-2xl border border-[#E5E8EF] shadow-sm p-5">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="font-bold text-sm text-[#0F172A]">{c.name}</span>
+                        {c.is_default && <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#D1FAE5] text-[#065F46]">Default</span>}
+                      </div>
+                      <div className="text-xs text-[#64748B]">{c.host}:{c.port} · {c.from_email}</div>
+                      {c.last_tested_at && (
+                        <div className="text-xs mt-1.5 flex items-center gap-1.5 text-[#94A3B8]">
+                          Last tested: {new Date(c.last_tested_at).toLocaleDateString('en-IN')} —
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-semibold ${c.test_status === 'ok' ? 'bg-[#D1FAE5] text-[#065F46]' : 'bg-[#FEE2E2] text-[#991B1B]'}`}>
+                            {c.test_status}
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                    <button disabled={testId === c.id} onClick={() => testSmtp(c.id)}
+                      className="px-4 py-2 text-sm font-semibold bg-[#EEF2FF] text-[#4F46E5] rounded-xl hover:bg-[#E0E7FF] transition-colors disabled:opacity-50">
+                      {testId === c.id ? '⏳ Testing...' : '🧪 Test'}
+                    </button>
+                  </div>
                 </div>
-                <div className="flex gap-2">
-                  <Btn variant="default" disabled={testId===c.id} onClick={() => testSmtp(c.id)}>
-                    {testId===c.id ? 'Testing...' : '🧪 Test'}
-                  </Btn>
-                </div>
-              </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* TEMPLATES */}
+      {/* === TEMPLATES === */}
       {tab === 'templates' && (
-        <div className="pt-4">
-          {loading ? <div className="text-sm">Loading...</div>
-          : templates.map(t => (
-            <div key={t.id} className="nb-card p-4 mb-3">
+        <div className="space-y-3">
+          {loading ? (
+            <div className="py-16 text-center text-sm text-[#94A3B8] animate-pulse">Loading templates...</div>
+          ) : templates.map(t => (
+            <div key={t.id} className="bg-white rounded-2xl border border-[#E5E8EF] shadow-sm p-5">
               <div className="flex items-center justify-between mb-2">
-                <div>
-                  <Badge color="bg-c1 text-black">{t.event.replace(/_/g,' ')}</Badge>
-                  <span className="ml-2 font-bold text-sm">{t.subject}</span>
+                <div className="flex items-center gap-3">
+                  <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#DBEAFE] text-[#1E40AF]">{t.event.replace(/_/g, ' ')}</span>
+                  <span className="font-semibold text-sm text-[#0F172A]">{t.subject}</span>
                 </div>
-                <Badge color={t.is_active?'bg-c3':'bg-[#999] text-white'}>{t.is_active?'Active':'Inactive'}</Badge>
+                <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${t.is_active ? 'bg-[#D1FAE5] text-[#065F46]' : 'bg-[#F1F5F9] text-[#475569]'}`}>
+                  {t.is_active ? 'Active' : 'Inactive'}
+                </span>
               </div>
-              <div className="text-xs text-[#777] font-mono-nb">Variables: {JSON.parse(t.variables||'[]').map((v:string) => `{{${v}}}`).join(', ')}</div>
+              <div className="text-xs text-[#94A3B8] font-mono">
+                Variables: {JSON.parse(t.variables || '[]').map((v: string) => `{{${v}}}`).join(', ') || '—'}
+              </div>
             </div>
           ))}
         </div>
       )}
 
-      {/* NOTIFICATION RULES */}
+      {/* === NOTIFICATION RULES === */}
       {tab === 'rules' && (
-        <div className="pt-4">
-          {loading ? <div className="text-sm">Loading...</div>
-          : rules.map(r => (
-            <div key={r.id} className="flex items-center justify-between border-b-2 border-[#eee] py-3">
-              <div>
-                <div className="font-bold text-sm">{r.event.replace(/_/g,' ')}</div>
-                <div className="text-xs text-[#777]">Send to: {r.send_to}</div>
-              </div>
-              <button onClick={() => toggleRule(r.id, !r.is_active)}
-                className={`w-10 h-5 border-2 border-black rounded-full relative transition-colors ${r.is_active?'bg-c3':'bg-[#ddd]'}`}>
-                <span className={`absolute top-0.5 w-3 h-3 border-2 border-black rounded-full bg-white transition-all ${r.is_active?'left-5':'left-0.5'}`} />
-              </button>
+        <div className="bg-white rounded-2xl border border-[#E5E8EF] shadow-sm overflow-hidden">
+          {loading ? (
+            <div className="py-16 text-center text-sm text-[#94A3B8] animate-pulse">Loading rules...</div>
+          ) : (
+            <div className="divide-y divide-[#F1F5F9]">
+              {rules.map(r => (
+                <div key={r.id} className="flex items-center justify-between px-6 py-4 hover:bg-[#F8F9FB] transition-colors">
+                  <div>
+                    <div className="text-sm font-semibold text-[#0F172A] capitalize">{r.event.replace(/_/g, ' ')}</div>
+                    <div className="text-xs text-[#94A3B8] mt-0.5">Send to: <span className="font-medium text-[#475569]">{r.send_to}</span></div>
+                  </div>
+                  <button onClick={() => toggleRule(r.id, !r.is_active)}
+                    className={`w-11 h-6 rounded-full relative transition-colors ${r.is_active ? 'bg-[#4F46E5]' : 'bg-[#E5E8EF]'}`}>
+                    <span className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow transition-all ${r.is_active ? 'left-6' : 'left-1'}`} />
+                  </button>
+                </div>
+              ))}
             </div>
-          ))}
+          )}
         </div>
       )}
 
-      {/* LOGS */}
+      {/* === EMAIL LOGS === */}
       {tab === 'logs' && (
-        <div className="pt-4">
-          <Card>
-            {loading ? <div className="p-4 text-sm">Loading...</div>
-            : (
-              <div className="overflow-auto">
-                <table className="w-full text-xs"><thead><tr className="bg-black text-c3">
-                  <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">Date</th>
-                  <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">Event</th>
-                  <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">To</th>
-                  <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">Subject</th>
-                  <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">Status</th>
-                </tr></thead><tbody>
+        <div className="bg-white rounded-2xl border border-[#E5E8EF] shadow-sm overflow-hidden">
+          {loading ? (
+            <div className="py-16 text-center text-sm text-[#94A3B8] animate-pulse">Loading logs...</div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b border-[#E5E8EF] bg-[#F8F9FB]">
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Date</th>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Event</th>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">To</th>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Subject</th>
+                    <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F1F5F9]">
                   {logs.length === 0 ? (
-                    <tr><td colSpan={5} className="px-3 py-6 text-center text-[#777]">No email logs yet</td></tr>
+                    <tr><td colSpan={5} className="px-5 py-12 text-center text-sm text-[#94A3B8]">No email logs yet</td></tr>
                   ) : logs.map(l => (
-                    <tr key={l.id} className="border-b border-[#eee]">
-                      <td className="px-3 py-2">{new Date(l.created_at).toLocaleDateString('en-IN')}</td>
-                      <td className="px-3 py-2"><Badge color="bg-c5">{(l.event||'—').replace(/_/g,' ')}</Badge></td>
-                      <td className="px-3 py-2">{l.to_email}</td>
-                      <td className="px-3 py-2 truncate max-w-[200px]">{l.subject}</td>
-                      <td className="px-3 py-2"><Badge color={STATUS_COLOR[l.status]||'bg-c5'}>{l.status}</Badge></td>
+                    <tr key={l.id} className="hover:bg-[#F8F9FB] transition-colors">
+                      <td className="px-5 py-3 text-sm text-[#64748B]">{new Date(l.created_at).toLocaleDateString('en-IN')}</td>
+                      <td className="px-5 py-3">
+                        <span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#EEF2FF] text-[#4F46E5]">{(l.event || '—').replace(/_/g, ' ')}</span>
+                      </td>
+                      <td className="px-5 py-3 text-sm text-[#64748B]">{l.to_email}</td>
+                      <td className="px-5 py-3 text-sm text-[#0F172A] truncate max-w-[200px]">{l.subject}</td>
+                      <td className="px-5 py-3">
+                        <span className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${LOG_STATUS_STYLE[l.status] || 'bg-[#F1F5F9] text-[#475569]'}`}>
+                          {l.status}
+                        </span>
+                      </td>
                     </tr>
                   ))}
-                </tbody></table>
-              </div>
-            )}
-          </Card>
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
     </div>

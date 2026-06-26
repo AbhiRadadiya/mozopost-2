@@ -169,6 +169,12 @@ authRouter.post(
 
     await query(`UPDATE refresh_tokens SET revoked_at = NOW() WHERE id = $1`, [matched.id]);
 
+    const newRefreshToken = uuid();
+    const newRefreshHash = await bcrypt.hash(newRefreshToken, 8);
+    await query(`INSERT INTO refresh_tokens (user_id, token_hash, expires_at) VALUES ($1,$2,$3)`, [
+      matched.user_id, newRefreshHash, matched.expires_at
+    ]);
+
     const seller = await queryOne<{ id: string }>(`SELECT id FROM sellers WHERE user_id = $1`, [matched.user_id]);
 
     const accessToken = signAccessToken({
@@ -178,7 +184,7 @@ authRouter.post(
       sellerId: seller?.id,
     });
 
-    res.json({ accessToken });
+    res.json({ accessToken, refreshToken: newRefreshToken });
   }),
 );
 

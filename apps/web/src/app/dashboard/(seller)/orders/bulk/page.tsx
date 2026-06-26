@@ -1,7 +1,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Btn, Card, CardHead, Badge } from '@/components/ui';
 
 const SAMPLE_ROWS = [
   { row: 1, orderId:'ORD-001', name:'Rahul Sharma', phone:'9876543210', address:'204 MG Road', city:'Bengaluru', state:'Karnataka', pincode:'560001', weight:'0.5', mode:'Prepaid', cod:'0', status:'valid' },
@@ -11,87 +10,180 @@ const SAMPLE_ROWS = [
 
 export default function BulkUploadPage() {
   const [validated, setValidated] = useState(false);
+  const [dragActive, setDragActive] = useState(false);
 
   return (
-    <div>
-      <h1 className="mb-4 text-xl font-bold">Bulk Upload <Badge color="bg-c5">CSV / EXCEL</Badge></h1>
-      <div className="grid grid-cols-2 gap-4">
+    <div className="animate-fade-up max-w-6xl mx-auto">
+      <div className="flex items-center justify-between mb-6">
         <div>
-          <Card>
-            <CardHead className="bg-black text-white"><span className="font-bold">📁 Upload Orders</span>
+          <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-3">
+            Bulk Upload 
+            <span className="px-2.5 py-1 bg-[#EEF2FF] text-[#4F46E5] text-[10px] font-bold uppercase tracking-widest rounded-full">CSV / EXCEL</span>
+          </h1>
+          <p className="text-sm text-[#64748B] mt-1">Upload multiple orders at once using our template.</p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6">
+        {/* Left Column: Upload & Validation */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden">
+            <div className="px-6 py-5 border-b border-[#E5E8EF] bg-[#F8F9FB] flex items-center justify-between">
+              <h2 className="text-sm font-bold text-[#0F172A]">Upload Orders</h2>
               <div className="flex gap-2">
-                <Btn variant="success" onClick={() => setValidated(true)}>▶ Validate</Btn>
-                <Btn variant="default">⬇ Template</Btn>
+                <button onClick={() => setValidated(true)}
+                  className="px-4 py-2 bg-[#4F46E5] text-white text-xs font-semibold rounded-lg hover:bg-[#4338CA] transition-colors shadow-sm flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  Validate
+                </button>
+                <button className="px-4 py-2 bg-white border border-[#E5E8EF] text-[#475569] text-xs font-semibold rounded-lg hover:bg-[#F8F9FB] hover:text-[#0F172A] transition-colors shadow-sm flex items-center gap-1.5">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                  Template
+                </button>
               </div>
-            </CardHead>
-            <div style={{border:'2px dashed #000',borderRadius:3,padding:20,textAlign:'center',background:'var(--c5)',cursor:'pointer',margin:14}}>
-              <div style={{fontSize:28,marginBottom:7}}>📄</div>
-              <div className="font-bold">Drop CSV / Excel here or click to upload</div>
-              <div className="text-[#777] text-xs mt-1">{SAMPLE_ROWS.length} sample rows loaded · Max 500 rows/file</div>
             </div>
-            {validated && (
-              <div style={{padding:'0 14px 14px'}}>
-                <div className="grid grid-cols-3 gap-2 mb-3">
-                  <div className="nb-card p-2.5 bg-black text-white"><div className="font-mono-nb text-[8px] uppercase opacity-70">Total</div><div className="font-mono-nb text-2xl font-bold">{SAMPLE_ROWS.length}</div></div>
-                  <div className="nb-card p-2.5 bg-c3"><div className="font-mono-nb text-[8px] uppercase">Valid</div><div className="font-mono-nb text-2xl font-bold">{SAMPLE_ROWS.filter(r=>r.status==='valid').length}</div></div>
-                  <div className="nb-card p-2.5 bg-c2 text-white"><div className="font-mono-nb text-[8px] uppercase">Errors</div><div className="font-mono-nb text-2xl font-bold">{SAMPLE_ROWS.filter(r=>r.status==='error').length}</div></div>
-                </div>
-                <div className="overflow-auto border-2 border-black rounded">
-                  <table className="w-full text-xs"><thead><tr className="bg-black text-c3">
-                    <th className="px-2 py-1.5 text-left font-mono-nb text-[8px] uppercase">#</th>
-                    <th className="px-2 py-1.5 text-left font-mono-nb text-[8px] uppercase">Order ID</th>
-                    <th className="px-2 py-1.5 text-left font-mono-nb text-[8px] uppercase">Name</th>
-                    <th className="px-2 py-1.5 text-left font-mono-nb text-[8px] uppercase">Pincode</th>
-                    <th className="px-2 py-1.5 text-left font-mono-nb text-[8px] uppercase">Status</th>
-                  </tr></thead><tbody>
-                    {SAMPLE_ROWS.map(r => (
-                      <tr key={r.row} className={`border-b border-[#eee] ${r.status==='error'?'bg-[#fff0f0]':''}`}>
-                        <td className="font-mono-nb px-2 py-1.5">{r.row}</td>
-                        <td className="font-mono-nb px-2 py-1.5 font-bold">{r.orderId}</td>
-                        <td className="px-2 py-1.5">{r.name}</td>
-                        <td className="font-mono-nb px-2 py-1.5">{r.pincode}</td>
-                        <td className="px-2 py-1.5">
-                          {r.status==='valid'
-                            ? <Badge color="bg-c3">✓ Valid</Badge>
-                            : <><Badge color="bg-c2 text-white">Error</Badge><div className="text-[9px] text-c2 mt-0.5">{r.error}</div></>}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody></table>
-                </div>
-                <div className="flex gap-2 mt-3 justify-end">
-                  <Btn variant="default" onClick={() => setValidated(false)}>↩ Re-upload</Btn>
-                  <Btn variant="dark">✓ Process {SAMPLE_ROWS.filter(r=>r.status==='valid').length} valid orders</Btn>
+            
+            {!validated && (
+              <div className="p-6">
+                <div 
+                  className={`border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer ${dragActive ? 'border-[#4F46E5] bg-[#EEF2FF]' : 'border-[#CBD5E1] bg-[#F8F9FB] hover:border-[#94A3B8] hover:bg-[#F1F3F7]'}`}
+                  onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
+                  onDragLeave={() => setDragActive(false)}
+                  onDrop={(e) => { e.preventDefault(); setDragActive(false); setValidated(true); }}
+                >
+                  <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mx-auto mb-4 border border-[#E5E8EF]">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                  </div>
+                  <h3 className="text-base font-bold text-[#0F172A] mb-1">Drop CSV / Excel here or click to upload</h3>
+                  <p className="text-sm text-[#64748B]">Max 500 rows per file. File must match the template format.</p>
                 </div>
               </div>
             )}
-          </Card>
+
+            {validated && (
+              <div className="p-6 animate-fade-in">
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="bg-[#F8F9FB] p-4 rounded-xl border border-[#E5E8EF]">
+                    <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Total Rows</div>
+                    <div className="text-2xl font-bold text-[#0F172A] font-mono">{SAMPLE_ROWS.length}</div>
+                  </div>
+                  <div className="bg-[#F0FDF4] p-4 rounded-xl border border-[#BBF7D0]">
+                    <div className="text-[10px] font-bold text-[#166534] uppercase tracking-widest mb-1">Valid Orders</div>
+                    <div className="text-2xl font-bold text-[#16A34A] font-mono">{SAMPLE_ROWS.filter(r=>r.status==='valid').length}</div>
+                  </div>
+                  <div className="bg-[#FEF2F2] p-4 rounded-xl border border-[#FECACA]">
+                    <div className="text-[10px] font-bold text-[#991B1B] uppercase tracking-widest mb-1">Errors</div>
+                    <div className="text-2xl font-bold text-[#EF4444] font-mono">{SAMPLE_ROWS.filter(r=>r.status==='error').length}</div>
+                  </div>
+                </div>
+
+                <div className="border border-[#E5E8EF] rounded-xl overflow-hidden mb-6">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-[#F8F9FB] border-b border-[#E5E8EF]">
+                        <tr>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest w-12">#</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Order ID</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Name</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Pincode</th>
+                          <th className="px-4 py-3 text-left text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {SAMPLE_ROWS.map(r => (
+                          <tr key={r.row} className={`border-b border-[#F1F3F7] last:border-0 ${r.status==='error'?'bg-[#FEF2F2]':'hover:bg-[#F8F9FB]'} transition-colors`}>
+                            <td className="px-4 py-3.5 font-mono text-xs text-[#64748B]">{r.row}</td>
+                            <td className="px-4 py-3.5 font-mono text-xs font-bold text-[#0F172A]">{r.orderId}</td>
+                            <td className="px-4 py-3.5 text-xs font-medium text-[#0F172A]">{r.name}</td>
+                            <td className="px-4 py-3.5 font-mono text-xs text-[#475569]">{r.pincode}</td>
+                            <td className="px-4 py-3.5">
+                              {r.status==='valid' ? (
+                                <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#D1FAE5] text-[#065F46]">✓ Valid</span>
+                              ) : (
+                                <div>
+                                  <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#FECACA] text-[#991B1B]">Error</span>
+                                  <div className="text-[10px] font-medium text-[#DC2626] mt-1">{r.error}</div>
+                                </div>
+                              )}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="flex items-center justify-end gap-3 pt-4 border-t border-[#E5E8EF]">
+                  <button onClick={() => setValidated(false)}
+                    className="px-5 py-2.5 bg-white border border-[#E5E8EF] text-[#475569] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] hover:text-[#0F172A] transition-colors">
+                    Re-upload
+                  </button>
+                  <button className="px-5 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors shadow-sm">
+                    Process {SAMPLE_ROWS.filter(r=>r.status==='valid').length} valid orders
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
-        <div>
-          <Card>
-            <CardHead className="bg-black text-white"><span className="font-bold">📋 Upload History</span></CardHead>
-            <div className="overflow-auto">
-              <table className="w-full text-xs"><thead><tr className="bg-black text-c3">
-                <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">Date</th>
-                <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">File</th>
-                <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">Total</th>
-                <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">OK</th>
-                <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">Failed</th>
-              </tr></thead><tbody>
-                <tr className="border-b border-[#eee]"><td className="px-3 py-2">01 Jun</td><td className="font-mono-nb px-3 py-2 text-[10px]">orders_jun1.csv</td><td className="font-mono-nb px-3 py-2">120</td><td><Badge color="bg-c3">115</Badge></td><td><Badge color="bg-c2 text-white">5</Badge></td></tr>
-                <tr className="border-b border-[#eee]"><td className="px-3 py-2">31 May</td><td className="font-mono-nb px-3 py-2 text-[10px]">bulk_may31.xlsx</td><td className="font-mono-nb px-3 py-2">84</td><td><Badge color="bg-c3">84</Badge></td><td><Badge color="bg-c3">0</Badge></td></tr>
-              </tbody></table>
+
+        {/* Right Column: History & Actions */}
+        <div className="space-y-6">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden">
+            <div className="px-6 py-5 border-b border-[#E5E8EF] bg-[#F8F9FB]">
+              <h2 className="text-sm font-bold text-[#0F172A]">Upload History</h2>
             </div>
-          </Card>
-          <Card>
-            <CardHead className="bg-black text-white"><span className="font-bold">Bulk Actions</span></CardHead>
-            <div className="flex flex-col gap-2 p-3">
-              <Btn variant="success" className="w-full justify-center">🖨 Bulk Print Labels</Btn>
-              <Btn variant="default" className="w-full justify-center">📋 Bulk Manifest</Btn>
-              <Btn variant="danger" className="w-full justify-center">✕ Bulk Cancel</Btn>
-              <Btn variant="primary" className="w-full justify-center">🚚 Bulk Assign Courier</Btn>
+            <div className="p-0">
+              <table className="w-full text-xs">
+                <thead className="bg-[#F8F9FB] border-b border-[#E5E8EF]">
+                  <tr>
+                    <th className="px-4 py-3 text-left font-bold text-[#94A3B8] uppercase tracking-widest text-[9px]">Date</th>
+                    <th className="px-4 py-3 text-left font-bold text-[#94A3B8] uppercase tracking-widest text-[9px]">File</th>
+                    <th className="px-4 py-3 text-left font-bold text-[#94A3B8] uppercase tracking-widest text-[9px]">OK</th>
+                    <th className="px-4 py-3 text-left font-bold text-[#94A3B8] uppercase tracking-widest text-[9px]">Fail</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-[#F1F3F7]">
+                  <tr className="hover:bg-[#F8F9FB]">
+                    <td className="px-4 py-3 text-[#475569] font-medium whitespace-nowrap">01 Jun</td>
+                    <td className="px-4 py-3 font-mono text-[10px] text-[#0F172A] font-medium truncate max-w-[100px]">orders_jun1.csv</td>
+                    <td className="px-4 py-3"><span className="text-[#16A34A] font-mono font-bold">115</span></td>
+                    <td className="px-4 py-3"><span className="text-[#EF4444] font-mono font-bold">5</span></td>
+                  </tr>
+                  <tr className="hover:bg-[#F8F9FB]">
+                    <td className="px-4 py-3 text-[#475569] font-medium whitespace-nowrap">31 May</td>
+                    <td className="px-4 py-3 font-mono text-[10px] text-[#0F172A] font-medium truncate max-w-[100px]">bulk_may31.xlsx</td>
+                    <td className="px-4 py-3"><span className="text-[#16A34A] font-mono font-bold">84</span></td>
+                    <td className="px-4 py-3"><span className="text-[#94A3B8] font-mono font-bold">0</span></td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
-          </Card>
+          </div>
+
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden">
+            <div className="px-6 py-5 border-b border-[#E5E8EF] bg-[#F8F9FB]">
+              <h2 className="text-sm font-bold text-[#0F172A]">Bulk Actions</h2>
+            </div>
+            <div className="p-4 space-y-3">
+              <button className="w-full px-4 py-2.5 bg-white border border-[#E5E8EF] text-[#0F172A] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] transition-colors flex items-center justify-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+                Bulk Print Labels
+              </button>
+              <button className="w-full px-4 py-2.5 bg-white border border-[#E5E8EF] text-[#0F172A] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] transition-colors flex items-center justify-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                Bulk Manifest
+              </button>
+              <button className="w-full px-4 py-2.5 bg-[#F8F9FB] border border-[#E5E8EF] text-[#4F46E5] text-sm font-semibold rounded-xl hover:bg-white hover:border-[#4F46E5] transition-colors flex items-center justify-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><rect x="1" y="3" width="15" height="13"></rect><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"></polygon><circle cx="5.5" cy="18.5" r="2.5"></circle><circle cx="18.5" cy="18.5" r="2.5"></circle></svg>
+                Bulk Assign Courier
+              </button>
+              <button className="w-full px-4 py-2.5 bg-[#FEF2F2] border border-[#FECACA] text-[#DC2626] text-sm font-semibold rounded-xl hover:bg-[#FEE2E2] hover:border-[#F87171] transition-colors flex items-center justify-center gap-2">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                Bulk Cancel
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </div>

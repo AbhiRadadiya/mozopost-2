@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import Script from 'next/script';
 import { api, apiErrorMessage } from '@/lib/api';
-import { Btn, Card, CardHead, Input, Badge, StatCard } from '@/components/ui';
 import { useAuthStore } from '@/store/auth';
 
 interface Txn {
@@ -37,9 +36,7 @@ export default function WalletPage() {
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
-  useEffect(() => {
-    load();
-  }, []);
+  useEffect(() => { load(); }, []);
 
   async function load() {
     setLoading(true);
@@ -52,16 +49,12 @@ export default function WalletPage() {
       setBalance(parseFloat(walletRes.data.wallet.balance));
       setTxns(txnRes.data.transactions);
       if (creditRes.data) setCredit(creditRes.data);
-    } catch (err) {
-      setError(apiErrorMessage(err));
-    } finally {
-      setLoading(false);
-    }
+    } catch (err) { setError(apiErrorMessage(err)); }
+    finally { setLoading(false); }
   }
 
   async function handleRecharge() {
-    setError('');
-    setMessage('');
+    setError(''); setMessage('');
     const amt = parseFloat(amount);
     if (!amt || amt < 100) {
       setError('Minimum recharge amount is ₹100');
@@ -72,7 +65,6 @@ export default function WalletPage() {
       const { data } = await api.post('/wallet/recharge/create', { amount: amt });
 
       if (data.mock) {
-        // Mock mode: API already credited the wallet instantly
         setMessage(data.message);
         await load();
         await fetchMe();
@@ -80,7 +72,6 @@ export default function WalletPage() {
         return;
       }
 
-      // Live mode: open Razorpay checkout
       const options = {
         key: RAZORPAY_KEY || data.keyId,
         amount: Math.round(amt * 100),
@@ -99,161 +90,207 @@ export default function WalletPage() {
             setMessage('Payment successful — wallet credited!');
             await load();
             await fetchMe();
-          } catch (err) {
-            setError(apiErrorMessage(err));
-          }
+          } catch (err) { setError(apiErrorMessage(err)); }
         },
-        theme: { color: '#104378' },
+        theme: { color: '#4F46E5' },
       };
       const rzp = new (window as any).Razorpay(options);
       rzp.open();
-    } catch (err) {
-      setError(apiErrorMessage(err));
-    } finally {
-      setRecharging(false);
-    }
+    } catch (err) { setError(apiErrorMessage(err)); }
+    finally { setRecharging(false); }
   }
 
   return (
-    <div>
+    <div className="animate-fade-up max-w-6xl mx-auto">
       <Script src="https://checkout.razorpay.com/v1/checkout.js" strategy="lazyOnload" />
-      <h1 className="mb-4 text-xl font-bold">Wallet &amp; Billing</h1>
+      
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h1 className="text-2xl font-bold text-[#0F172A]">Wallet &amp; Billing</h1>
+          <p className="text-sm text-[#64748B] mt-1">Manage your prepaid balance, recharges, and credit limits.</p>
+        </div>
+      </div>
 
-      <div className="mb-4 grid grid-cols-3 gap-2.5">
-        <StatCard label="Wallet balance" value={loading ? '...' : `₹${balance?.toLocaleString('en-IN')}`} bg="bg-c3" />
-        <StatCard label="Total Transactions" value={txns.length} bg="bg-c5" />
-        <StatCard label="Mode" value={RAZORPAY_KEY ? 'LIVE' : 'MOCK'} bg={RAZORPAY_KEY ? 'bg-c3' : 'bg-c4'} />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#E5E8EF]">
+          <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1.5">Wallet Balance</div>
+          <div className="text-3xl font-bold text-[#0F172A] font-mono">
+            {loading ? '...' : `₹${balance?.toLocaleString('en-IN')}`}
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#E5E8EF]">
+          <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1.5">Total Transactions</div>
+          <div className="text-3xl font-bold text-[#0F172A] font-mono">{txns.length}</div>
+        </div>
+        <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#E5E8EF] flex flex-col justify-center">
+          <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1.5">Payment Mode</div>
+          <div>
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${RAZORPAY_KEY ? 'bg-[#D1FAE5] text-[#065F46]' : 'bg-[#FEF3C7] text-[#92400E]'}`}>
+              {RAZORPAY_KEY ? 'Live' : 'Mock Mode'}
+            </span>
+          </div>
+        </div>
       </div>
 
       {/* Credit facility panel */}
       {credit?.hasCreditFacility && credit.creditFacility && (
-        <div className={`mb-4 nb-card p-4 ${
-          credit.creditFacility.riskBand === 'exhausted' ? 'bg-[#fff5f5]' :
-          credit.creditFacility.riskBand === 'near_limit' ? 'bg-[#fffbeb]' : 'bg-white'
+        <div className={`mb-6 p-6 rounded-2xl border shadow-sm ${
+          credit.creditFacility.riskBand === 'exhausted' ? 'bg-[#FEF2F2] border-[#FECACA]' :
+          credit.creditFacility.riskBand === 'near_limit' ? 'bg-[#FFFBEB] border-[#FEF08A]' : 'bg-white border-[#E5E8EF]'
         }`}>
-          <div className="flex items-center justify-between mb-3">
-            <div className="font-bold">💳 Postpaid Credit Facility</div>
-            <Badge color={credit.creditFacility.riskBand === 'exhausted' ? 'bg-c2 text-white' :
-              credit.creditFacility.riskBand === 'near_limit' ? 'bg-c4' : 'bg-c3'}>
-              {credit.creditFacility.riskBand === 'exhausted' ? '❌ Credit exhausted' :
-               credit.creditFacility.riskBand === 'near_limit' ? '🟡 Near limit' : '✓ Active'}
-            </Badge>
+          <div className="flex items-center justify-between mb-4">
+            <div className="font-bold text-[#0F172A] flex items-center gap-2">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>
+              Postpaid Credit Facility
+            </div>
+            <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+              credit.creditFacility.riskBand === 'exhausted' ? 'bg-[#FECACA] text-[#991B1B]' :
+              credit.creditFacility.riskBand === 'near_limit' ? 'bg-[#FEF08A] text-[#92400E]' : 'bg-[#D1FAE5] text-[#065F46]'
+            }`}>
+              {credit.creditFacility.riskBand === 'exhausted' ? 'Credit Exhausted' :
+               credit.creditFacility.riskBand === 'near_limit' ? 'Near Limit' : 'Active'}
+            </span>
           </div>
-          <div className="grid grid-cols-4 gap-2 mb-3">
-            <div className="border-2 border-black p-2 bg-white">
-              <div className="font-mono-nb text-[8px] text-[#777] uppercase">Credit limit</div>
-              <div className="font-mono-nb text-base font-bold">₹{credit.creditFacility.creditLimit.toLocaleString('en-IN')}</div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
+            <div className="bg-[#F8F9FB] p-4 rounded-xl border border-[#E5E8EF]">
+              <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Credit Limit</div>
+              <div className="text-lg font-bold text-[#0F172A] font-mono">₹{credit.creditFacility.creditLimit.toLocaleString('en-IN')}</div>
             </div>
-            <div className="border-2 border-black p-2 bg-white">
-              <div className="font-mono-nb text-[8px] text-[#777] uppercase">Used credit</div>
-              <div className="font-mono-nb text-base font-bold text-c2">₹{(credit.wallet.creditOutstanding ?? 0).toLocaleString('en-IN')}</div>
+            <div className="bg-[#F8F9FB] p-4 rounded-xl border border-[#E5E8EF]">
+              <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Used Credit</div>
+              <div className="text-lg font-bold text-[#EF4444] font-mono">₹{(credit.wallet.creditOutstanding ?? 0).toLocaleString('en-IN')}</div>
             </div>
-            <div className="border-2 border-black p-2 bg-white">
-              <div className="font-mono-nb text-[8px] text-[#777] uppercase">Available credit</div>
-              <div className="font-mono-nb text-base font-bold text-green-700">₹{credit.creditFacility.availableCredit.toLocaleString('en-IN')}</div>
+            <div className="bg-[#F8F9FB] p-4 rounded-xl border border-[#E5E8EF]">
+              <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Available Credit</div>
+              <div className="text-lg font-bold text-[#16A34A] font-mono">₹{credit.creditFacility.availableCredit.toLocaleString('en-IN')}</div>
             </div>
-            <div className="border-2 border-black p-2 bg-white">
-              <div className="font-mono-nb text-[8px] text-[#777] uppercase">Billing cycle</div>
-              <div className="font-mono-nb text-base font-bold">{credit.creditFacility.billingCycle}</div>
+            <div className="bg-[#F8F9FB] p-4 rounded-xl border border-[#E5E8EF]">
+              <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Billing Cycle</div>
+              <div className="text-lg font-bold text-[#0F172A]">{credit.creditFacility.billingCycle}</div>
             </div>
           </div>
+          
           <div>
-            <div className="flex justify-between text-[10px] font-mono-nb font-bold mb-1">
-              <span>Credit utilization</span>
+            <div className="flex justify-between text-xs font-semibold text-[#475569] mb-2">
+              <span>Credit Utilization</span>
               <span>{credit.creditFacility.utilizationPct.toFixed(1)}%</span>
             </div>
-            <div className="h-2.5 bg-[#eee] border-2 border-black rounded-sm overflow-hidden">
+            <div className="h-2.5 bg-[#E5E8EF] rounded-full overflow-hidden">
               <div
-                className={`h-full transition-all ${credit.creditFacility.riskBand === 'exhausted' ? 'bg-c2' : credit.creditFacility.riskBand === 'near_limit' ? 'bg-c4' : 'bg-c3'}`}
+                className={`h-full transition-all rounded-full ${credit.creditFacility.riskBand === 'exhausted' ? 'bg-[#EF4444]' : credit.creditFacility.riskBand === 'near_limit' ? 'bg-[#F59E0B]' : 'bg-[#10B981]'}`}
                 style={{ width: `${Math.min(100, credit.creditFacility.utilizationPct)}%` }}
               />
             </div>
           </div>
+
           {credit.creditFacility.riskBand === 'exhausted' && (
-            <div className="mt-3 border-2 border-black bg-c2 p-2 text-xs font-bold text-white text-center">
-              ❌ Credit limit exhausted — new orders blocked. Please recharge your wallet.
+            <div className="mt-4 p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs font-medium text-[#991B1B]">
+              Credit limit exhausted. New orders blocked. Please recharge your wallet.
             </div>
           )}
           {credit.creditFacility.riskBand === 'near_limit' && (
-            <div className="mt-3 border-2 border-black bg-c4 p-2 text-xs font-bold text-center">
-              🟡 Credit limit near exhaustion — recharge soon to avoid order blocks.
+            <div className="mt-4 p-3 rounded-xl bg-[#FFFBEB] border border-[#FEF08A] text-xs font-medium text-[#92400E]">
+              Credit limit near exhaustion. Recharge soon to avoid order blocks.
             </div>
           )}
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-4">
-        <Card className="bg-c3">
-          <CardHead className="bg-c3">
-            <span className="text-sm font-bold">💰 Recharge Wallet</span>
-          </CardHead>
-          <div className="p-4">
-            <Input type="number" value={amount} onChange={(e) => setAmount(e.target.value)} className="mb-3 bg-white" />
-            <div className="mb-3 flex flex-wrap gap-2">
-              {[1000, 2000, 5000, 10000].map((v) => (
-                <button
-                  key={v}
-                  onClick={() => setAmount(String(v))}
-                  className="border-2 border-black bg-white px-3 py-1.5 text-xs font-bold shadow-nb-sm hover:translate-x-[-1px] hover:translate-y-[-1px]"
-                >
-                  ₹{v.toLocaleString('en-IN')}
-                </button>
-              ))}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Recharge Card */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden sticky top-6">
+            <div className="px-5 py-4 border-b border-[#E5E8EF] bg-[#F8F9FB]">
+              <h2 className="text-sm font-bold text-[#0F172A]">Recharge Wallet</h2>
             </div>
+            <div className="p-5">
+              <div className="relative mb-4">
+                <div className="absolute left-4 top-1/2 -translate-y-1/2 font-medium text-[#94A3B8]">₹</div>
+                <input type="number" value={amount} onChange={(e) => setAmount(e.target.value)}
+                  className="w-full pl-8 pr-4 py-3 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] font-mono outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10" />
+              </div>
+              <div className="flex flex-wrap gap-2 mb-4">
+                {[1000, 2000, 5000, 10000].map((v) => (
+                  <button key={v} onClick={() => setAmount(String(v))}
+                    className="flex-1 bg-[#F8F9FB] border border-[#E5E8EF] text-[#475569] text-xs font-semibold px-3 py-2 rounded-lg hover:bg-white hover:border-[#CBD5E1] transition-colors">
+                    +₹{v.toLocaleString('en-IN')}
+                  </button>
+                ))}
+              </div>
 
-            {!RAZORPAY_KEY && (
-              <div className="mb-3 border-2 border-black bg-white px-3 py-2 text-[11px] font-semibold">
-                ℹ Running in mock mode — wallet credits instantly. Add Razorpay keys to{' '}
-                <code className="font-mono-nb">apps/api/.env</code> for live payments.
+              {!RAZORPAY_KEY && (
+                <div className="mb-4 p-3 rounded-xl bg-[#F8F9FB] border border-[#E5E8EF] text-[11px] font-medium text-[#64748B] leading-relaxed">
+                  Running in mock mode. Wallet credits instantly without actual payment.
+                </div>
+              )}
+
+              {error && <div className="mb-4 p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs font-medium text-[#991B1B]">{error}</div>}
+              {message && <div className="mb-4 p-3 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] text-xs font-medium text-[#166534]">{message}</div>}
+
+              <button disabled={recharging} onClick={handleRecharge}
+                className="w-full flex items-center justify-center py-3 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors shadow-sm disabled:opacity-50">
+                {recharging ? 'Processing...' : (RAZORPAY_KEY ? 'Pay via Razorpay' : 'Recharge Wallet')}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Transactions Card */}
+        <div className="lg:col-span-2">
+          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#E5E8EF] bg-white flex items-center justify-between">
+              <h2 className="text-sm font-bold text-[#0F172A]">Transaction History</h2>
+            </div>
+            
+            {loading ? (
+              <div className="p-8 text-center text-[#94A3B8] text-sm">Loading transactions...</div>
+            ) : txns.length === 0 ? (
+              <div className="p-16 text-center">
+                <div className="w-12 h-12 rounded-xl bg-[#F4F6F9] flex items-center justify-center mx-auto mb-3">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" strokeWidth="2"><rect x="2" y="5" width="20" height="14" rx="2" /><path d="M2 10h20" /></svg>
+                </div>
+                <p className="text-sm font-medium text-[#64748B]">No transactions found.</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto max-h-[500px]">
+                <table className="w-full text-sm">
+                  <thead className="sticky top-0 bg-[#F8F9FB] shadow-sm z-10">
+                    <tr>
+                      <th className="px-5 py-3.5 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">Date</th>
+                      <th className="px-5 py-3.5 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">Description</th>
+                      <th className="px-5 py-3.5 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">Type</th>
+                      <th className="px-5 py-3.5 text-right text-xs font-semibold text-[#64748B] uppercase tracking-wide">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {txns.map((t) => {
+                      const isDebit = t.type === 'debit';
+                      return (
+                        <tr key={t.id} className="border-b border-[#F1F3F7] hover:bg-[#F8F9FB] transition-colors">
+                          <td className="px-5 py-4 text-[#475569] font-medium text-xs whitespace-nowrap">
+                            {new Date(t.created_at).toLocaleString('en-IN', {
+                              day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+                            })}
+                          </td>
+                          <td className="px-5 py-4 text-[#0F172A] font-medium text-sm">{t.description}</td>
+                          <td className="px-5 py-4">
+                            <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${isDebit ? 'bg-[#FEF2F2] text-[#991B1B]' : 'bg-[#D1FAE5] text-[#065F46]'}`}>
+                              {t.type}
+                            </span>
+                          </td>
+                          <td className={`px-5 py-4 text-right font-mono text-sm font-bold whitespace-nowrap ${isDebit ? 'text-[#0F172A]' : 'text-[#16A34A]'}`}>
+                            {isDebit ? '-' : '+'}₹{Math.abs(parseFloat(t.amount)).toFixed(2)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
-
-            {error && <div className="mb-3 border-2 border-black bg-c2 p-2 text-xs font-bold text-white">⚠ {error}</div>}
-            {message && <div className="mb-3 border-2 border-black bg-white p-2 text-xs font-bold">✓ {message}</div>}
-
-            <Btn variant="dark" disabled={recharging} onClick={handleRecharge} className="w-full justify-center py-2.5">
-              {recharging ? 'Processing...' : `💳 ${RAZORPAY_KEY ? 'Pay via Razorpay' : 'Recharge (mock)'}`}
-            </Btn>
           </div>
-        </Card>
-
-        <Card>
-          <CardHead className="bg-black text-white">
-            <span className="text-sm font-bold">📋 Transaction History</span>
-          </CardHead>
-          {loading ? (
-            <div className="p-4 text-sm">Loading...</div>
-          ) : txns.length === 0 ? (
-            <div className="p-4 text-sm text-[#777]">No transactions yet.</div>
-          ) : (
-            <div className="max-h-96 overflow-auto">
-              <table className="w-full text-xs">
-                <thead>
-                  <tr className="sticky top-0 bg-black text-c3">
-                    <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">Date</th>
-                    <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">Description</th>
-                    <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">Type</th>
-                    <th className="px-3 py-2 text-left font-mono-nb text-[9px] uppercase">Amount</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {txns.map((t) => (
-                    <tr key={t.id} className="border-b border-[#eee]">
-                      <td className="px-3 py-2">{new Date(t.created_at).toLocaleDateString('en-IN')}</td>
-                      <td className="px-3 py-2">{t.description}</td>
-                      <td className="px-3 py-2">
-                        <Badge color={t.type === 'debit' ? 'bg-c2 text-white' : 'bg-c3'}>{t.type}</Badge>
-                      </td>
-                      <td className={`font-mono-nb px-3 py-2 font-bold ${t.type === 'debit' ? 'text-c2' : 'text-green-700'}`}>
-                        {t.type === 'debit' ? '-' : '+'}₹{Math.abs(parseFloat(t.amount)).toFixed(2)}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </Card>
+        </div>
       </div>
     </div>
   );
