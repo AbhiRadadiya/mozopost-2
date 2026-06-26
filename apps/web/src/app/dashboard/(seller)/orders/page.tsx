@@ -102,12 +102,13 @@ function ProSelect({ label, required, children, ...rest }: React.SelectHTMLAttri
    Ship / Schedule Pickup Modal
    ───────────────────────────────────────────────────────── */
 function ShipModal({
-  open, orderIds, onClose, onSuccess,
+  open, orderIds, onClose, onSuccess, couriers
 }: {
-  open: boolean; orderIds: string[]; onClose: () => void; onSuccess: () => void;
+  open: boolean; orderIds: string[]; onClose: () => void; onSuccess: () => void; couriers: Courier[];
 }) {
   const today = new Date().toISOString().split('T')[0];
   const [pickupDate, setPickupDate] = useState(today);
+  const [courierId, setCourierId] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -118,6 +119,7 @@ function ShipModal({
       await api.post('/pickups', {
         pickupDate,
         expectedPackageCount: orderIds.length,
+        courierId: courierId || undefined,
       });
       setSuccess(`Pickup scheduled for ${orderIds.length} order${orderIds.length > 1 ? 's' : ''}!`);
       setTimeout(() => { onSuccess(); onClose(); setSuccess(''); }, 1800);
@@ -159,16 +161,22 @@ function ShipModal({
             </div>
           </div>
 
-          {/* Pickup date */}
-          <div>
-            <label className="block text-xs font-semibold text-[#475569] mb-1.5">Pickup Date</label>
-            <input
-              type="date"
-              value={pickupDate}
-              min={today}
-              onChange={e => setPickupDate(e.target.value)}
-              className="w-full border border-[#E5E8EF] rounded-lg px-3 py-2.5 text-sm text-[#0F172A] bg-white outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
-            />
+          {/* Pickup date and Courier */}
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-[#475569] mb-1.5">Pickup Date</label>
+              <input
+                type="date"
+                value={pickupDate}
+                min={today}
+                onChange={e => setPickupDate(e.target.value)}
+                className="w-full border border-[#E5E8EF] rounded-lg px-3 py-2.5 text-sm text-[#0F172A] bg-white outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
+              />
+            </div>
+            <ProSelect label="Courier Partner" value={courierId} onChange={e => setCourierId(e.target.value)}>
+              <option value="">Auto-allocate (cheapest)</option>
+              {couriers.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </ProSelect>
           </div>
 
           {error && (
@@ -483,6 +491,7 @@ export default function OrdersPage() {
         orderIds={shipModal.ids}
         onClose={() => setShipModal({ open: false, ids: [] })}
         onSuccess={() => { load(); setSelected([]); }}
+        couriers={couriers}
       />
       <AddOrderDrawer
         open={drawerOpen}

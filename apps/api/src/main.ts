@@ -68,7 +68,7 @@ app.use('/api/v1/referrals',               referralRouter);
 app.use('/api/v1/future-cod',              futureCodRouter);
 app.use('/api/v1/labels',                  labelSettingsRouter);
 app.use('/api/v1/developer',               developerApiRouter);
-app.use('/api/v1/stores/shopify',          shopifyOAuthRouter);
+app.use('/api/v1/shopify',                 shopifyOAuthRouter);
 app.use('/api/v1/stores',                  storeIntegrationsRouter);
 app.use('/api/v1/tickets',                 ticketsRouter);
 app.use('/api/v1/cod',                     codRouter);

@@ -19,10 +19,16 @@ export default function LabelsPage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [couriers, setCouriers] = useState<any[]>([]);
 
   useEffect(() => {
-    api.get('/labels/settings').then(r => setSettings(r.data.settings))
-      .catch(err => setError(apiErrorMessage(err)))
+    Promise.all([
+      api.get('/labels/settings'),
+      api.get('/couriers')
+    ]).then(([settingsRes, couriersRes]) => {
+      setSettings(settingsRes.data.settings);
+      setCouriers(couriersRes.data.couriers || []);
+    }).catch(err => setError(apiErrorMessage(err)))
       .finally(() => setLoading(false));
   }, []);
 
@@ -192,7 +198,9 @@ export default function LabelsPage() {
                     {settings?.show_brand_name && settings?.brand_name && (
                       <div className="font-bold text-sm mb-1">{settings.brand_name}</div>
                     )}
-                    <div className="font-black text-lg tracking-wide mb-1">DELHIVERY</div>
+                    <div className="font-black text-lg tracking-wide mb-1">
+                      {(couriers.length > 0 ? couriers[0].name : 'DELHIVERY').toUpperCase()}
+                    </div>
                     <div className="text-[10px]">AWB: DEL1234567890</div>
                   </div>
                   <div className="bg-black text-white px-2 py-1 font-bold text-[10px]">PREPAID</div>

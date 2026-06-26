@@ -105,7 +105,7 @@ export default function StoresPage() {
     }
     
     try {
-      const { data } = await api.get(`/stores/shopify/auth-url?shop=${cleanDomain}`);
+      const { data } = await api.get(`/shopify/auth-url?shop=${cleanDomain}`);
       window.location.href = data.url;
     } catch (err) {
       setError(apiErrorMessage(err));

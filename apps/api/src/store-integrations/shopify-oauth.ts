@@ -33,6 +33,7 @@ shopifyOAuthRouter.get('/auth-url', requireAuth, requireRole('seller'), ah(async
 
   const authUrl = `https://${shop}/admin/oauth/authorize?client_id=${clientId}&scope=${scopes}&redirect_uri=${redirectUri}&state=${state}`;
 
+  // Target new window open
   res.json({ url: authUrl });
 }));
 
