@@ -37,8 +37,13 @@ export default function LoginPage() {
         }
       }
 
-      if (user.role === "seller") router.push("/dashboard");
-      else router.push("/dashboard/admin");
+      if (user.role === "seller") {
+        router.push("/dashboard");
+      } else if (user.role === "super_admin") {
+        router.push("/dashboard/superadmin");
+      } else {
+        router.push("/dashboard/admin");
+      }
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {

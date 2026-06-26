@@ -10,7 +10,8 @@ interface Dispute {
   difference_gm: number; difference_pct: string; disputed_amount: string;
   approved_refund_amount: string | null; status: string;
   auto_flagged: boolean; escalated: boolean; reason: string;
-  seller_remarks: string | null; created_at: string;
+  seller_remarks: string | null; admin_remarks: string | null;
+  proof_video_url: string | null; created_at: string;
 }
 interface Stats {
   open: string; under_review: string; refund_pending: string;
@@ -39,9 +40,11 @@ export default function AdminDisputesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [resolveId, setResolveId] = useState<string | null>(null);
-  const [resolveAction, setResolveAction] = useState<'approve' | 'reject'>('approve');
+  const [resolveDispute, setResolveDispute] = useState<Dispute | null>(null);
+  const [resolveAction, setResolveAction] = useState<'approve' | 'reject' | 'on_hold'>('approve');
   const [approveAmt, setApproveAmt] = useState('');
   const [adminRemarks, setAdminRemarks] = useState('');
+  const [declineReason, setDeclineReason] = useState('');
   const [resolving, setResolving] = useState(false);
   const [refunding, setRefunding] = useState<string | null>(null);
   const [statusFilter, setStatusFilter] = useState('');
@@ -65,14 +68,21 @@ export default function AdminDisputesPage() {
 
   async function resolve() {
     if (!resolveId) return;
+    if (resolveAction === 'reject' && !declineReason.trim()) {
+      setError('Please enter a decline reason before rejecting the dispute.');
+      return;
+    }
     setResolving(true);
     try {
       await api.patch(`/admin/weight-disputes/${resolveId}/resolve`, {
         action: resolveAction,
         approvedAmount: resolveAction === 'approve' ? parseFloat(approveAmt) : undefined,
         adminRemarks: adminRemarks || undefined,
+        declineReason: resolveAction === 'reject' ? declineReason : undefined,
       });
-      setResolveId(null); setApproveAmt(''); setAdminRemarks('');
+      setResolveId(null); setResolveDispute(null);
+      setApproveAmt(''); setAdminRemarks(''); setDeclineReason('');
+      setError('');
       load();
     } catch (err) { setError(apiErrorMessage(err)); }
     finally { setResolving(false); }
@@ -137,19 +147,33 @@ export default function AdminDisputesPage() {
 
       {/* Resolve Modal */}
       {resolveId && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-96 border border-[#E5E8EF]">
-            <h3 className="text-base font-bold text-[#0F172A] mb-4">Resolve Dispute</h3>
-            <div className="flex rounded-xl border border-[#E5E8EF] overflow-hidden mb-4">
-              <button type="button" onClick={() => setResolveAction('approve')}
-                className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${resolveAction === 'approve' ? 'bg-[#D1FAE5] text-[#065F46]' : 'bg-white text-[#94A3B8]'}`}>
-                ✓ Approve Refund
-              </button>
-              <button type="button" onClick={() => setResolveAction('reject')}
-                className={`flex-1 py-2.5 text-sm font-semibold transition-colors border-l border-[#E5E8EF] ${resolveAction === 'reject' ? 'bg-[#FEE2E2] text-[#991B1B]' : 'bg-white text-[#94A3B8]'}`}>
-                ✕ Reject
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md border border-[#E5E8EF]">
+            <div className="flex items-start justify-between mb-4">
+              <h3 className="text-base font-bold text-[#0F172A]">Resolve Dispute</h3>
+              <button onClick={() => { setResolveId(null); setResolveDispute(null); setDeclineReason(''); setError(''); }}
+                className="w-7 h-7 rounded-lg bg-[#F4F6F9] flex items-center justify-center text-[#94A3B8] hover:text-[#0F172A] hover:bg-[#E5E8EF] transition-colors">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12"/></svg>
               </button>
             </div>
+
+            {/* 3 Action Tabs */}
+            <div className="flex rounded-xl border border-[#E5E8EF] overflow-hidden mb-5">
+              <button type="button" onClick={() => setResolveAction('approve')}
+                className={`flex-1 py-2.5 text-xs font-bold transition-colors ${resolveAction === 'approve' ? 'bg-[#D1FAE5] text-[#065F46]' : 'bg-white text-[#94A3B8] hover:bg-[#F8F9FB]'}`}>
+                ✓ Approve
+              </button>
+              <button type="button" onClick={() => setResolveAction('on_hold')}
+                className={`flex-1 py-2.5 text-xs font-bold transition-colors border-l border-[#E5E8EF] ${resolveAction === 'on_hold' ? 'bg-[#FEF9C3] text-[#854D0E]' : 'bg-white text-[#94A3B8] hover:bg-[#F8F9FB]'}`}>
+                ⏸ On Hold
+              </button>
+              <button type="button" onClick={() => setResolveAction('reject')}
+                className={`flex-1 py-2.5 text-xs font-bold transition-colors border-l border-[#E5E8EF] ${resolveAction === 'reject' ? 'bg-[#FEE2E2] text-[#991B1B]' : 'bg-white text-[#94A3B8] hover:bg-[#F8F9FB]'}`}>
+                ✕ Decline
+              </button>
+            </div>
+
+            {/* Approve — amount */}
             {resolveAction === 'approve' && (
               <div className="mb-4">
                 <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">Approved Refund Amount (₹)</label>
@@ -158,17 +182,54 @@ export default function AdminDisputesPage() {
                   className="w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 placeholder:text-[#94A3B8]" />
               </div>
             )}
-            <div className="mb-4">
-              <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">Admin Remarks</label>
+
+            {/* On Hold — info banner */}
+            {resolveAction === 'on_hold' && (
+              <div className="mb-4 p-3 rounded-xl bg-[#FFFBEB] border border-[#FEF08A] text-xs font-medium text-[#854D0E]">
+                ⏸ Dispute will be marked <strong>Under Review</strong>. Seller will be notified to provide additional proof or wait for logistics confirmation.
+              </div>
+            )}
+
+            {/* Decline — mandatory reason */}
+            {resolveAction === 'reject' && (
+              <div className="mb-4">
+                <label className="block text-xs font-semibold text-[#991B1B] mb-1.5 uppercase tracking-wide">
+                  Decline Reason <span className="text-[#DC2626]">*</span>
+                </label>
+                <textarea rows={3} value={declineReason} onChange={e => setDeclineReason(e.target.value)}
+                  placeholder="Explain why this dispute is being declined (visible to seller)…"
+                  className={`w-full px-3 py-2.5 text-sm border rounded-xl outline-none focus:ring-2 resize-none transition-colors ${
+                    declineReason.trim() ? 'border-[#E5E8EF] focus:border-[#4F46E5] focus:ring-[#4F46E5]/10' : 'border-[#FCA5A5] focus:border-[#DC2626] focus:ring-[#DC2626]/10'
+                  }`} />
+                {!declineReason.trim() && (
+                  <p className="text-xs text-[#DC2626] mt-1">This field is required before declining.</p>
+                )}
+              </div>
+            )}
+
+            {/* Admin Remarks (always visible) */}
+            <div className="mb-5">
+              <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">Admin Remarks (internal)</label>
               <textarea rows={2} value={adminRemarks} onChange={e => setAdminRemarks(e.target.value)}
-                className="w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 resize-none" />
+                placeholder="Internal notes — not shown to seller"
+                className="w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 resize-none placeholder:text-[#94A3B8]" />
             </div>
+
+            {error && <div className="mb-4 p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs font-medium text-[#991B1B]">{error}</div>}
+
             <div className="flex gap-3">
-              <button disabled={resolving} onClick={resolve}
-                className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 ${resolveAction === 'approve' ? 'bg-[#4F46E5] text-white hover:bg-[#4338CA]' : 'bg-[#DC2626] text-white hover:bg-[#B91C1C]'}`}>
-                {resolving ? 'Saving...' : resolveAction === 'approve' ? 'Confirm Approve' : 'Confirm Reject'}
+              <button disabled={resolving || (resolveAction === 'reject' && !declineReason.trim())} onClick={resolve}
+                className={`flex-1 py-2.5 text-sm font-semibold rounded-xl transition-colors disabled:opacity-50 ${
+                  resolveAction === 'approve' ? 'bg-[#4F46E5] text-white hover:bg-[#4338CA]'
+                  : resolveAction === 'on_hold' ? 'bg-[#CA8A04] text-white hover:bg-[#A16207]'
+                  : 'bg-[#DC2626] text-white hover:bg-[#B91C1C]'
+                }`}>
+                {resolving ? 'Saving...'
+                  : resolveAction === 'approve' ? 'Confirm Approve'
+                  : resolveAction === 'on_hold' ? 'Put On Hold'
+                  : 'Confirm Decline'}
               </button>
-              <button onClick={() => setResolveId(null)}
+              <button onClick={() => { setResolveId(null); setResolveDispute(null); setDeclineReason(''); setError(''); }}
                 className="px-4 py-2.5 bg-white border border-[#E5E8EF] text-[#475569] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] transition-colors">
                 Cancel
               </button>
@@ -220,9 +281,15 @@ export default function AdminDisputesPage() {
                     <td className="px-4 py-3 text-sm font-semibold text-[#0F172A]">{d.business_name}</td>
                     <td className="px-4 py-3">
                       <div className="text-sm font-mono text-[#4F46E5]">{d.mozopost_order_id}</div>
-                      <div className="flex gap-1 mt-1">
+                      <div className="flex gap-1 mt-1 flex-wrap">
                         {d.auto_flagged && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FEE2E2] text-[#991B1B]">auto-flagged</span>}
                         {d.escalated && <span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#FEE2E2] text-[#991B1B]">escalated</span>}
+                        {d.proof_video_url && (
+                          <a href={d.proof_video_url} target="_blank" rel="noopener noreferrer"
+                            className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#EEF2FF] text-[#4F46E5] hover:bg-[#E0E7FF] transition-colors">
+                            🎥 Video
+                          </a>
+                        )}
                       </div>
                     </td>
                     <td className="px-4 py-3 text-sm text-[#64748B]">{d.courier_name || '—'}</td>
@@ -232,13 +299,13 @@ export default function AdminDisputesPage() {
                     <td className="px-4 py-3 text-sm font-mono font-bold text-[#0F172A]">₹{parseFloat(d.disputed_amount).toFixed(2)}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${STATUS_STYLE[d.status] || 'bg-[#F1F5F9] text-[#475569]'}`}>
-                        {d.status.replace('_', ' ')}
+                        {d.status.replace(/_/g, ' ')}
                       </span>
                     </td>
                     <td className="px-4 py-3">
                       <div className="flex gap-2">
                         {['open', 'under_review'].includes(d.status) && (
-                          <button onClick={() => { setResolveId(d.id); setResolveAction('approve'); setApproveAmt(d.disputed_amount); }}
+                          <button onClick={() => { setResolveId(d.id); setResolveDispute(d); setResolveAction('approve'); setApproveAmt(d.disputed_amount); setDeclineReason(''); setError(''); }}
                             className="px-3 py-1.5 text-xs font-semibold bg-[#EEF2FF] text-[#4F46E5] rounded-lg hover:bg-[#E0E7FF] transition-colors">
                             Resolve
                           </button>

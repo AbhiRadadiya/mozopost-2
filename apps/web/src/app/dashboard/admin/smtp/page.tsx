@@ -33,6 +33,8 @@ export default function SmtpPage() {
   const [form, setForm] = useState({ name: '', host: '', port: '587', secure: false, username: '', password: '', fromEmail: '', fromName: 'Mozopost', isDefault: false });
   const [saving, setSaving] = useState(false);
   const [testId, setTestId] = useState<string | null>(null);
+  const [testEmail, setTestEmail] = useState('');
+  const [testResult, setTestResult] = useState<{ id: string; ok: boolean; message: string } | null>(null);
 
   useEffect(() => { load(); }, [tab]);
 
@@ -66,12 +68,19 @@ export default function SmtpPage() {
   }
 
   async function testSmtp(id: string) {
-    setTestId(id);
+    if (!testEmail.trim()) {
+      setError('Please enter a test recipient email before testing.');
+      return;
+    }
+    setTestId(id); setTestResult(null);
     try {
-      const { data } = await api.post(`/admin/smtp/configs/${id}/test`, {});
-      alert(data.message); load();
-    } catch (err) { setError(apiErrorMessage(err)); }
-    finally { setTestId(null); }
+      const { data } = await api.post(`/admin/smtp/configs/${id}/test`, { toEmail: testEmail });
+      setTestResult({ id, ok: true, message: data.message || 'Test email sent successfully!' });
+      load();
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || apiErrorMessage(err);
+      setTestResult({ id, ok: false, message: msg });
+    } finally { setTestId(null); }
   }
 
   async function toggleRule(id: string, isActive: boolean) {
@@ -111,6 +120,23 @@ export default function SmtpPage() {
               + Add SMTP Config
             </button>
           </div>
+
+          {/* Test Email Input */}
+          <div className="bg-[#EEF2FF] border border-[#C7D2FE] rounded-xl p-4 flex items-center gap-3">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2.5"><path d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+            <input
+              type="email" value={testEmail} onChange={e => setTestEmail(e.target.value)}
+              placeholder="Test recipient email (e.g. admin@company.com)"
+              className="flex-1 px-3 py-2 text-sm border border-[#C7D2FE] rounded-lg bg-white outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 placeholder:text-[#94A3B8]"
+            />
+            <span className="text-xs font-semibold text-[#4F46E5] whitespace-nowrap">Test recipient</span>
+          </div>
+
+          {testResult && (
+            <div className={`p-4 rounded-xl text-sm font-medium border ${testResult.ok ? 'bg-[#F0FDF4] border-[#A7F3D0] text-[#065F46]' : 'bg-[#FEF2F2] border-[#FECACA] text-[#991B1B]'}`}>
+              {testResult.ok ? '✓ ' : '✕ '}{testResult.message}
+            </div>
+          )}
 
           {showForm && (
             <div className="bg-white rounded-2xl border border-[#E5E8EF] shadow-sm overflow-hidden">
@@ -195,10 +221,17 @@ export default function SmtpPage() {
                         </div>
                       )}
                     </div>
-                    <button disabled={testId === c.id} onClick={() => testSmtp(c.id)}
-                      className="px-4 py-2 text-sm font-semibold bg-[#EEF2FF] text-[#4F46E5] rounded-xl hover:bg-[#E0E7FF] transition-colors disabled:opacity-50">
-                      {testId === c.id ? '⏳ Testing...' : '🧪 Test'}
-                    </button>
+                    <div className="flex flex-col items-end gap-2">
+                      <button disabled={testId === c.id} onClick={() => testSmtp(c.id)}
+                        className="px-4 py-2 text-sm font-semibold bg-[#EEF2FF] text-[#4F46E5] rounded-xl hover:bg-[#E0E7FF] transition-colors disabled:opacity-50">
+                        {testId === c.id ? '⏳ Sending...' : '🧪 Send Test'}
+                      </button>
+                      {testResult?.id === c.id && (
+                        <span className={`text-[11px] font-semibold ${testResult?.ok ? 'text-[#16A34A]' : 'text-[#DC2626]'}`}>
+                          {testResult?.ok ? '✓ Sent' : '✕ Failed'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ))}

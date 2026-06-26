@@ -32,6 +32,7 @@ interface Dispute {
   auto_flagged: boolean;
   escalated: boolean;
   created_at: string;
+  proof_video_url?: string | null;
 }
 
 const STATUS_BADGE: Record<string, { classes: string; label: string }> = {
@@ -70,6 +71,11 @@ export default function WeightDisputesPage() {
   const [raiseSuccess, setRaiseSuccess] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
 
+  const [uploadingVideo, setUploadingVideo] = useState(false);
+  const [videoUrl, setVideoUrl] = useState("");
+  const [uploadVideoError, setUploadVideoError] = useState("");
+  const [videoUploadKey, setVideoUploadKey] = useState(Date.now());
+
   useEffect(() => {
     load();
   }, []);
@@ -107,6 +113,52 @@ export default function WeightDisputesPage() {
     setForm((p) => ({ ...p, [k]: v }));
   }
 
+  async function handleVideoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("video/")) {
+      setUploadVideoError("Please select a valid video file.");
+      return;
+    }
+
+    const maxSize = 50 * 1024 * 1024;
+    if (file.size > maxSize) {
+      setUploadVideoError("Video file size must be less than 50MB.");
+      return;
+    }
+
+    setUploadingVideo(true);
+    setUploadVideoError("");
+    setVideoUrl("");
+
+    try {
+      const reader = new FileReader();
+      reader.onload = async () => {
+        const base64 = reader.result as string;
+        try {
+          const { data } = await api.post("/upload", {
+            name: file.name,
+            data: base64,
+          });
+          setVideoUrl(data.url);
+        } catch (err) {
+          setUploadVideoError("Failed to upload video.");
+        } finally {
+          setUploadingVideo(false);
+        }
+      };
+      reader.onerror = () => {
+        setUploadVideoError("Failed to read video file.");
+        setUploadingVideo(false);
+      };
+      reader.readAsDataURL(file);
+    } catch (err) {
+      setUploadVideoError("An error occurred during video upload.");
+      setUploadingVideo(false);
+    }
+  }
+
   async function handleRaise(e: React.FormEvent) {
     e.preventDefault();
     setRaiseError("");
@@ -122,11 +174,14 @@ export default function WeightDisputesPage() {
         courierWeightGm: parseInt(form.courierWeightGm),
         reason: form.reason,
         sellerRemarks: form.sellerRemarks || undefined,
+        proofVideoUrl: videoUrl || undefined,
       });
       setRaiseSuccess(
         `Dispute raised successfully! Difference: ${data.dispute.difference_gm}g (${parseFloat(data.dispute.difference_pct).toFixed(1)}%). Disputed amount: ₹${parseFloat(data.dispute.disputed_amount).toFixed(2)}`,
       );
       setForm(raiseForm);
+      setVideoUrl("");
+      setVideoUploadKey(Date.now());
       load();
     } catch (err) {
       setRaiseError(apiErrorMessage(err));
@@ -352,6 +407,38 @@ export default function WeightDisputesPage() {
                 />
               </div>
 
+              <div>
+                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
+                  Proof Video (Optional)
+                </label>
+                <div className="flex flex-col gap-2">
+                  <input
+                    key={videoUploadKey}
+                    type="file"
+                    accept="video/*"
+                    onChange={handleVideoUpload}
+                    className="block w-full text-sm text-[#475569] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#EEF2FF] file:text-[#4F46E5] hover:file:bg-[#E0E7FF] transition-all cursor-pointer"
+                  />
+                  {uploadingVideo && (
+                    <p className="text-xs text-[#4F46E5] animate-pulse">Uploading video...</p>
+                  )}
+                  {uploadVideoError && (
+                    <p className="text-xs text-[#EF4444] font-medium">{uploadVideoError}</p>
+                  )}
+                  {videoUrl && (
+                    <div className="flex items-center gap-2 text-xs text-[#16A34A] font-medium bg-[#F0FDF4] border border-[#BBF7D0] p-2 rounded-xl">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                        <path d="M20 6L9 17l-5-5" />
+                      </svg>
+                      <span>Video uploaded successfully!</span>
+                      <a href={videoUrl} target="_blank" rel="noopener noreferrer" className="underline text-[#15803D] ml-auto hover:text-[#166534]">
+                        Preview
+                      </a>
+                    </div>
+                  )}
+                </div>
+              </div>
+
               {raiseError && (
                 <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B]">
                   {raiseError}
@@ -524,6 +611,26 @@ export default function WeightDisputesPage() {
                         <div className="font-mono text-xs font-bold text-[#4F46E5]">
                           #{d.mozopost_order_id}
                         </div>
+                        {d.proof_video_url && (
+                          <div className="mt-1">
+                            <a
+                              href={d.proof_video_url}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-[#4F46E5] hover:text-[#3730A3] bg-[#EEF2FF] px-1.5 py-0.5 rounded transition-colors"
+                            >
+                              <svg
+                                width="10"
+                                height="10"
+                                viewBox="0 0 24 24"
+                                fill="currentColor"
+                              >
+                                <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 7.5v-3l5 1.5-5 1.5z"/>
+                              </svg>
+                              Video Proof
+                            </a>
+                          </div>
+                        )}
                         {d.auto_flagged && (
                           <div className="text-[10px] font-bold text-[#B45309] mt-1 uppercase tracking-widest">
                             Auto-Flagged

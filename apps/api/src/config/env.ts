@@ -59,7 +59,7 @@ export const env = {
     amazon_shipping: { clientId: process.env.AMAZON_SHIPPING_CLIENT_ID || '', clientSecret: process.env.AMAZON_SHIPPING_CLIENT_SECRET || '' },
     india_post: { apiKey: process.env.INDIA_POST_API_KEY || '' },
     gati: { apiKey: process.env.GATI_API_KEY || '' },
-    dlh: { apiKey: process.env.DLH_API_KEY || '' },
+    dhl: { apiKey: process.env.DHL_API_KEY || '' },
   },
 };
 

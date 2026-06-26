@@ -133,7 +133,7 @@ riskRouter.get('/blacklist', ah(async (req, res) => {
      ${filter} ORDER BY bl.created_at DESC LIMIT 500`,
     params,
   );
-  res.json({ items });
+  res.json({ items, blacklist: items });
 }));
 
 const blSchema = z.object({
@@ -161,13 +161,28 @@ riskRouter.delete('/blacklist/:id', ah(async (req, res) => {
 // ── SECURITY LOGS ─────────────────────────────────────────────
 
 riskRouter.get('/logs', ah(async (req, res) => {
-  const page  = Math.max(1, parseInt((req.query.page as string) || '1', 10));
-  const limit = Math.min(100, parseInt((req.query.limit as string) || '50', 10));
+  let page  = Math.max(1, parseInt((req.query.page as string) || '1', 10));
+  if (isNaN(page)) page = 1;
+  let limit = Math.min(100, parseInt((req.query.limit as string) || '50', 10));
+  if (isNaN(limit)) limit = 50;
+
   const event = req.query.event as string | undefined;
+  const severity = req.query.severity as string | undefined;
   const params: any[] = [];
-  let filter = '';
-  if (event) { params.push(event); filter = `WHERE sl.event=$1`; }
+  const filters: string[] = [];
+
+  if (event) {
+    params.push(event);
+    filters.push(`sl.event = $${params.length}`);
+  }
+  if (severity) {
+    params.push(severity);
+    filters.push(`sl.severity = $${params.length}`);
+  }
+
+  const filter = filters.length ? `WHERE ${filters.join(' AND ')}` : '';
   const total = parseInt((await queryOne<any>(`SELECT COUNT(*)::text c FROM security_logs sl ${filter}`, params))?.c || '0', 10);
+
   params.push(limit, (page - 1) * limit);
   const logs = await query(
     `SELECT sl.*, s.business_name FROM security_logs sl

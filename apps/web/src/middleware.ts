@@ -65,7 +65,7 @@ export function middleware(request: NextRequest) {
   // ── Super Admin panel ─────────────────────────────────────────
   if (isSuperAdmin) {
     if (pathname === '/dashboard') {
-      return NextResponse.redirect(new URL('/dashboard/admin', request.url));
+      return NextResponse.redirect(new URL('/dashboard/superadmin', request.url));
     }
     if (pathname.startsWith('/register')) {
       return NextResponse.redirect(new URL('/login', request.url));

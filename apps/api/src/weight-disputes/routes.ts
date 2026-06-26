@@ -70,6 +70,7 @@ const raiseDisputeSchema = z.object({
   courierWeightGm: z.number().int().positive(),
   reason: z.enum(['wrong_weight', 'volumetric_mismatch', 'dimensional_error', 'courier_error', 'other']).default('wrong_weight'),
   sellerRemarks: z.string().max(1000).optional(),
+  proofVideoUrl: z.string().optional(),
 });
 
 /** POST /  — seller raises a new weight dispute */
@@ -90,8 +91,8 @@ weightDisputesRouter.post(
 
     const sellerWeightGm = Math.round((parseFloat(order.dead_weight_kg) || 0) * 1000);
     const volWeightGm    = order.volumetric_weight_kg
-      ? Math.round(parseFloat(order.volumetric_weight_kg) * 1000)
-      : 0;
+       ? Math.round(parseFloat(order.volumetric_weight_kg) * 1000)
+       : 0;
     const chargedWeightGm = dto.courierWeightGm;
     const differenceGm    = chargedWeightGm - Math.max(sellerWeightGm, volWeightGm);
     const billedPer500gm  = parseFloat(order.total_freight) / Math.ceil(Math.max(sellerWeightGm, volWeightGm) / 500);
@@ -117,8 +118,8 @@ weightDisputesRouter.post(
             seller_weight_gm, volumetric_weight_gm, courier_weight_gm,
             charged_weight_gm, difference_gm, difference_pct,
             seller_charged_amount, disputed_amount,
-            reason, seller_remarks, auto_flagged)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+            reason, seller_remarks, auto_flagged, proof_video_url)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
          RETURNING *`,
         [
           sellerId, dto.orderId, order.cid,
@@ -127,6 +128,7 @@ weightDisputesRouter.post(
           parseFloat(order.total_freight), disputedAmount,
           dto.reason, dto.sellerRemarks || null,
           differencePct >= 20,
+          dto.proofVideoUrl || null,
         ],
       );
 
@@ -251,12 +253,16 @@ adminWeightDisputesRouter.get(
 );
 
 const resolveSchema = z.object({
-  action: z.enum(['approve', 'reject']),
+  action: z.enum(['approve', 'reject', 'on_hold']),
   approvedAmount: z.number().min(0).optional(),
   adminRemarks: z.string().max(1000).optional(),
-});
+  declineReason: z.string().max(1000).optional(),
+}).refine(
+  (d) => d.action !== 'reject' || (d.declineReason && d.declineReason.trim().length > 0),
+  { message: 'Decline reason is required when rejecting a dispute', path: ['declineReason'] },
+);
 
-/** PATCH /:id/resolve  — admin approves or rejects */
+/** PATCH /:id/resolve  — admin approves, rejects or puts on hold */
 adminWeightDisputesRouter.patch(
   '/:id/resolve',
   ah(async (req: AuthedRequest, res) => {
@@ -274,15 +280,24 @@ adminWeightDisputesRouter.patch(
         [refundAmt, dto.adminRemarks || null, req.user!.sub, req.params.id],
       );
       res.json({ message: `Dispute approved — ₹${refundAmt.toFixed(2)} refund pending` });
+    } else if (dto.action === 'on_hold') {
+      await query(
+        `UPDATE weight_disputes SET
+           status = 'under_review', admin_remarks = $1,
+           resolved_by = $2
+         WHERE id = $3`,
+        [`[ON HOLD] ${dto.adminRemarks || 'Pending further review'}`, req.user!.sub, req.params.id],
+      );
+      res.json({ message: 'Dispute placed on hold — under review' });
     } else {
       await query(
         `UPDATE weight_disputes SET
            status = 'rejected', admin_remarks = $1,
            resolved_by = $2, resolved_at = NOW()
          WHERE id = $3`,
-        [dto.adminRemarks || null, req.user!.sub, req.params.id],
+        [`[DECLINED] ${dto.declineReason}${dto.adminRemarks ? ' | ' + dto.adminRemarks : ''}`, req.user!.sub, req.params.id],
       );
-      res.json({ message: 'Dispute rejected' });
+      res.json({ message: 'Dispute declined with reason provided to seller' });
     }
   }),
 );

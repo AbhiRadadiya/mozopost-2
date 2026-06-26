@@ -34,8 +34,16 @@ export default function NdrMgmtPage() {
     <div className="animate-fade-up max-w-7xl mx-auto space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">NDR Management</h1>
-          <p className="text-sm text-[#64748B] mt-1">Resolve non-delivery reports to prevent revenue loss.</p>
+          <div className="flex items-center gap-3 mb-1">
+            <h1 className="text-2xl font-bold text-[#0F172A]">NDR Management</h1>
+            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] text-white shadow-sm">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14.93V17a1 1 0 01-2 0v-.07A8.001 8.001 0 014.07 11H4a1 1 0 010-2h.07A8.001 8.001 0 0111 4.07V4a1 1 0 012 0v.07A8.001 8.001 0 0119.93 11H20a1 1 0 010 2h-.07A8.001 8.001 0 0113 16.93zM12 9a3 3 0 100 6 3 3 0 000-6z"/>
+              </svg>
+              Servam AI Calling
+            </span>
+          </div>
+          <p className="text-sm text-[#64748B]">Automated AI reminders call customers for unresolved NDRs.</p>
         </div>
         <div className="flex items-center gap-3">
           <select className="px-4 py-2 text-sm border border-[#E5E8EF] rounded-xl bg-white outline-none focus:border-[#4F46E5]">

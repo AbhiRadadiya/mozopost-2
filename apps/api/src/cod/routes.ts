@@ -67,8 +67,21 @@ adminCodRouter.get(
 adminCodRouter.patch(
   '/:id/status',
   ah(async (req, res) => {
-    const { status } = req.body;
-    await query(`UPDATE cod_remittances SET status = $1 WHERE id = $2`, [status, req.params.id]);
+    const { status, utrNumber, paymentMode, bankReference } = req.body;
+    if (status === 'settled') {
+      if (!utrNumber || !utrNumber.trim()) {
+        throw new ApiError(400, 'UTR number is required before releasing a COD settlement');
+      }
+      await query(
+        `UPDATE cod_remittances
+         SET status = 'settled', settled_at = NOW(),
+             utr_number = $1, payment_mode = $2, bank_reference = $3
+         WHERE id = $4`,
+        [utrNumber.trim(), paymentMode || 'neft', bankReference || null, req.params.id],
+      );
+    } else {
+      await query(`UPDATE cod_remittances SET status = $1 WHERE id = $2`, [status, req.params.id]);
+    }
     res.json({ message: 'Status updated' });
   })
 );
