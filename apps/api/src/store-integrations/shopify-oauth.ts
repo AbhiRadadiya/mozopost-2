@@ -86,7 +86,7 @@ shopifyOAuthRouter.get('/callback', ah(async (req: Request, res: Response) => {
     throw new ApiError(500, `Failed to get access token from Shopify: ${errText}`);
   }
 
-  const data = await accessTokenResponse.json();
+  const data = await accessTokenResponse.json() as any;
   const accessToken = data.access_token;
 
   // 3. Store the integration in Mozopost Database

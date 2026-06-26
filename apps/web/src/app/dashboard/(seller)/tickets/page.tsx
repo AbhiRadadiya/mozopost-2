@@ -103,7 +103,7 @@ export default function TicketsPage() {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="font-mono text-[10px] font-bold text-[#64748B] uppercase tracking-wider">{t.ticket_number}</span>
                         <span className="w-1 h-1 rounded-full bg-[#CBD5E1]" />
-                        <span className="text-xs font-bold text-[#4F46E5]">{t.type.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</span>
+                        <span className="text-xs font-bold text-[#4F46E5]">{t.type.replace('_', ' ').replace(/\b\w/g, (l: string) => l.toUpperCase())}</span>
                       </div>
                       <h3 className="text-sm font-bold text-[#0F172A] pr-4">{t.subject}</h3>
                     </div>

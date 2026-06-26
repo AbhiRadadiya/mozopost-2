@@ -15,7 +15,7 @@ function sellerIdOf(req: AuthedRequest): string {
 // ─────────────────────────────────────────────────────────────────
 settingsRouter.get('/', ah(async (req: AuthedRequest, res) => {
   const sellerId = sellerIdOf(req);
-  const userId = req.user!.id;
+  const userId = req.user!.sub;
 
   const user = await queryOne(`SELECT first_name || ' ' || COALESCE(last_name, '') AS name, email, phone AS phone_number FROM users WHERE id=$1`, [userId]);
   const seller = await queryOne(`SELECT business_name, business_type, gstin, pan, bank_account_name, bank_account_number, bank_ifsc, auto_allocate_courier FROM sellers WHERE id=$1`, [sellerId]);
@@ -54,7 +54,7 @@ settingsRouter.get('/', ah(async (req: AuthedRequest, res) => {
 // ─────────────────────────────────────────────────────────────────
 settingsRouter.patch('/profile', ah(async (req: AuthedRequest, res) => {
   const sellerId = sellerIdOf(req);
-  const userId = req.user!.id;
+  const userId = req.user!.sub;
   const { name, phone_number, business_name, business_type, gstin, pan } = req.body;
 
   if (name !== undefined || phone_number !== undefined) {
