@@ -30,9 +30,9 @@ import { pool } from './db/pool';
 const app = express();
 
 const CORS_ORIGINS = [
-  'http://seller.mozopost.in',
-  'http://admin.mozopost.in',
-  'http://masteradmin.mozopost.in',
+  'https://seller.mozopost.in',
+  'https://admin.mozopost.in',
+  'https://masteradmin.mozopost.in',
   'http://localhost:3000',
   'http://localhost:4000',
   'http://localhost:4002',
