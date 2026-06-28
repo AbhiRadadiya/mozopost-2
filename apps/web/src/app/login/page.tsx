@@ -292,9 +292,9 @@ export default function LoginPage() {
           {/* Logo */}
           <div className="flex items-center gap-3 mb-10">
             <div
-              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-black text-base shadow-md"
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-[#FFF8EC] font-black text-base shadow-md"
               style={{
-                background: "linear-gradient(135deg,#7C3AED 0%,#4F46E5 100%)",
+                background: "linear-gradient(135deg,#546B41 0%,#3C4E2D 100%)",
               }}
             >
               <svg
@@ -402,8 +402,8 @@ export default function LoginPage() {
               id="login-submit"
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-lg text-sm font-semibold text-white transition-all duration-200
-                disabled:opacity-70 active:scale-[0.99] bg-[#6366F1] hover:bg-[#4F46E5] shadow-sm"
+              className="w-full py-2.5 rounded-lg text-sm font-semibold text-[#FFF8EC] transition-all duration-200
+                disabled:opacity-70 active:scale-[0.99] bg-[#546B41] hover:bg-[#3C4E2D] shadow-sm"
             >
               {loading ? "Signing in..." : "Login"}
             </button>
@@ -451,7 +451,7 @@ export default function LoginPage() {
             You dont have an account yet?{" "}
             <Link
               href="/register"
-              className="font-semibold text-[#6366F1] hover:text-[#4F46E5] transition-colors"
+              className="font-semibold text-[#546B41] hover:text-[#3C4E2D] transition-colors"
             >
               Sign up
             </Link>

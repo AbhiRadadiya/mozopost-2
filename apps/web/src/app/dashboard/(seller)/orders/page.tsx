@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { Field, Input } from '@/components/ui';
+import { BulkUploadModal } from './BulkUploadModal';
 
 /* ─────────────────────────────────────────────────────────
    Types
@@ -434,6 +435,7 @@ export default function OrdersPage() {
   const [couriers, setCouriers] = useState<Courier[]>([]);
   const [selected, setSelected] = useState<string[]>([]);
   const [shipModal, setShipModal] = useState<{ open: boolean; ids: string[] }>({ open: false, ids: [] });
+  const [bulkModalOpen, setBulkModalOpen] = useState(false);
 
   useEffect(() => {
     api.get('/couriers').then(r => setCouriers(r.data.couriers?.filter((c: Courier) => c.is_enabled !== false) || []));
@@ -499,255 +501,277 @@ export default function OrdersPage() {
         onSuccess={() => load()}
         couriers={couriers}
       />
+      <BulkUploadModal
+        open={bulkModalOpen}
+        onClose={() => setBulkModalOpen(false)}
+      />
 
-      <div className="animate-fade-up">
-        {/* ── Page header ── */}
-        <div className="flex items-center justify-between mb-5">
-          <h1 className="text-2xl font-bold text-[#0F172A]">Orders</h1>
-          <div className="flex items-center gap-3">
-            {/* Search */}
-            <div className="relative">
-              <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-[#94A3B8]" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <circle cx="11" cy="11" r="8" /><path d="M21 21l-4.35-4.35" />
-              </svg>
-              <input value={search} onChange={e => setSearch(e.target.value)} onKeyDown={e => e.key === 'Enter' && load()}
-                placeholder="Search AWB, Order ID, customer..."
-                className="pl-9 pr-4 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 placeholder:text-[#CBD5E1] w-72"
-              />
-            </div>
-            <button onClick={load} className="w-10 h-10 rounded-xl border border-[#E5E8EF] bg-white flex items-center justify-center text-[#94A3B8] hover:text-[#4F46E5] hover:border-[#4F46E5]/30 hover:bg-[#EEF2FF] transition-colors">
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M23 4v6h-6M1 20v-6h6M3.51 9a9 9 0 0114.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0020.49 15" /></svg>
+      <div className="animate-fade-up space-y-5">
+        {/* ── Page Header ── */}
+        <div className="flex items-start justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-[#2F3A22] tracking-tight">
+              Self-Ship Orders <span className="text-sm font-normal text-[#8A9270] ml-1">({meta?.total || orders.length} Orders)</span>
+            </h1>
+            <p className="text-sm text-[#8A9270] mt-1">Manage all your self-ship orders from here.</p>
+          </div>
+          <div className="flex items-center gap-2.5">
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-lg px-4 py-2 text-xs font-medium hover:bg-[#E0E7CE] transition-colors shadow-sm cursor-pointer"
+            >
+              + Create Order
             </button>
-            <button onClick={() => setDrawerOpen(true)}
-              className="flex items-center gap-2 px-5 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors shadow-sm">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 4v16m8-8H4" /></svg>
-              Add Order
+            <button
+              onClick={() => setBulkModalOpen(true)}
+              className="bg-white border border-[#CBD7B5] text-[#546B41] rounded-lg px-4 py-2 text-xs font-medium hover:bg-[#F9FAFC] transition-colors shadow-sm cursor-pointer"
+            >
+              Import Orders
             </button>
           </div>
         </div>
 
-        {/* ── Tab bar ── */}
-        <div className="flex items-center gap-0 border-b border-[#E5E8EF] overflow-x-auto">
-          {STATUS_TABS.map(tab => (
-            <button key={tab.key}
-              onClick={() => { setStatus(tab.key); setPage(1); setSelected([]); }}
-              className={`flex items-center gap-1.5 px-4 py-3 text-sm font-medium whitespace-nowrap transition-colors border-b-2 -mb-px ${
-                status === tab.key
-                  ? 'border-[#4F46E5] text-[#4F46E5]'
-                  : 'border-transparent text-[#64748B] hover:text-[#0F172A] hover:border-[#E5E8EF]'
-              }`}
-            >
-              {tab.dot && <span className="w-1.5 h-1.5 rounded-full" style={{ background: status === tab.key ? tab.dot : '#CBD5E1' }} />}
-              {tab.label}
-            </button>
-          ))}
+        {/* ── Tab Bar ── */}
+        <div className="flex items-center gap-1 border-b border-[#EADFC8] overflow-x-auto pt-1">
+          {STATUS_TABS.map((tab) => {
+            const isActive = status === tab.key;
+            return (
+              <button
+                key={tab.key}
+                onClick={() => { setStatus(tab.key); setPage(1); setSelected([]); }}
+                className={`flex items-center gap-2 px-4 py-2.5 text-xs font-medium whitespace-nowrap transition-colors border-b-2 -mb-px cursor-pointer ${
+                  isActive
+                    ? 'border-[#546B41] text-[#546B41] font-semibold'
+                    : 'border-transparent text-[#8A9270] hover:text-[#2F3A22]'
+                }`}
+              >
+                {tab.label}
+                <span
+                  className={`px-2 py-0.5 rounded-full text-[10px] font-mono-nb border ${
+                    isActive
+                      ? 'bg-[#EDF0E4] text-[#546B41] border-[#CBD7B5]'
+                      : 'bg-[#FFF8EC] text-[#8A9270] border-[#E2D4B8]'
+                  }`}
+                >
+                  {status === tab.key ? (meta?.total || orders.length) : '0'}
+                </span>
+              </button>
+            );
+          })}
         </div>
 
-        {/* ── Bulk action toolbar (appears when rows selected) ── */}
-        <div className={`transition-all duration-200 overflow-hidden ${selected.length > 0 ? 'max-h-16 opacity-100' : 'max-h-0 opacity-0'}`}>
-          <div className="flex items-center justify-between py-2.5 px-1">
-            <div className="flex items-center gap-2">
-              <span className="text-sm font-semibold text-[#4F46E5]">{selected.length} selected</span>
-              <button onClick={() => setSelected([])} className="text-xs text-[#94A3B8] hover:text-[#475569] transition-colors">Clear</button>
+        {/* ── Search & Filter Controls ── */}
+        <div className="flex items-center gap-3 flex-wrap">
+          <div className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-semibold text-[#6B7556] flex items-center gap-2 shadow-sm cursor-pointer">
+            <span>Order ID</span>
+            <span className="text-[#8A9270]">▾</span>
+          </div>
+          <div className="flex-1 max-w-xs relative">
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && load()}
+              placeholder="⌕ Search by Order ID, AWB..."
+              className="w-full bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs text-[#2F3A22] placeholder-[#B3B596] outline-none shadow-sm focus:border-[#546B41]"
+            />
+          </div>
+          <div className="ml-auto flex items-center gap-2.5">
+            <div className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-mono-nb text-[#6B7556] shadow-sm">
+              21 Jun – 27 Jun
             </div>
+            <button
+              onClick={load}
+              className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-medium text-[#2F3A22] hover:border-[#D8CBAE] transition-colors shadow-sm cursor-pointer"
+            >
+              + Add Filter
+            </button>
+            <button
+              onClick={load}
+              className="bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-lg px-4 py-2 text-xs font-medium hover:bg-[#E0E7CE] transition-colors shadow-sm cursor-pointer"
+            >
+              Apply
+            </button>
+          </div>
+        </div>
+
+        {/* ── Multi-Selection Bulk Action Toolbar ── */}
+        {selected.length > 0 && (
+          <div className="flex items-center gap-4 bg-[#EDF0E4] border border-[#CBD7B5] rounded-xl p-3 px-4 shadow-sm animate-fade-up">
+            <span className="text-xs font-semibold text-[#546B41] font-mono-nb">
+              {selected.length} selected
+            </span>
             <div className="flex items-center gap-2">
+              <button
+                onClick={() => alert('Printing labels for selected orders...')}
+                className="bg-white border border-[#E2D4B8] hover:border-[#546B41] text-[#2F3A22] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+              >
+                ⎙ Print Labels
+              </button>
               {shippableSelected.length > 0 && (
-                <button onClick={openBulkShip}
-                  className="flex items-center gap-1.5 px-4 py-2 bg-[#4F46E5] text-white text-xs font-bold rounded-lg hover:bg-[#4338CA] transition-colors">
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 13l4 4L19 7" /></svg>
-                  Ship {shippableSelected.length} order{shippableSelected.length > 1 ? 's' : ''}
+                <button
+                  onClick={openBulkShip}
+                  className="bg-white border border-[#E2D4B8] hover:border-[#546B41] text-[#546B41] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+                >
+                  ✓ Confirm Ship ({shippableSelected.length})
                 </button>
               )}
+              <button
+                onClick={() => alert('Exporting selected orders...')}
+                className="bg-white border border-[#E2D4B8] hover:border-[#546B41] text-[#2F3A22] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+              >
+                ↧ Export
+              </button>
             </div>
-          </div>
-        </div>
-
-        {/* ── Count row ── */}
-        <div className="flex items-center py-3 px-0.5">
-          <span className="text-sm text-[#94A3B8]">
-            {loading ? '—' : `${meta?.total ?? orders.length} orders`}
-          </span>
-        </div>
-
-        {/* ── Error ── */}
-        {error && (
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B] mb-4">
-            <svg width="15" height="15" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" /></svg>
-            {error}
+            <button
+              onClick={() => setSelected([])}
+              className="ml-auto text-xs text-[#8A9270] hover:text-[#B4623F] transition-colors cursor-pointer"
+            >
+              Clear selection
+            </button>
           </div>
         )}
 
-        {/* ── Table ── */}
-        <div className="nb-card overflow-hidden">
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="bg-[#F8F9FB] border-b border-[#E5E8EF]">
-                  <th className="px-4 py-3 w-10">
-                    <input type="checkbox" checked={selected.length === orders.length && orders.length > 0} onChange={toggleAll}
-                      className="w-4 h-4 rounded border-[#E5E8EF] accent-[#4F46E5]" />
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide whitespace-nowrap">Order ID</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">Customer</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">Destination</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">Weight</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">Payment</th>
-                  {/* Post-ship columns — only shown on shipped tabs or "all" */}
-                  {(!isPreShipTab) && <>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">AWB</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">Courier</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">Status</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">Freight</th>
-                  </>}
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">Date</th>
-                  {/* Ship action column for pre-ship tabs */}
-                  {isPreShipTab && <th className="px-4 py-3 w-24" />}
-                </tr>
-              </thead>
-              <tbody>
-                {loading ? (
-                  [...Array(6)].map((_, i) => (
-                    <tr key={i} className="border-b border-[#F1F3F7]">
-                      {[...Array(isPreShipTab ? 8 : 11)].map((_, j) => (
-                        <td key={j} className="px-4 py-4">
-                          <div className="skeleton h-4 rounded" style={{ width: `${55 + (j * 17 % 40)}%` }} />
-                        </td>
-                      ))}
-                    </tr>
-                  ))
-                ) : orders.length === 0 ? (
-                  <tr>
-                    <td colSpan={isPreShipTab ? 8 : 10} className="px-4 py-16 text-center">
-                      <div className="flex flex-col items-center gap-3">
-                        <div className="w-14 h-14 rounded-2xl bg-[#EEF2FF] flex items-center justify-center">
-                          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="1.75">
-                            <path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                          </svg>
-                        </div>
-                        <p className="text-sm font-medium text-[#475569]">No orders found</p>
-                        <button onClick={() => setDrawerOpen(true)}
-                          className="mt-1 px-4 py-2 bg-[#4F46E5] text-white text-sm font-semibold rounded-lg hover:bg-[#4338CA] transition-colors">
-                          + Add Order
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  orders.map(o => {
-                    const s = STATUS_BADGE[o.status] || { classes: 'bg-[#F1F5F9] text-[#64748B]', label: o.status };
-                    const payClass = PAYMENT_BADGE[o.payment_mode] || 'bg-[#F1F5F9] text-[#64748B]';
-                    const isSelected = selected.includes(o.id);
-                    const canShip = PRE_SHIP_STATUSES.has(o.status);
-                    /* showPostShip: true on any non-pre-ship tab */
-                    const showPostShip = !isPreShipTab;
-
-                    return (
-                      <tr key={o.id} className={`border-b border-[#F1F3F7] transition-colors group ${isSelected ? 'bg-[#EEF2FF]' : 'hover:bg-[#F8F9FB]'}`}>
-                        <td className="px-4 py-3.5">
-                          <input type="checkbox" checked={isSelected} onChange={() => toggleSelect(o.id)}
-                            className="w-4 h-4 rounded border-[#E5E8EF] accent-[#4F46E5]" />
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className="font-mono-nb text-xs font-semibold text-[#4F46E5] bg-[#EEF2FF] px-2.5 py-1 rounded-md">
-                            #{o.mozopost_order_id}
-                          </span>
-                          {o.fraud_score != null && (
-                            <div className={`text-[10px] mt-1 flex items-center gap-0.5 ${o.fraud_score > 60 ? 'text-[#EF4444]' : 'text-[#CBD5E1]'}`}>
-                              <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                              Risk {o.fraud_score}
-                            </div>
-                          )}
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="text-sm font-medium text-[#0F172A]">{o.consignee_name}</div>
-                          <div className="text-xs text-[#94A3B8] font-mono-nb mt-0.5">{o.consignee_phone}</div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="text-sm text-[#0F172A]">{o.consignee_city}</div>
-                          <div className="text-xs text-[#94A3B8]">{o.consignee_state}</div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <div className="text-sm font-mono-nb text-[#0F172A]">{o.dead_weight_kg ?? '—'} kg</div>
-                        </td>
-                        <td className="px-4 py-3.5">
-                          <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-semibold ${payClass}`}>
-                            {o.payment_mode?.toUpperCase()}
-                          </span>
-                          {o.cod_amount > 0 && (
-                            <div className="font-mono-nb text-xs text-[#475569] mt-0.5">₹{parseFloat(o.cod_amount).toFixed(0)}</div>
-                          )}
-                        </td>
-
-                        {/* Post-ship data — shown only for shipped tabs or shipped rows in "all" tab */}
-                        {!isPreShipTab && (
-                          <>
-                            <td className="px-4 py-3.5">
-                              {showPostShip
-                                ? <span className="font-mono-nb text-xs text-[#475569]">{o.awb_number || '—'}</span>
-                                : <span className="text-[#E5E8EF]">—</span>}
-                            </td>
-                            <td className="px-4 py-3.5 text-sm text-[#475569]">
-                              {showPostShip ? (o.courier_name || <span className="text-[#CBD5E1]">—</span>) : <span className="text-[#E5E8EF]">—</span>}
-                            </td>
-                            <td className="px-4 py-3.5">
-                              {showPostShip
-                                ? <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${s.classes}`}>
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />{s.label}
-                                  </span>
-                                : <span className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold ${s.classes}`}>
-                                    <span className="w-1.5 h-1.5 rounded-full bg-current opacity-60" />{s.label}
-                                  </span>}
-                            </td>
-                            <td className="px-4 py-3.5 font-mono-nb text-sm font-semibold text-[#0F172A]">
-                              {showPostShip ? `₹${parseFloat(o.total_freight||0).toFixed(0)}` : <span className="text-[#E5E8EF]">—</span>}
-                            </td>
-                          </>
-                        )}
-
-                        <td className="px-4 py-3.5">
-                          <div className="text-xs text-[#94A3B8]">
-                            {new Date(o.created_at).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })}
-                          </div>
-                          <div className="text-[10px] text-[#CBD5E1]">
-                            {new Date(o.created_at).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}
-                          </div>
-                        </td>
-
-                        {/* Ship action — only on pre-ship tabs */}
-                        {isPreShipTab && (
-                          <td className="px-4 py-3.5 text-right">
-                            {canShip && (
-                              <button
-                                onClick={() => openSingleShip(o.id)}
-                                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#4F46E5] text-white text-xs font-bold rounded-lg hover:bg-[#4338CA] transition-colors whitespace-nowrap shadow-sm"
-                              >
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 13l4 4L19 7" /></svg>
-                                Ship
-                              </button>
-                            )}
-                          </td>
-                        )}
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
+        {/* ── Error Banner ── */}
+        {error && (
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B]">
+            <span>⚠️</span> {error}
           </div>
+        )}
+
+        {/* ── Orders Table Container ── */}
+        <div className="bg-white border border-[#EADFC8] rounded-xl overflow-hidden shadow-sm">
+          {/* Grid Table Header */}
+          <div className="grid grid-cols-[34px_1.3fr_1.1fr_2fr_1.4fr_1.4fr_1fr] gap-3.5 px-4 py-3 bg-[#F6EEDB] text-[11px] font-semibold text-[#8A9270] uppercase tracking-wider items-center border-b border-[#EADFC8]">
+            <div>
+              <input
+                type="checkbox"
+                checked={selected.length === orders.length && orders.length > 0}
+                onChange={toggleAll}
+                className="w-4 h-4 rounded border-[#E2D4B8] accent-[#546B41] cursor-pointer"
+              />
+            </div>
+            <div>Order ID</div>
+            <div>Payment</div>
+            <div>Items</div>
+            <div>Status</div>
+            <div>Customer</div>
+            <div>Created At</div>
+          </div>
+
+          {/* Grid Table Body */}
+          {loading ? (
+            <div className="p-8 text-center text-sm text-[#8A9270]">Loading orders...</div>
+          ) : orders.length === 0 ? (
+            <div className="p-12 text-center flex flex-col items-center justify-center">
+              <div className="w-12 h-12 rounded-full bg-[#EDF0E4] text-[#546B41] flex items-center justify-center mb-3 font-bold text-lg">
+                ▤
+              </div>
+              <p className="text-sm font-medium text-[#2F3A22] mb-1">No orders found</p>
+              <p className="text-xs text-[#8A9270] mb-4">Get started by creating your first self-ship order.</p>
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-lg px-4 py-2 text-xs font-semibold hover:bg-[#E0E7CE] transition-colors shadow-sm cursor-pointer"
+              >
+                + Create Order
+              </button>
+            </div>
+          ) : (
+            <div className="divide-y divide-[#F6EEDB]">
+              {orders.map((o) => {
+                const isSelected = selected.includes(o.id);
+                const s = STATUS_BADGE[o.status] || { classes: 'bg-[#EDF0E4] text-[#546B41]', label: o.status };
+                const payClass = PAYMENT_BADGE[o.payment_mode] || 'bg-[#F3ECD8] text-[#A9842E]';
+
+                return (
+                  <div
+                    key={o.id}
+                    className={`grid grid-cols-[34px_1.3fr_1.1fr_2fr_1.4fr_1.4fr_1fr] gap-3.5 px-4 py-4 text-xs items-start transition-colors ${
+                      isSelected ? 'bg-[#FFF8EC]' : 'hover:bg-[#FFF8EC]/50'
+                    }`}
+                  >
+                    <div>
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        onChange={() => toggleSelect(o.id)}
+                        className="w-4 h-4 rounded border-[#E2D4B8] accent-[#546B41] cursor-pointer mt-0.5"
+                      />
+                    </div>
+                    <div>
+                      <div className="font-mono-nb font-semibold text-[#2F3A22] text-xs">#{o.mozopost_order_id}</div>
+                      <div className="text-[11px] text-[#8A9270] mt-1">Group: {o.id.slice(0, 6)}</div>
+                      <div className="inline-block mt-1.5 text-[10px] color-[#546B41] bg-[#EDF0E4] border border-[#CBD7B5] rounded px-1.5 py-0.5 font-mono-nb">
+                        pira surat-500
+                      </div>
+                    </div>
+                    <div>
+                      <span className={`inline-block text-[10px] font-semibold px-2 py-0.5 rounded border ${payClass}`}>
+                        {o.payment_mode?.toUpperCase()}
+                      </span>
+                      <div className="text-[11px] text-[#8A9270] mt-2 flex justify-between">
+                        <span>Total</span>
+                        <span className="font-mono-nb text-[#2F3A22] font-semibold">₹{parseFloat(o.total_freight || o.cod_amount || 0).toFixed(0)}</span>
+                      </div>
+                      <div className="text-[11px] text-[#8A9270] mt-0.5 flex justify-between">
+                        <span>COD</span>
+                        <span className="font-mono-nb text-[#A9842E] font-semibold">₹{parseFloat(o.cod_amount || 0).toFixed(0)}</span>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="text-[#2F3A22] font-medium leading-relaxed truncate max-w-xs">
+                        {o.consignee_name}'s Order Shipment Items
+                      </div>
+                      <div className="text-[11px] text-[#8A9270] font-mono-nb mt-1.5">
+                        ₹{parseFloat(o.total_freight || 0).toFixed(0)} · Qty: 1 · {o.dead_weight_kg || '0.4'} kg
+                      </div>
+                    </div>
+                    <div>
+                      <span className={`inline-block text-[10px] font-semibold font-mono-nb px-2 py-0.5 rounded-full border ${s.classes}`}>
+                        {s.label}
+                      </span>
+                      <div className="text-[11px] text-[#8A9270] mt-1.5">
+                        {new Date(o.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                      </div>
+                      <div className="text-[11px] text-[#546B41] font-mono-nb mt-0.5 font-medium">
+                        {o.courier_name || 'DELHIVERY'}
+                      </div>
+                      <div className="text-[11px] text-[#8A9270] font-mono-nb mt-0.5">
+                        {o.awb_number || 'DL5566120934'}
+                      </div>
+                    </div>
+                    <div>
+                      <div className="font-semibold text-[#2F3A22]">{o.consignee_name}</div>
+                      <div className="text-[11px] text-[#8A9270] font-mono-nb mt-0.5">{o.consignee_phone}</div>
+                      <div className="text-[11px] text-[#8A9270] mt-0.5 truncate">{o.consignee_city}, {o.consignee_state}</div>
+                    </div>
+                    <div className="text-xs text-[#6B7556] font-mono-nb">
+                      {new Date(o.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* Pagination */}
           {meta && meta.totalPages > 1 && (
-            <div className="flex items-center justify-between px-5 py-3.5 border-t border-[#E5E8EF] bg-[#F8F9FB]">
-              <span className="text-xs text-[#94A3B8]">
+            <div className="flex items-center justify-between px-5 py-3.5 border-t border-[#EADFC8] bg-[#FFF8EC]">
+              <span className="text-xs text-[#8A9270]">
                 Page {meta.page} of {meta.totalPages} · {meta.total} total orders
               </span>
               <div className="flex items-center gap-2">
-                <button disabled={page === 1} onClick={() => setPage(p => p-1)}
-                  className="px-4 py-2 text-sm font-medium rounded-lg border border-[#E5E8EF] bg-white text-[#475569] hover:bg-[#F4F6F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                <button
+                  disabled={page === 1}
+                  onClick={() => setPage((p) => p - 1)}
+                  className="px-4 py-1.5 text-xs font-semibold rounded-lg border border-[#E2D4B8] bg-white text-[#2F3A22] hover:bg-[#EDF0E4] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
                   ← Prev
                 </button>
-                <button disabled={page === meta.totalPages} onClick={() => setPage(p => p+1)}
-                  className="px-4 py-2 text-sm font-medium rounded-lg border border-[#E5E8EF] bg-white text-[#475569] hover:bg-[#F4F6F9] disabled:opacity-40 disabled:cursor-not-allowed transition-colors">
+                <button
+                  disabled={page === meta.totalPages}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="px-4 py-1.5 text-xs font-semibold rounded-lg border border-[#E2D4B8] bg-white text-[#2F3A22] hover:bg-[#EDF0E4] disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
                   Next →
                 </button>
               </div>

@@ -21,12 +21,12 @@ export function Btn({
   className?: string;
 }) {
   const variants: Record<string, string> = {
-    default: 'bg-white text-[#0F172A] border-[#E5E8EF] hover:border-[#C8D0DD] hover:bg-[#F8F9FB]',
-    primary: 'bg-[#4F46E5] text-white border-[#4338CA] hover:bg-[#4338CA]',
-    success: 'bg-[#10B981] text-white border-[#059669] hover:bg-[#059669]',
-    danger:  'bg-[#EF4444] text-white border-[#DC2626] hover:bg-[#DC2626]',
-    warn:    'bg-[#F59E0B] text-white border-[#D97706] hover:bg-[#D97706]',
-    dark:    'bg-[#0F172A] text-white border-[#0F172A] hover:bg-[#1E293B]',
+    default: 'bg-white text-[#2F3A22] border-[#E2D4B8] hover:border-[#D8CBAE] hover:bg-[#FFF8EC]',
+    primary: 'bg-[#EDF0E4] text-[#546B41] border-[#CBD7B5] hover:bg-[#E0E7CE]',
+    success: 'bg-[#EDF0E4] text-[#546B41] border-[#CBD7B5] hover:bg-[#E0E7CE]',
+    danger:  'bg-[#F1E2D8] text-[#B4623F] border-[#DDBBA8] hover:bg-[#EADFC8]',
+    warn:    'bg-[#F6EEDB] text-[#A9842E] border-[#DEC98F] hover:bg-[#EDF0E4]',
+    dark:    'bg-[#2F3A22] text-[#FFF8EC] border-[#2F3A22] hover:bg-[#3C4E2D]',
   };
   return (
     <button
@@ -71,7 +71,7 @@ export function CardHead({
 }) {
   return (
     <div
-      className={`flex items-center justify-between px-5 py-3.5 border-b border-[#E5E8EF] bg-white ${className}`}
+      className={`flex items-center justify-between px-5 py-4 border-b border-[#EADFC8] bg-white ${className}`}
     >
       {children}
     </div>
@@ -97,11 +97,11 @@ export function Label({
 }) {
   return (
     <label
-      className="mb-1 block text-xs font-semibold text-[#475569] tracking-wide uppercase"
+      className="mb-1 block text-xs font-semibold text-[#8A9270] tracking-wide uppercase"
       style={{ letterSpacing: '0.05em' }}
     >
       {children}
-      {required && <span className="text-[#EF4444] ml-0.5">*</span>}
+      {required && <span className="text-[#B4623F] ml-0.5">*</span>}
     </label>
   );
 }
@@ -125,7 +125,7 @@ export function Field({
       <Label required={required}>{label}</Label>
       {children}
       {error && (
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-[#EF4444]">
+        <div className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-[#B4623F]">
           <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
             <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
           </svg>
@@ -140,13 +140,13 @@ export function Field({
    Badge
    ───────────────────────────────────────────────────────── */
 const BADGE_PRESETS: Record<string, string> = {
-  delivered:         'bg-[#D1FAE5] text-[#065F46]',
-  in_transit:        'bg-[#DBEAFE] text-[#1E40AF]',
-  out_for_delivery:  'bg-[#E0E7FF] text-[#3730A3]',
-  booked:            'bg-[#F3F4F6] text-[#374151]',
-  rto_initiated:     'bg-[#FEE2E2] text-[#991B1B]',
-  failed:            'bg-[#FEF3C7] text-[#92400E]',
-  cancelled:         'bg-[#F3F4F6] text-[#6B7280]',
+  delivered:         'bg-[#E0E7CE] text-[#4A5F37] border border-[#CBD7B5]',
+  in_transit:        'bg-[#EDF0E4] text-[#546B41] border border-[#CBD7B5]',
+  out_for_delivery:  'bg-[#F6EEDB] text-[#3C4E2D] border border-[#D8CBAE]',
+  booked:            'bg-[#FFF8EC] text-[#6B7556] border border-[#E2D4B8]',
+  rto_initiated:     'bg-[#F1E2D8] text-[#B4623F] border border-[#DDBBA8]',
+  failed:            'bg-[#F1E2D8] text-[#B4623F] border border-[#DDBBA8]',
+  cancelled:         'bg-[#FFF8EC] text-[#8A9270] border border-[#E2D4B8]',
 };
 
 export function Badge({
@@ -160,8 +160,8 @@ export function Badge({
   status?: string;
   className?: string;
 }) {
-  const preset = status ? (BADGE_PRESETS[status] || 'bg-[#F3F4F6] text-[#374151]') : '';
-  const colorClass = preset || color || 'bg-[#F3F4F6] text-[#374151]';
+  const preset = status ? (BADGE_PRESETS[status] || 'bg-[#EDF0E4] text-[#546B41] border border-[#CBD7B5]') : '';
+  const colorClass = preset || color || 'bg-[#EDF0E4] text-[#546B41] border border-[#CBD7B5]';
 
   return (
     <span
@@ -178,57 +178,50 @@ export function Badge({
 export function StatCard({
   label,
   value,
+  subLabel,
+  subValue,
   sub,
-  bg = '',
   icon,
-  accent = '#4F46E5',
-  trend,
+  accent = '#546B41',
 }: {
   label: string;
   value: string | number;
+  subLabel?: string;
+  subValue?: string | number;
   sub?: string;
-  bg?: string;
   icon?: React.ReactNode;
   accent?: string;
-  trend?: { value: string; up: boolean };
 }) {
+  const finalSubLabel = subLabel || 'METRICS';
+  const finalSubValue = subValue !== undefined ? subValue : sub;
+
   return (
     <div
-      className="nb-card p-5 flex flex-col gap-3 animate-fade-up"
-      style={{ background: bg || undefined }}
+      style={{
+        background: '#FFFFFF',
+        border: '1px solid #E2D4B8',
+        borderRadius: '12px',
+        padding: '18px',
+        borderTop: `2px solid ${accent}`,
+      }}
     >
-      <div className="flex items-start justify-between">
-        <div
-          className="w-10 h-10 rounded-lg flex items-center justify-center text-white shrink-0"
-          style={{ background: accent }}
-        >
-          {icon || (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-          )}
-        </div>
-        {trend && (
-          <span
-            className={`text-xs font-semibold px-2 py-0.5 rounded-full ${
-              trend.up
-                ? 'bg-[#D1FAE5] text-[#065F46]'
-                : 'bg-[#FEE2E2] text-[#991B1B]'
-            }`}
-          >
-            {trend.up ? '↑' : '↓'} {trend.value}
-          </span>
-        )}
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: accent, fontSize: '13px', fontWeight: 600 }}>
+        <span>{icon || '▤'}</span>
+        <span>{label}</span>
       </div>
-      <div>
-        <div className="text-xs font-medium text-[#94A3B8] uppercase tracking-wider mb-1" style={{ letterSpacing: '0.07em' }}>
-          {label}
-        </div>
-        <div className="text-2xl font-bold text-[#0F172A] font-mono-nb leading-none">
-          {value}
-        </div>
-        {sub && <div className="mt-1 text-xs text-[#94A3B8]">{sub}</div>}
+      <div style={{ fontSize: '26px', fontWeight: 700, fontFamily: "'IBM Plex Mono', monospace", marginTop: '14px', letterSpacing: '-.5px', color: '#2F3A22' }}>
+        {value}
       </div>
+      {(finalSubValue !== undefined) && (
+        <div style={{ marginTop: '12px', background: '#FFF8EC', borderRadius: '8px', padding: '8px 11px' }}>
+          <div style={{ fontSize: '10px', color: '#8A9270' }}>{finalSubLabel}</div>
+          <div style={{ fontSize: '14px', fontFamily: "'IBM Plex Mono', monospace", color: accent, marginTop: '2px' }}>{finalSubValue}</div>
+        </div>
+      )}
     </div>
   );
 }
+
+
+
+

@@ -69,7 +69,7 @@ export default function StoresPage() {
     setError("");
     try {
       const { data } = await api.post("/stores", form);
-      alert('Store connected successfully.');
+      alert("Store connected successfully.");
       setShowForm(false);
       load();
     } catch (err) {

@@ -71,6 +71,7 @@ const raiseDisputeSchema = z.object({
   reason: z.enum(['wrong_weight', 'volumetric_mismatch', 'dimensional_error', 'courier_error', 'other']).default('wrong_weight'),
   sellerRemarks: z.string().max(1000).optional(),
   proofVideoUrl: z.string().optional(),
+  proofImageUrls: z.array(z.string()).optional(),
 });
 
 /** POST /  — seller raises a new weight dispute */
@@ -118,8 +119,8 @@ weightDisputesRouter.post(
             seller_weight_gm, volumetric_weight_gm, courier_weight_gm,
             charged_weight_gm, difference_gm, difference_pct,
             seller_charged_amount, disputed_amount,
-            reason, seller_remarks, auto_flagged, proof_video_url)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15)
+            reason, seller_remarks, auto_flagged, proof_video_url, proof_image_urls)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
          RETURNING *`,
         [
           sellerId, dto.orderId, order.cid,
@@ -129,7 +130,17 @@ weightDisputesRouter.post(
           dto.reason, dto.sellerRemarks || null,
           differencePct >= 20,
           dto.proofVideoUrl || null,
+          JSON.stringify(dto.proofImageUrls || []),
         ],
+      );
+
+      const d = result.rows[0];
+
+      // Insert event
+      await client.query(
+        `INSERT INTO weight_dispute_events (dispute_id, event_type, description, user_type, user_id)
+         VALUES ($1, 'created', 'Dispute raised by seller', 'seller', $2)`,
+        [d.id, sellerId]
       );
 
       // Mark order as having a flagged discrepancy
@@ -143,7 +154,7 @@ weightDisputesRouter.post(
         [chargedWeightGm / 1000, differenceGm, disputedAmount, differencePct >= 20, dto.orderId],
       );
 
-      return result.rows[0];
+      return d;
     });
 
     res.status(201).json({ dispute });
@@ -180,7 +191,16 @@ weightDisputesRouter.patch(
     if (!['open', 'under_review'].includes(dispute.status)) {
       throw new ApiError(422, `Cannot accept a dispute in status: ${dispute.status}`);
     }
-    await query(`UPDATE weight_disputes SET status = 'rejected', admin_remarks = 'Accepted by seller' WHERE id = $1`, [req.params.id]);
+    
+    await withTransaction(async (client) => {
+      await client.query(`UPDATE weight_disputes SET status = 'rejected', admin_remarks = 'Accepted by seller' WHERE id = $1`, [req.params.id]);
+      await client.query(
+        `INSERT INTO weight_dispute_events (dispute_id, event_type, description, user_type, user_id)
+         VALUES ($1, 'accepted_by_seller', 'Seller accepted courier charges', 'seller', $2)`,
+        [dispute.id, sellerId]
+      );
+    });
+
     res.json({ message: 'Charges accepted. Dispute closed.' });
   }),
 );
@@ -191,11 +211,37 @@ weightDisputesRouter.patch(
   requireRole('seller'),
   ah(async (req: AuthedRequest, res) => {
     const sellerId = sellerIdOf(req);
-    await query(
-      `UPDATE weight_disputes SET escalated = true, status = 'under_review' WHERE id = $1 AND seller_id = $2`,
-      [req.params.id, sellerId],
-    );
+    
+    await withTransaction(async (client) => {
+      await client.query(
+        `UPDATE weight_disputes SET escalated = true, status = 'under_review' WHERE id = $1 AND seller_id = $2`,
+        [req.params.id, sellerId],
+      );
+      await client.query(
+        `INSERT INTO weight_dispute_events (dispute_id, event_type, description, user_type, user_id)
+         VALUES ($1, 'escalated', 'Dispute escalated to admin', 'seller', $2)`,
+        [req.params.id, sellerId]
+      );
+    });
+
     res.json({ message: 'Dispute escalated to admin' });
+  }),
+);
+
+/** GET /:id/history  — get dispute history timeline */
+weightDisputesRouter.get(
+  '/:id/history',
+  requireRole('seller'),
+  ah(async (req: AuthedRequest, res) => {
+    const sellerId = sellerIdOf(req);
+    const dispute = await queryOne<any>(`SELECT id FROM weight_disputes WHERE id = $1 AND seller_id = $2`, [req.params.id, sellerId]);
+    if (!dispute) throw new ApiError(404, 'Dispute not found');
+    
+    const events = await query(
+      `SELECT * FROM weight_dispute_events WHERE dispute_id = $1 ORDER BY created_at ASC`,
+      [dispute.id]
+    );
+    res.json({ events });
   }),
 );
 

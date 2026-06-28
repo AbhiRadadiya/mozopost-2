@@ -3,17 +3,24 @@
 import { useEffect, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 
-const REASON_LABELS: Record<string,string> = {
-  customer_not_available: 'Not available', wrong_address: 'Wrong address',
-  refused_delivery: 'Refused delivery', premises_closed: 'Premises closed',
-  out_of_delivery_area: 'Out of area', fake_attempt: 'Fake attempt', other: 'Other',
+const REASON_LABELS: Record<string, string> = {
+  customer_not_available: 'Customer not available',
+  wrong_address: 'Address issue',
+  refused_delivery: 'Customer refused',
+  premises_closed: 'Premises closed',
+  out_of_delivery_area: 'Out of delivery area',
+  fake_attempt: 'Fake attempt',
+  other: 'Customer not contactable',
 };
 
 export default function NdrPage() {
-  const [records, setRecords] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-  const [actionId, setActionId] = useState<string|null>(null);
+  const [records, setRecords]     = useState<any[]>([]);
+  const [loading, setLoading]     = useState(true);
+  const [error, setError]         = useState('');
+  const [actionId, setActionId]   = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('Failed Delivery');
+  const [onlyPending, setOnlyPending] = useState(false);
+  const [selected, setSelected]   = useState<string[]>([]);
 
   useEffect(() => { load(); }, []);
 
@@ -35,108 +42,213 @@ export default function NdrPage() {
     finally { setActionId(null); }
   }
 
+  function toggleSelect(id: string) {
+    setSelected(p => p.includes(id) ? p.filter(x => x !== id) : [...p, id]);
+  }
+
+  const ndrTabs = ['Failed Delivery', 'Delivered', 'Out For Delivery', 'RTO'];
+
   return (
-    <div className="animate-fade-up max-w-5xl mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="animate-fade-up space-y-5 max-w-6xl mx-auto">
+      {/* Page Header */}
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-3">
-            NDR Management
-            {records.length > 0 && (
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-[#FEF2F2] text-[#EF4444] text-xs font-bold uppercase tracking-wider">
-                {records.length} Pending
-              </span>
-            )}
-          </h1>
-          <p className="text-sm text-[#64748B] mt-1">Manage non-delivery reports and prevent RTOs.</p>
+          <h1 className="text-2xl font-bold text-[#2F3A22] tracking-tight">Manage Self Ship NDR</h1>
+          <p className="text-sm text-[#8A9270] mt-1">All orders with at least one failed delivery attempt will be shown here.</p>
         </div>
       </div>
 
-      {error && (
-        <div className="mb-6 p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B] flex items-center gap-3">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 8v4m0 4h.01"/></svg>
-          {error}
+      {/* Tabs Row */}
+      <div className="flex items-center gap-4 border-b border-[#EADFC8] pt-1 overflow-x-auto">
+        {ndrTabs.map((t) => {
+          const isActive = activeTab === t;
+          return (
+            <button
+              key={t}
+              onClick={() => setActiveTab(t)}
+              className={`pb-2.5 text-xs font-medium whitespace-nowrap transition-colors border-b-2 -mb-px cursor-pointer ${
+                isActive
+                  ? 'border-[#546B41] text-[#546B41] font-semibold'
+                  : 'border-transparent text-[#8A9270] hover:text-[#2F3A22]'
+              }`}
+            >
+              {t}
+            </button>
+          );
+        })}
+      </div>
+
+      {/* Filter Controls */}
+      <div className="flex items-center gap-3 flex-wrap">
+        <div className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-mono-nb text-[#6B7556] shadow-sm">
+          21 Jun – 27 Jun
+        </div>
+        <select className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-semibold text-[#2F3A22] shadow-sm outline-none cursor-pointer">
+          <option>All Failure Reasons</option>
+          <option>Customer not contactable</option>
+          <option>Customer not available</option>
+          <option>Address issue</option>
+        </select>
+        <div className="flex-1 max-w-xs">
+          <input
+            placeholder="⌕ Search AWB, Order ID..."
+            className="w-full bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs text-[#2F3A22] placeholder-[#B3B596] outline-none shadow-sm focus:border-[#546B41]"
+          />
+        </div>
+        <button
+          onClick={() => setOnlyPending(!onlyPending)}
+          className="flex items-center gap-2 bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-medium text-[#6B7556] cursor-pointer shadow-sm"
+        >
+          <span>Only pending action</span>
+          <span className={`w-7 h-4 rounded-full p-0.5 transition-colors ${onlyPending ? 'bg-[#546B41]' : 'bg-[#E2D4B8]'}`}>
+            <span className={`block w-3 h-3 rounded-full bg-white transition-transform ${onlyPending ? 'translate-x-3' : 'translate-x-0'}`} />
+          </span>
+        </button>
+        <button
+          onClick={load}
+          className="ml-auto bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-lg px-4 py-2 text-xs font-semibold hover:bg-[#E0E7CE] transition-colors shadow-sm cursor-pointer"
+        >
+          Apply
+        </button>
+      </div>
+
+      {/* Multi-Selection Bulk Toolbar */}
+      {selected.length > 0 && (
+        <div className="flex items-center gap-4 bg-[#EDF0E4] border border-[#CBD7B5] rounded-xl p-3 px-4 shadow-sm animate-fade-up">
+          <span className="text-xs font-semibold text-[#546B41] font-mono-nb">
+            {selected.length} selected
+          </span>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => alert('Initiating re-attempt for selected...')}
+              className="bg-white border border-[#E2D4B8] hover:border-[#546B41] text-[#546B41] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+            >
+              ↻ Re-attempt
+            </button>
+            <button
+              onClick={() => alert('Marking RTO for selected...')}
+              className="bg-white border border-[#E2D4B8] hover:border-[#B4623F] text-[#B4623F] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+            >
+              ↺ Mark RTO
+            </button>
+          </div>
+          <button
+            onClick={() => setSelected([])}
+            className="ml-auto text-xs text-[#8A9270] hover:text-[#B4623F] transition-colors cursor-pointer"
+          >
+            Clear selection
+          </button>
         </div>
       )}
 
+      {/* Error Banner */}
+      {error && (
+        <div className="flex items-center gap-3 p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B]">
+          <span>⚠️</span> {error}
+        </div>
+      )}
+
+      {/* Action Notice */}
       {records.length > 0 && (
-        <div className="mb-6 p-4 rounded-xl bg-[#FFFBEB] border border-[#FEF08A] flex items-start gap-3">
-          <div className="mt-0.5 w-6 h-6 rounded-full bg-[#FEF08A] flex items-center justify-center shrink-0">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#B45309" strokeWidth="2.5"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" /></svg>
+        <div className="p-4 rounded-xl bg-[#FFF8EC] border border-[#E2D4B8] flex items-start gap-3 shadow-sm">
+          <div className="w-6 h-6 rounded-full bg-[#EDF0E4] text-[#546B41] flex items-center justify-center shrink-0 font-bold text-xs mt-0.5">
+            !
           </div>
           <div>
-            <h4 className="text-sm font-bold text-[#92400E]">Action Required</h4>
-            <p className="text-xs font-medium text-[#B45309] mt-0.5">
+            <h4 className="text-xs font-bold text-[#2F3A22] uppercase tracking-wider">Action Required</h4>
+            <p className="text-xs text-[#6B7556] mt-0.5">
               Unresolved NDRs auto-convert to RTO after 3 days. Act now to protect your COD revenue.
             </p>
           </div>
         </div>
       )}
 
+      {/* Records Grid */}
       {loading ? (
-        <div className="text-sm text-[#94A3B8] text-center py-12">Loading NDR records...</div>
+        <div className="text-xs text-[#8A9270] text-center py-12 font-mono-nb">Loading NDR records...</div>
       ) : records.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] p-12 text-center">
-          <div className="w-16 h-16 rounded-2xl bg-[#F0FDF4] flex items-center justify-center mx-auto mb-4">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#16A34A" strokeWidth="2"><path d="M5 13l4 4L19 7" /></svg>
+        <div className="bg-white rounded-xl border border-[#EADFC8] p-12 text-center shadow-sm">
+          <div className="w-12 h-12 rounded-full bg-[#EDF0E4] text-[#546B41] flex items-center justify-center mx-auto mb-3 text-lg font-bold">
+            ✓
           </div>
-          <h3 className="text-lg font-bold text-[#0F172A] mb-1">No pending NDRs</h3>
-          <p className="text-sm font-medium text-[#64748B]">All your deliveries are on track. Great job!</p>
+          <h3 className="text-base font-bold text-[#2F3A22] mb-1">No pending NDRs</h3>
+          <p className="text-xs text-[#8A9270]">All your deliveries are on track. Great job!</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {records.map(n => {
+          {records.map((n) => {
             const isCritical = n.attempt_number >= 3;
+            const isSelected = selected.includes(n.id);
+
             return (
-              <div key={n.id} className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden flex flex-col group hover:border-[#CBD5E1] transition-colors">
-                {/* Header */}
-                <div className={`px-5 py-4 border-b ${isCritical ? 'bg-[#FEF2F2] border-[#FECACA]' : 'bg-[#F8F9FB] border-[#E5E8EF]'} flex items-start justify-between`}>
-                  <div>
-                    <div className={`font-mono text-sm font-bold ${isCritical ? 'text-[#991B1B]' : 'text-[#4F46E5]'}`}>
-                      #{n.mozopost_order_id}
-                    </div>
-                    <div className="text-xs font-medium text-[#64748B] mt-1 flex items-center gap-1.5">
-                      <span>{n.courier_name}</span>
-                      <span className="w-1 h-1 rounded-full bg-[#CBD5E1]" />
-                      <span>Attempt {n.attempt_number}/3</span>
+              <div
+                key={n.id}
+                className={`bg-white rounded-xl border transition-colors shadow-sm overflow-hidden flex flex-col ${
+                  isSelected ? 'border-[#546B41] bg-[#FFF8EC]' : 'border-[#EADFC8] hover:border-[#CBD7B5]'
+                }`}
+              >
+                {/* Card Header */}
+                <div className={`px-4 py-3 border-b ${isCritical ? 'bg-[#F1E2D8] border-[#DDBBA8]' : 'bg-[#EDF0E4] border-[#CBD7B5]'} flex items-center justify-between`}>
+                  <div className="flex items-center gap-2.5">
+                    <input
+                      type="checkbox"
+                      checked={isSelected}
+                      onChange={() => toggleSelect(n.id)}
+                      className="w-4 h-4 rounded border-[#E2D4B8] accent-[#546B41] cursor-pointer"
+                    />
+                    <div>
+                      <div className={`font-mono-nb text-xs font-bold ${isCritical ? 'text-[#B4623F]' : 'text-[#546B41]'}`}>
+                        #{n.mozopost_order_id}
+                      </div>
+                      <div className="text-[11px] text-[#8A9270] mt-0.5 font-mono-nb">
+                        {n.courier_name || 'DELHIVERY'} · Attempt {n.attempt_number}/3
+                      </div>
                     </div>
                   </div>
-                  <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${isCritical ? 'bg-[#FECACA] text-[#991B1B]' : 'bg-[#EEF2FF] text-[#4F46E5]'}`}>
-                    {REASON_LABELS[n.ndr_reason] || n.ndr_reason}
+                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono-nb border ${isCritical ? 'bg-[#F1E2D8] text-[#B4623F] border-[#DDBBA8]' : 'bg-[#FFF8EC] text-[#546B41] border-[#E2D4B8]'}`}>
+                    {REASON_LABELS[n.ndr_reason] || n.ndr_reason || 'Customer not contactable'}
                   </span>
                 </div>
 
-                {/* Body */}
-                <div className="p-5 flex-1">
-                  <div className="flex items-center gap-3 mb-4">
-                    <div className="w-10 h-10 rounded-full bg-[#F4F6F9] flex items-center justify-center text-[#475569] font-bold text-sm shrink-0">
-                      {n.consignee_name.charAt(0).toUpperCase()}
-                    </div>
+                {/* Card Body */}
+                <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
+                  <div className="flex items-start justify-between">
                     <div>
-                      <div className="text-sm font-bold text-[#0F172A]">{n.consignee_name}</div>
-                      <div className="text-xs font-mono text-[#64748B] mt-0.5">{n.consignee_phone}</div>
+                      <div className="text-xs font-bold text-[#2F3A22]">{n.consignee_name}</div>
+                      <div className="text-[11px] text-[#8A9270] font-mono-nb mt-0.5">{n.consignee_phone}</div>
+                      <div className="text-[11px] text-[#8A9270] mt-0.5">{n.consignee_city}, {n.consignee_state}</div>
                     </div>
                   </div>
 
                   {isCritical && (
-                    <div className="mb-4 p-3 rounded-lg bg-[#FEF2F2] border border-[#FECACA] text-xs font-medium text-[#991B1B]">
+                    <div className="p-2.5 rounded-lg bg-[#F1E2D8] border border-[#DDBBA8] text-[11px] font-medium text-[#B4623F]">
                       Max attempts reached. You must initiate RTO.
                     </div>
                   )}
 
                   {/* Actions */}
-                  <div className="flex flex-wrap gap-2 mt-auto">
+                  <div className="flex items-center gap-2 pt-2 border-t border-[#F6EEDB]">
                     {n.attempt_number < 3 && (
-                      <button disabled={actionId===n.order_id} onClick={() => takeAction(n.order_id, 'reattempt')}
-                        className="flex-1 bg-[#4F46E5] text-white text-xs font-semibold px-3 py-2 rounded-lg hover:bg-[#4338CA] transition-colors disabled:opacity-50">
+                      <button
+                        disabled={actionId === n.order_id}
+                        onClick={() => takeAction(n.order_id, 'reattempt')}
+                        className="flex-1 bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] text-xs font-semibold py-1.5 rounded-lg hover:bg-[#E0E7CE] transition-colors disabled:opacity-50 cursor-pointer"
+                      >
                         Re-attempt
                       </button>
                     )}
-                    <button disabled={actionId===n.order_id} onClick={() => takeAction(n.order_id, 'update_address')}
-                      className="flex-1 bg-white border border-[#E5E8EF] text-[#475569] text-xs font-semibold px-3 py-2 rounded-lg hover:bg-[#F8F9FB] hover:text-[#0F172A] transition-colors disabled:opacity-50">
+                    <button
+                      disabled={actionId === n.order_id}
+                      onClick={() => takeAction(n.order_id, 'update_address')}
+                      className="flex-1 bg-white border border-[#E2D4B8] text-[#2F3A22] text-xs font-semibold py-1.5 rounded-lg hover:border-[#D8CBAE] transition-colors disabled:opacity-50 cursor-pointer"
+                    >
                       Update Address
                     </button>
-                    <button disabled={actionId===n.order_id} onClick={() => takeAction(n.order_id, 'rto')}
-                      className="flex-none bg-[#FEF2F2] text-[#EF4444] text-xs font-semibold px-3 py-2 rounded-lg hover:bg-[#FEE2E2] hover:text-[#B91C1C] transition-colors disabled:opacity-50">
+                    <button
+                      disabled={actionId === n.order_id}
+                      onClick={() => takeAction(n.order_id, 'rto')}
+                      className="bg-[#F1E2D8] border border-[#DDBBA8] text-[#B4623F] text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-[#E8D4C7] transition-colors disabled:opacity-50 cursor-pointer"
+                    >
                       Mark RTO
                     </button>
                   </div>
@@ -149,3 +261,4 @@ export default function NdrPage() {
     </div>
   );
 }
+

@@ -261,7 +261,7 @@ reportsRouter.get(
     if (!sellerId) throw new ApiError(403, 'Not a seller');
     const days = Math.min(parseInt((req.query.days as string) || '30', 10), 90);
 
-    const [daily, byCourier, topStates, topCities, futureCod] = await Promise.all([
+    const [daily, byCourier, topStates, topCities, futureCod, byPaymentMode, byStatus] = await Promise.all([
       query(
         `SELECT DATE(created_at) AS day,
                 COUNT(*)::int AS orders,
@@ -284,7 +284,9 @@ reportsRouter.get(
       ),
       query(
         `SELECT consignee_state AS state, COUNT(*)::int AS orders,
-                ROUND(100.0*COUNT(*) FILTER (WHERE status='delivered')/NULLIF(COUNT(*),0),2)::float AS delivery_rate
+                ROUND(100.0*COUNT(*)/(SELECT NULLIF(COUNT(*),0) FROM orders WHERE seller_id=$1 AND created_at >= NOW() - INTERVAL '${days} days'),2)::float AS share,
+                ROUND(100.0*COUNT(*) FILTER (WHERE status='delivered')/NULLIF(COUNT(*),0),2)::float AS del,
+                ROUND(100.0*COUNT(*) FILTER (WHERE status::text LIKE 'rto%')/NULLIF(COUNT(*),0),2)::float AS rto
          FROM orders WHERE seller_id=$1 AND created_at >= NOW() - INTERVAL '${days} days'
          GROUP BY consignee_state ORDER BY orders DESC LIMIT 10`,
         [sellerId],
@@ -301,11 +303,24 @@ reportsRouter.get(
          FROM orders WHERE seller_id=$1 AND payment_mode='cod' AND status='delivered'`,
         [sellerId],
       ),
+      query(
+        `SELECT payment_mode AS label, COUNT(*)::int AS value
+         FROM orders WHERE seller_id=$1 AND created_at >= NOW() - INTERVAL '${days} days'
+         GROUP BY payment_mode ORDER BY value DESC`,
+        [sellerId],
+      ),
+      query(
+        `SELECT UPPER(status::text) AS label, COUNT(*)::int AS value
+         FROM orders WHERE seller_id=$1 AND created_at >= NOW() - INTERVAL '${days} days'
+         GROUP BY status ORDER BY value DESC`,
+        [sellerId],
+      ),
     ]);
 
     // Best courier (highest delivery rate with >5 orders)
     const bestCourier = byCourier.find((c: any) => c.orders >= 5) || byCourier[0] || null;
 
-    res.json({ daily, byCourier, topStates, topCities, futureCod, bestCourier });
+    res.json({ daily, byCourier, topStates, topCities, futureCod, bestCourier, byPaymentMode, byStatus });
   }),
 );
+

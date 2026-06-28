@@ -182,70 +182,49 @@ export default function LabelsPage() {
     );
 
   return (
-    <div className="animate-fade-up mx-auto">
-      <div className="flex items-center justify-between mb-6">
+    <div className="animate-fade-up space-y-5 mx-auto">
+      <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">
+          <h1 className="text-2xl font-bold text-[#2F3A22] tracking-tight">
             Label Management
           </h1>
-          <p className="text-sm text-[#64748B] mt-1">
+          <p className="text-sm text-[#8A9270] mt-1">
             Customize your shipping labels and printer settings.
           </p>
         </div>
       </div>
 
       {error && (
-        <div className="mb-6 p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B] flex items-center gap-3">
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-          >
-            <circle cx="12" cy="12" r="10" />
-            <path d="M12 8v4m0 4h.01" />
-          </svg>
-          {error}
+        <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B] flex items-center gap-3">
+          <span>⚠️</span> {error}
         </div>
       )}
       {success && (
-        <div className="mb-6 p-4 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] text-sm font-medium text-[#166534] flex items-center gap-3">
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.5"
-          >
-            <path d="M20 6L9 17l-5-5" />
-          </svg>
-          {success}
+        <div className="p-4 rounded-xl bg-[#EDF0E4] border border-[#CBD7B5] text-sm font-medium text-[#546B41] flex items-center gap-3">
+          <span>✓</span> {success}
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="space-y-6">
           {/* Toggle options */}
-          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden">
-            <div className="px-6 py-5 border-b border-[#E5E8EF] bg-[#F8F9FB]">
-              <h2 className="text-sm font-bold text-[#0F172A]">
+          <div className="bg-white rounded-xl border border-[#EADFC8] shadow-sm overflow-hidden">
+            <div className="px-5 py-4 border-b border-[#EADFC8] bg-[#F6EEDB]">
+              <h2 className="text-xs font-bold text-[#2F3A22] uppercase tracking-wider">
                 Label Content Options
               </h2>
             </div>
-            <div className="divide-y divide-[#F1F3F7]">
+            <div className="divide-y divide-[#F6EEDB]">
               {[
-                {
-                  key: "show_logo",
-                  label: "Show Logo",
-                  desc: "Display your store logo on the label",
-                },
                 {
                   key: "show_brand_name",
                   label: "Show Brand Name",
-                  desc: "Print your brand name on the label",
+                  desc: "Print your store or brand name on the label",
+                },
+                {
+                  key: "show_logo",
+                  label: "Show Brand Logo",
+                  desc: "Display your store logo at the top",
                 },
                 {
                   key: "show_gst",
@@ -267,22 +246,22 @@ export default function LabelsPage() {
                 return (
                   <div
                     key={opt.key}
-                    className="flex items-center justify-between p-5 hover:bg-[#F8F9FB] transition-colors cursor-pointer"
+                    className="flex items-center justify-between p-4 hover:bg-[#FFF8EC]/50 transition-colors cursor-pointer"
                     onClick={() => toggle(opt.key)}
                   >
                     <div>
-                      <div className="font-bold text-sm text-[#0F172A]">
+                      <div className="font-semibold text-xs text-[#2F3A22]">
                         {opt.label}
                       </div>
-                      <div className="text-xs text-[#64748B] mt-0.5">
+                      <div className="text-[11px] text-[#8A9270] mt-0.5">
                         {opt.desc}
                       </div>
                     </div>
                     <button
-                      className={`w-11 h-6 rounded-full relative transition-colors ${isActive ? "bg-[#4F46E5]" : "bg-[#CBD5E1]"}`}
+                      className={`w-10 h-5 rounded-full relative transition-colors ${isActive ? "bg-[#546B41]" : "bg-[#E2D4B8]"}`}
                     >
                       <span
-                        className={`absolute top-1 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${isActive ? "left-6" : "left-1"}`}
+                        className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${isActive ? "left-5.5" : "left-0.5"}`}
                       />
                     </button>
                   </div>

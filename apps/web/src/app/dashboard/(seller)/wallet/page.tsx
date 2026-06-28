@@ -124,41 +124,41 @@ export default function WalletPage() {
         strategy="lazyOnload"
       />
 
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex items-start justify-between mb-5">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">
+          <h1 className="text-2xl font-bold text-[#2F3A22] tracking-tight">
             Wallet &amp; Billing
           </h1>
-          <p className="text-sm text-[#64748B] mt-1">
+          <p className="text-sm text-[#8A9270] mt-1">
             Manage your prepaid balance, recharges, and credit limits.
           </p>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#E5E8EF]">
-          <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1.5">
+        <div className="bg-white p-4 rounded-xl border border-[#EADFC8] shadow-sm">
+          <div className="text-[11px] font-bold text-[#8A9270] uppercase tracking-wider mb-1">
             Wallet Balance
           </div>
-          <div className="text-3xl font-bold text-[#0F172A] font-mono">
+          <div className="text-2xl font-bold text-[#2F3A22] font-mono-nb">
             {loading ? "..." : `₹${balance?.toLocaleString("en-IN")}`}
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#E5E8EF]">
-          <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1.5">
+        <div className="bg-white p-4 rounded-xl border border-[#EADFC8] shadow-sm">
+          <div className="text-[11px] font-bold text-[#8A9270] uppercase tracking-wider mb-1">
             Total Transactions
           </div>
-          <div className="text-3xl font-bold text-[#0F172A] font-mono">
+          <div className="text-2xl font-bold text-[#2F3A22] font-mono-nb">
             {txns.length}
           </div>
         </div>
-        <div className="bg-white p-5 rounded-2xl shadow-sm border border-[#E5E8EF] flex flex-col justify-center">
-          <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1.5">
+        <div className="bg-white p-4 rounded-xl border border-[#EADFC8] shadow-sm flex flex-col justify-center">
+          <div className="text-[11px] font-bold text-[#8A9270] uppercase tracking-wider mb-1">
             Payment Mode
           </div>
           <div>
             <span
-              className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${RAZORPAY_KEY ? "bg-[#D1FAE5] text-[#065F46]" : "bg-[#FEF3C7] text-[#92400E]"}`}
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono-nb border ${RAZORPAY_KEY ? "bg-[#EDF0E4] text-[#546B41] border-[#CBD7B5]" : "bg-[#FFF8EC] text-[#A9842E] border-[#E2D4B8]"}`}
             >
               {RAZORPAY_KEY ? "Live" : "Mock Mode"}
             </span>
@@ -169,36 +169,25 @@ export default function WalletPage() {
       {/* Credit facility panel */}
       {credit?.hasCreditFacility && credit.creditFacility && (
         <div
-          className={`mb-6 p-6 rounded-2xl border shadow-sm ${
+          className={`mb-6 p-5 rounded-xl border shadow-sm ${
             credit.creditFacility.riskBand === "exhausted"
-              ? "bg-[#FEF2F2] border-[#FECACA]"
+              ? "bg-[#F1E2D8] border-[#DDBBA8]"
               : credit.creditFacility.riskBand === "near_limit"
-                ? "bg-[#FFFBEB] border-[#FEF08A]"
-                : "bg-white border-[#E5E8EF]"
+                ? "bg-[#FFF8EC] border-[#E2D4B8]"
+                : "bg-white border-[#EADFC8]"
           }`}
         >
           <div className="flex items-center justify-between mb-4">
-            <div className="font-bold text-[#0F172A] flex items-center gap-2">
-              <svg
-                width="20"
-                height="20"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="#4F46E5"
-                strokeWidth="2"
-              >
-                <rect x="2" y="5" width="20" height="14" rx="2" />
-                <path d="M2 10h20" />
-              </svg>
-              Postpaid Credit Facility
+            <div className="font-bold text-[#2F3A22] flex items-center gap-2 text-sm">
+              💳 Postpaid Credit Facility
             </div>
             <span
-              className={`inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono-nb border ${
                 credit.creditFacility.riskBand === "exhausted"
-                  ? "bg-[#FECACA] text-[#991B1B]"
+                  ? "bg-[#F1E2D8] text-[#B4623F] border-[#DDBBA8]"
                   : credit.creditFacility.riskBand === "near_limit"
-                    ? "bg-[#FEF08A] text-[#92400E]"
-                    : "bg-[#D1FAE5] text-[#065F46]"
+                    ? "bg-[#FFF8EC] text-[#A9842E] border-[#E2D4B8]"
+                    : "bg-[#EDF0E4] text-[#546B41] border-[#CBD7B5]"
               }`}
             >
               {credit.creditFacility.riskBand === "exhausted"
@@ -209,37 +198,36 @@ export default function WalletPage() {
             </span>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-5">
-            <div className="bg-[#F8F9FB] p-4 rounded-xl border border-[#E5E8EF]">
-              <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <div className="bg-[#FFF8EC]/50 p-3.5 rounded-lg border border-[#E2D4B8]">
+              <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-wider mb-1">
                 Credit Limit
               </div>
-              <div className="text-lg font-bold text-[#0F172A] font-mono">
+              <div className="text-base font-bold text-[#2F3A22] font-mono-nb">
                 ₹{credit.creditFacility.creditLimit.toLocaleString("en-IN")}
               </div>
             </div>
-            <div className="bg-[#F8F9FB] p-4 rounded-xl border border-[#E5E8EF]">
-              <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">
+            <div className="bg-[#FFF8EC]/50 p-3.5 rounded-lg border border-[#E2D4B8]">
+              <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-wider mb-1">
                 Used Credit
               </div>
-              <div className="text-lg font-bold text-[#EF4444] font-mono">
-                ₹
-                {(credit.wallet.creditOutstanding ?? 0).toLocaleString("en-IN")}
+              <div className="text-base font-bold text-[#B4623F] font-mono-nb">
+                ₹{(credit.wallet.creditOutstanding ?? 0).toLocaleString("en-IN")}
               </div>
             </div>
-            <div className="bg-[#F8F9FB] p-4 rounded-xl border border-[#E5E8EF]">
-              <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">
+            <div className="bg-[#FFF8EC]/50 p-3.5 rounded-lg border border-[#E2D4B8]">
+              <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-wider mb-1">
                 Available Credit
               </div>
-              <div className="text-lg font-bold text-[#16A34A] font-mono">
+              <div className="text-base font-bold text-[#546B41] font-mono-nb">
                 ₹{credit.creditFacility.availableCredit.toLocaleString("en-IN")}
               </div>
             </div>
-            <div className="bg-[#F8F9FB] p-4 rounded-xl border border-[#E5E8EF]">
-              <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">
+            <div className="bg-[#FFF8EC]/50 p-3.5 rounded-lg border border-[#E2D4B8]">
+              <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-wider mb-1">
                 Billing Cycle
               </div>
-              <div className="text-lg font-bold text-[#0F172A]">
+              <div className="text-base font-bold text-[#2F3A22]">
                 {credit.creditFacility.billingCycle}
               </div>
             </div>

@@ -3,16 +3,16 @@
 import React from 'react';
 
 export const RISK_BADGE: Record<string, string> = {
-  safe:     'bg-[#D1FAE5] text-[#065F46]',
-  medium:   'bg-[#FEF3C7] text-[#92400E]',
-  high:     'bg-[#FFEDD5] text-[#9A3412]',
-  critical: 'bg-[#FEE2E2] text-[#991B1B]',
+  safe:     'bg-[#E0E7CE] text-[#4A5F37] border border-[#CBD7B5]',
+  medium:   'bg-[#F6EEDB] text-[#A9842E] border border-[#DEC98F]',
+  high:     'bg-[#F1E2D8] text-[#B4623F] border border-[#DDBBA8]',
+  critical: 'bg-[#F1E2D8] text-[#B4623F] border border-[#DDBBA8]',
 };
 
 export const SEV_BADGE: Record<string, string> = {
-  info:     'bg-[#DBEAFE] text-[#1E40AF]',
-  warn:     'bg-[#FEF3C7] text-[#92400E]',
-  critical: 'bg-[#FEE2E2] text-[#991B1B]',
+  info:     'bg-[#EDF0E4] text-[#546B41] border border-[#CBD7B5]',
+  warn:     'bg-[#F6EEDB] text-[#A9842E] border border-[#DEC98F]',
+  critical: 'bg-[#F1E2D8] text-[#B4623F] border border-[#DDBBA8]',
 };
 
 export function SAIcon({ d, size = 18 }: { d: string; size?: number }) {
@@ -26,10 +26,10 @@ export function SAIcon({ d, size = 18 }: { d: string; size?: number }) {
 
 export function PageHeader({ title, subtitle, action }: { title: string; subtitle?: string; action?: React.ReactNode }) {
   return (
-    <div className="mb-5 flex items-end justify-between gap-4">
+    <div className="mb-6 flex items-end justify-between gap-4">
       <div>
-        <h1 className="text-xl font-bold text-[#0F172A]">{title}</h1>
-        {subtitle && <p className="mt-0.5 text-sm text-[#94A3B8]">{subtitle}</p>}
+        <h1 className="text-2xl font-bold text-[#2F3A22] tracking-tight">{title}</h1>
+        {subtitle && <p className="mt-1 text-sm text-[#8A9270]">{subtitle}</p>}
       </div>
       {action}
     </div>
@@ -39,11 +39,11 @@ export function PageHeader({ title, subtitle, action }: { title: string; subtitl
 export function Toast({ msg, onClose }: { msg: string; onClose: () => void }) {
   if (!msg) return null;
   return (
-    <div className="mb-4 flex items-center justify-between rounded-xl border-2 border-[#059669] bg-[#D1FAE5] px-4 py-3 text-sm font-bold text-[#065F46]">
+    <div className="mb-4 flex items-center justify-between rounded-xl border border-[#CBD7B5] bg-[#EDF0E4] px-4 py-3 text-sm font-semibold text-[#546B41]">
       <span className="flex items-center gap-2">
         <SAIcon d="M5 13l4 4L19 7" size={16} /> {msg}
       </span>
-      <button onClick={onClose} className="text-[#065F46]">✕</button>
+      <button onClick={onClose} className="text-[#546B41] hover:opacity-75">✕</button>
     </div>
   );
 }
@@ -51,9 +51,10 @@ export function Toast({ msg, onClose }: { msg: string; onClose: () => void }) {
 export function ErrorBar({ msg, onClose }: { msg: string; onClose: () => void }) {
   if (!msg) return null;
   return (
-    <div className="mb-4 flex items-center justify-between rounded-xl border-2 border-[#DC2626] bg-[#FEE2E2] px-4 py-3 text-sm font-bold text-[#991B1B]">
+    <div className="mb-4 flex items-center justify-between rounded-xl border border-[#DDBBA8] bg-[#F1E2D8] px-4 py-3 text-sm font-semibold text-[#B4623F]">
       <span>⚠ {msg}</span>
-      <button onClick={onClose} className="text-[#991B1B]">✕</button>
+      <button onClick={onClose} className="text-[#B4623F] hover:opacity-75">✕</button>
     </div>
   );
 }
+
