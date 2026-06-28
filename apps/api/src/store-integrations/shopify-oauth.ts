@@ -49,6 +49,10 @@ shopifyOAuthRouter.get('/callback', ah(async (req: Request, res: Response) => {
   }
 
   const sellerId = state as string;
+  if (!sellerId || sellerId === 'undefined' || sellerId.length < 30) {
+    throw new ApiError(400, 'Invalid state parameter: missing or malformed seller ID. Please initiate OAuth from the Mozopost dashboard.');
+  }
+
   const clientId = env.SHOPIFY_CLIENT_ID;
   const clientSecret = env.SHOPIFY_CLIENT_SECRET;
 
