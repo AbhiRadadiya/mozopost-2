@@ -16,8 +16,7 @@ function sid(req: AuthedRequest) {
 
 storeIntegrationsRouter.get('/', ah(async (req: AuthedRequest, res) => {
   const stores = await query(
-    `SELECT id, platform, store_name, store_url, sync_interval_min, auto_sync,
-            import_pending, import_prepaid, import_cod, push_tracking, push_awb,
+    `SELECT id, platform, store_name, store_url, sync_interval_min,
             status, is_active, last_sync_at, last_sync_orders, last_error, total_imported, created_at,
             uuid
      FROM store_integrations WHERE seller_id=$1 ORDER BY created_at DESC`,
@@ -27,19 +26,13 @@ storeIntegrationsRouter.get('/', ah(async (req: AuthedRequest, res) => {
 }));
 
 const connectSchema = z.object({
-  platform:        z.enum(['shopify','woocommerce','opencart','magento','shopline','dukaan','custom_api']),
+  platform:        z.enum(['shopify']),
   storeName:       z.string().min(1).max(255),
   storeUrl:        z.string().url(),
   apiKey:          z.string().min(1),
   apiSecret:       z.string().optional(),
   accessToken:     z.string().optional(),
   syncIntervalMin: z.number().int().refine(v => [5,15,30,60].includes(v)).default(15),
-  autoSync:        z.boolean().default(true),
-  importPending:   z.boolean().default(true),
-  importPrepaid:   z.boolean().default(true),
-  importCod:       z.boolean().default(true),
-  pushTracking:    z.boolean().default(true),
-  pushAwb:         z.boolean().default(true),
 });
 
 storeIntegrationsRouter.post('/', ah(async (req: AuthedRequest, res) => {
@@ -48,25 +41,21 @@ storeIntegrationsRouter.post('/', ah(async (req: AuthedRequest, res) => {
   const store = await queryOne(
     `INSERT INTO store_integrations
        (seller_id, platform, store_name, store_url, api_key_encrypted, api_secret_encrypted,
-        access_token_encrypted, sync_interval_min, auto_sync,
-        import_pending, import_prepaid, import_cod, push_tracking, push_awb)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
+        access_token_encrypted, sync_interval_min)
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8) RETURNING *`,
     [sellerId, dto.platform, dto.storeName, dto.storeUrl,
      dto.apiKey, dto.apiSecret || null, dto.accessToken || null,
-     dto.syncIntervalMin, dto.autoSync,
-     dto.importPending, dto.importPrepaid, dto.importCod, dto.pushTracking, dto.pushAwb],
+     dto.syncIntervalMin],
   );
   res.status(201).json({ store, message: 'Store connected successfully.' });
 }));
 
 storeIntegrationsRouter.patch('/:id', ah(async (req: AuthedRequest, res) => {
   const sellerId = sid(req);
-  const allowed = ['store_name','sync_interval_min','auto_sync','import_pending','import_prepaid','import_cod','push_tracking','push_awb','is_active'];
+  const allowed = ['store_name','sync_interval_min','is_active'];
   const fields: string[] = []; const params: any[] = [];
   const map: Record<string,string> = {
-    storeName:'store_name', syncIntervalMin:'sync_interval_min', autoSync:'auto_sync',
-    importPending:'import_pending', importPrepaid:'import_prepaid', importCod:'import_cod',
-    pushTracking:'push_tracking', pushAwb:'push_awb', isActive:'is_active',
+    storeName:'store_name', syncIntervalMin:'sync_interval_min', isActive:'is_active',
   };
   for (const [k, v] of Object.entries(req.body)) {
     const col = map[k] || k;

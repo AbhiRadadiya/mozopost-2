@@ -24,24 +24,7 @@ export default function StoresPage() {
   const [dashboard, setDashboard] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [showForm, setShowForm] = useState(false);
   const [syncingId, setSyncingId] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    platform: "woocommerce",
-    storeName: "",
-    storeUrl: "",
-    apiKey: "",
-    apiSecret: "",
-    accessToken: "",
-    syncIntervalMin: 15,
-    autoSync: true,
-    importPending: true,
-    importPrepaid: true,
-    importCod: true,
-    pushTracking: true,
-    pushAwb: true,
-  });
-  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     load();
@@ -60,22 +43,6 @@ export default function StoresPage() {
       setError(apiErrorMessage(err));
     } finally {
       setLoading(false);
-    }
-  }
-
-  async function connect(e: React.FormEvent) {
-    e.preventDefault();
-    setConnecting(true);
-    setError("");
-    try {
-      const { data } = await api.post("/stores", form);
-      alert("Store connected successfully.");
-      setShowForm(false);
-      load();
-    } catch (err) {
-      setError(apiErrorMessage(err));
-    } finally {
-      setConnecting(false);
     }
   }
 
@@ -129,22 +96,6 @@ export default function StoresPage() {
             className="px-5 py-2.5 bg-[#96bf48] text-white text-sm font-semibold rounded-xl hover:bg-[#86ac40] transition-colors shadow-sm flex items-center gap-2"
           >
             🛍️ Connect Shopify
-          </button>
-          <button
-            onClick={() => setShowForm((s) => !s)}
-            className="px-5 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors shadow-sm flex items-center gap-2"
-          >
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
-              <path d="M12 5v14M5 12l7 7" />
-            </svg>
-            Other Store
           </button>
         </div>
       </div>
@@ -203,178 +154,11 @@ export default function StoresPage() {
         </div>
       )}
 
-      {showForm && (
-        <div className="mb-6 bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden animate-fade-in">
-          <div className="px-6 py-5 border-b border-[#E5E8EF] bg-[#F8F9FB]">
-            <h2 className="text-lg font-bold text-[#0F172A]">
-              Connect New Store
-            </h2>
-          </div>
-          <form onSubmit={connect} className="p-6">
-            <div className="mb-6">
-              <label className="block text-xs font-semibold text-[#475569] mb-3 uppercase tracking-wide">
-                Select Platform
-              </label>
-              <div className="flex flex-wrap gap-2">
-                {PLATFORMS.map((p) => {
-                  const isSelected = form.platform === p.id;
-                  return (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => setForm((f) => ({ ...f, platform: p.id }))}
-                      className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${isSelected ? `${p.color} ring-4 ring-[#EEF2FF] shadow-sm` : "bg-[#F4F6F9] text-[#475569] hover:bg-[#E5E8EF]"}`}
-                    >
-                      {p.label}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5 mb-6">
-              <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
-                  Store Name
-                </label>
-                <input
-                  required
-                  value={form.storeName}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, storeName: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
-                  Store URL
-                </label>
-                <input
-                  type="url"
-                  required
-                  value={form.storeUrl}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, storeUrl: e.target.value }))
-                  }
-                  placeholder="https://yourstore.com"
-                  className="w-full px-3 py-2 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 placeholder:text-[#94A3B8]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
-                  API Key
-                </label>
-                <input
-                  required
-                  value={form.apiKey}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, apiKey: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
-                  API Secret
-                </label>
-                <input
-                  value={form.apiSecret}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, apiSecret: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
-                  Access Token
-                </label>
-                <input
-                  value={form.accessToken}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, accessToken: e.target.value }))
-                  }
-                  className="w-full px-3 py-2 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
-                  Sync Interval
-                </label>
-                <select
-                  value={form.syncIntervalMin}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      syncIntervalMin: parseInt(e.target.value),
-                    }))
-                  }
-                  className="w-full px-3 py-2 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
-                >
-                  <option value={5}>Every 5 minutes</option>
-                  <option value={15}>Every 15 minutes</option>
-                  <option value={30}>Every 30 minutes</option>
-                  <option value={60}>Every 60 minutes</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="bg-[#F8F9FB] border border-[#E5E8EF] rounded-xl p-4 mb-6 grid grid-cols-2 md:grid-cols-3 gap-4">
-              {[
-                ["Import Pending Orders", "importPending"],
-                ["Import Prepaid", "importPrepaid"],
-                ["Import COD", "importCod"],
-                ["Push Tracking", "pushTracking"],
-                ["Push AWB Number", "pushAwb"],
-                ["Auto Sync", "autoSync"],
-              ].map(([label, key]) => (
-                <label
-                  key={key}
-                  className="flex items-center gap-3 cursor-pointer group"
-                >
-                  <div className="relative flex items-center">
-                    <input
-                      type="checkbox"
-                      checked={(form as any)[key]}
-                      onChange={(e) =>
-                        setForm((f) => ({ ...f, [key]: e.target.checked }))
-                      }
-                      className="w-5 h-5 border-2 border-[#CBD5E1] rounded text-[#4F46E5] focus:ring-[#4F46E5] transition-colors cursor-pointer"
-                    />
-                  </div>
-                  <span className="text-sm font-medium text-[#475569] group-hover:text-[#0F172A] transition-colors">
-                    {label}
-                  </span>
-                </label>
-              ))}
-            </div>
-
-            <div className="flex gap-3 pt-2 border-t border-[#E5E8EF]">
-              <button
-                type="submit"
-                disabled={connecting}
-                className="px-6 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors shadow-sm disabled:opacity-50"
-              >
-                {connecting ? "Connecting..." : "Connect Store"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="px-6 py-2.5 bg-white border border-[#E5E8EF] text-[#475569] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] hover:text-[#0F172A] transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
       {loading ? (
         <div className="text-sm text-[#94A3B8] text-center py-12">
           Loading stores...
         </div>
-      ) : stores.length === 0 && !showForm ? (
+      ) : stores.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] p-12 text-center">
           <div className="w-16 h-16 rounded-2xl bg-[#F4F6F9] flex items-center justify-center mx-auto mb-4 text-2xl">
             🛒
@@ -383,7 +167,7 @@ export default function StoresPage() {
             No stores connected
           </h3>
           <p className="text-sm font-medium text-[#64748B]">
-            Connect Shopify, WooCommerce, or any platform to auto-import orders.
+            Connect your Shopify store to auto-import orders.
           </p>
         </div>
       ) : (

@@ -39,7 +39,7 @@ shopifyWebhooksRouter.post(
 
     // 2. Find the store integration
     const store = await queryOne<any>(
-      `SELECT id, seller_id, import_pending, import_prepaid, import_cod FROM store_integrations WHERE store_url = $1 AND is_active = true`,
+      `SELECT id, seller_id FROM store_integrations WHERE store_url = $1 AND is_active = true`,
       [`https://${shopDomain}`]
     );
 
@@ -76,11 +76,6 @@ async function handleOrderCreate(store: any, shopifyOrder: any) {
   if (financialStatus === 'pending' || shopifyOrder.gateway?.toLowerCase().includes('cod') || shopifyOrder.gateway?.toLowerCase().includes('cash')) {
     paymentMode = 'cod';
   }
-
-  // Check sync settings
-  if (paymentMode === 'cod' && !store.import_cod) return;
-  if (paymentMode === 'prepaid' && !store.import_prepaid) return;
-  if (financialStatus === 'pending' && !store.import_pending && paymentMode !== 'cod') return;
 
   const sellerOrderId = shopifyOrder.name || String(shopifyOrder.id);
 
