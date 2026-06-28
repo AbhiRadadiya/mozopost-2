@@ -43,7 +43,14 @@ const CORS_ORIGINS = [
 ];
 
 app.use(cors({ origin: CORS_ORIGINS, credentials: true }));
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json({ 
+  limit: '10mb',
+  verify: (req: any, res, buf) => {
+    if (req.originalUrl.startsWith('/api/v1/webhooks/shopify')) {
+      req.rawBody = buf.toString('utf8');
+    }
+  }
+}));
 
 app.get('/health', async (_req, res) => {
   try {

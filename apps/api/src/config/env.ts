@@ -65,5 +65,6 @@ export const env = {
 
 export function isCourierLive(code: keyof typeof env.COURIERS): boolean {
   const creds = env.COURIERS[code] as Record<string, string>;
+  if (!creds) return false;
   return Object.values(creds).some((v) => v && v.length > 0);
 }

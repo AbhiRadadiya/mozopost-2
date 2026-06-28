@@ -1,8 +1,12 @@
 import { Router } from 'express';
 import { query, queryOne } from '../db/pool';
 import { ah, ApiError } from '../middleware';
+import { shopifyWebhooksRouter } from './shopify';
 
 export const webhooksRouter = Router();
+
+webhooksRouter.use('/shopify', shopifyWebhooksRouter);
+
 
 /**
  * Generic courier status webhook. In production, point your courier's

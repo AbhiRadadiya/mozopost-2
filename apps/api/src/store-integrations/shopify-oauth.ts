@@ -90,6 +90,14 @@ shopifyOAuthRouter.get('/callback', ah(async (req: Request, res: Response) => {
   const data = await accessTokenResponse.json() as any;
   const accessToken = data.access_token;
 
+  // Encrypt the access token before saving
+  const iv = crypto.randomBytes(16);
+  const key = crypto.createHash('sha256').update(clientSecret).digest();
+  const cipher = crypto.createCipheriv('aes-256-cbc', key, iv);
+  let encrypted = cipher.update(accessToken, 'utf8', 'hex');
+  encrypted += cipher.final('hex');
+  const encryptedToken = iv.toString('hex') + ':' + encrypted;
+
   // 3. Store the integration in Mozopost Database
   const webhookSecret = 'whstore_' + crypto.randomBytes(16).toString('hex');
   const storeUrl = `https://${shop}`;
@@ -107,7 +115,7 @@ shopifyOAuthRouter.get('/callback', ah(async (req: Request, res: Response) => {
       `UPDATE store_integrations 
        SET access_token_encrypted = $1, is_active = true, updated_at = NOW() 
        WHERE id = $2`,
-      [accessToken, existing.id]
+      [encryptedToken, existing.id]
     );
     storeId = existing.id;
   } else {
@@ -116,35 +124,48 @@ shopifyOAuthRouter.get('/callback', ah(async (req: Request, res: Response) => {
          (seller_id, platform, store_name, store_url, access_token_encrypted, webhook_secret, sync_interval_min, auto_sync,
           import_pending, import_prepaid, import_cod, push_tracking, push_awb)
        VALUES ($1, 'shopify', $2, $3, $4, $5, 15, true, true, true, true, true, true) RETURNING id`,
-      [sellerId, shop, storeUrl, accessToken, webhookSecret]
+      [sellerId, shop, storeUrl, encryptedToken, webhookSecret]
     );
     storeId = store.id;
   }
 
   // 4. Auto-register Webhooks via Shopify API
-  const webhookUrl = `${env.APP_API_URL}/api/v1/webhooks/shopify/${storeId}`;
+  const webhookUrl = `${env.APP_API_URL}/api/v1/webhooks/shopify`;
+  const topics = ['orders/create', 'orders/updated', 'orders/cancelled'];
+  const apiVersion = process.env.SHOPIFY_API_VERSION || '2024-04';
+  let allRegistered = true;
   
-  try {
-    const webhookResponse = await fetch(`https://${shop}/admin/api/2024-04/webhooks.json`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Shopify-Access-Token': accessToken,
-      },
-      body: JSON.stringify({
-        webhook: {
-          topic: 'orders/create',
-          address: webhookUrl,
-          format: 'json',
+  for (const topic of topics) {
+    try {
+      const webhookResponse = await fetch(`https://${shop}/admin/api/${apiVersion}/webhooks.json`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Shopify-Access-Token': accessToken,
         },
-      }),
-    });
+        body: JSON.stringify({
+          webhook: { topic, address: webhookUrl, format: 'json' },
+        }),
+      });
 
-    if (!webhookResponse.ok) {
-      console.warn(`Failed to auto-register webhook for shop ${shop}.`, await webhookResponse.text());
+      if (!webhookResponse.ok) {
+        if (webhookResponse.status === 422) {
+          // 422 usually means the webhook address is already registered for this topic, so we can ignore it
+          console.log(`Webhook ${topic} already registered for ${shop}`);
+        } else {
+          console.warn(`Failed to auto-register ${topic} webhook for shop ${shop}.`, await webhookResponse.text());
+          allRegistered = false;
+        }
+      }
+    } catch (err) {
+      console.error(`Error registering ${topic} webhook for ${shop}:`, err);
+      allRegistered = false;
     }
-  } catch (err) {
-    console.error(`Error registering webhook for ${shop}:`, err);
+  }
+
+  // Update DB flag if successful
+  if (allRegistered) {
+    await query(`UPDATE store_integrations SET webhook_registered = true WHERE id = $1`, [storeId]);
   }
 
   // Redirect back to the dashboard with success
