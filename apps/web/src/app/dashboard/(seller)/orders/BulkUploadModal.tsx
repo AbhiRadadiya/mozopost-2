@@ -60,35 +60,35 @@ export function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () 
       
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-6xl max-h-[90vh] overflow-hidden flex flex-col animate-fade-up">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E8EF] shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#EADFC8] shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-[#0F172A] flex items-center gap-3">
+            <h2 className="text-xl font-bold text-[#2F3A22] flex items-center gap-3">
               Bulk Upload
-              <span className="px-2.5 py-1 bg-[#EEF2FF] text-[#4F46E5] text-[10px] font-bold uppercase tracking-widest rounded-full">
+              <span className="px-2.5 py-1 bg-[#EDF0E4] text-[#546B41] text-[10px] font-bold uppercase tracking-widest rounded-full">
                 CSV / EXCEL
               </span>
             </h2>
-            <p className="text-sm text-[#64748B] mt-1">Upload multiple orders at once using our template.</p>
+            <p className="text-sm text-[#8A9270] mt-1">Upload multiple orders at once using our template.</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#94A3B8] hover:bg-[#F4F6F9] transition-colors">
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8A9270] hover:bg-[#FFF8EC] transition-colors">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12" /></svg>
           </button>
         </div>
 
         {/* Scrollable Body */}
-        <div className="overflow-y-auto p-6 flex-1 bg-[#F8F9FB]">
+        <div className="overflow-y-auto p-6 flex-1 bg-[#FFF8EC]">
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6">
             {/* Left Column: Upload & Validation */}
             <div className="space-y-6">
-              <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden">
-                <div className="px-6 py-5 border-b border-[#E5E8EF] bg-white flex items-center justify-between">
-                  <h2 className="text-sm font-bold text-[#0F172A]">Upload Orders</h2>
+              <div className="bg-white rounded-2xl shadow-sm border border-[#EADFC8] overflow-hidden">
+                <div className="px-6 py-5 border-b border-[#EADFC8] bg-white flex items-center justify-between">
+                  <h2 className="text-sm font-bold text-[#2F3A22]">Upload Orders</h2>
                   <div className="flex gap-2">
-                    <button onClick={() => setValidated(true)} className="px-4 py-2 bg-[#4F46E5] text-white text-xs font-semibold rounded-lg hover:bg-[#4338CA] transition-colors shadow-sm flex items-center gap-1.5">
+                    <button onClick={() => setValidated(true)} className="px-4 py-2 bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] text-xs font-semibold rounded-lg hover:bg-[#E0E7CE] transition-colors shadow-sm flex items-center gap-1.5">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12" /></svg>
                       Validate
                     </button>
-                    <button className="px-4 py-2 bg-white border border-[#E5E8EF] text-[#475569] text-xs font-semibold rounded-lg hover:bg-[#F8F9FB] hover:text-[#0F172A] transition-colors shadow-sm flex items-center gap-1.5">
+                    <button className="px-4 py-2 bg-white border border-[#E2D4B8] text-[#6B7556] text-xs font-semibold rounded-lg hover:bg-[#FFF8EC] hover:text-[#2F3A22] transition-colors shadow-sm flex items-center gap-1.5">
                       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" /></svg>
                       Template
                     </button>
@@ -98,16 +98,16 @@ export function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () 
                 {!validated && (
                   <div className="p-6">
                     <div
-                      className={`border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer ${dragActive ? "border-[#4F46E5] bg-[#EEF2FF]" : "border-[#CBD5E1] bg-[#F8F9FB] hover:border-[#94A3B8] hover:bg-[#F1F3F7]"}`}
+                      className={`border-2 border-dashed rounded-xl p-12 text-center transition-all cursor-pointer ${dragActive ? "border-[#546B41] bg-[#EDF0E4]" : "border-[#E2D4B8] bg-[#FFF8EC] hover:border-[#CBD7B5] hover:bg-[#F6EEDB]"}`}
                       onDragOver={(e) => { e.preventDefault(); setDragActive(true); }}
                       onDragLeave={() => setDragActive(false)}
                       onDrop={(e) => { e.preventDefault(); setDragActive(false); setValidated(true); }}
                     >
-                      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mx-auto mb-4 border border-[#E5E8EF]">
-                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#4F46E5" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
+                      <div className="w-16 h-16 bg-white rounded-full flex items-center justify-center shadow-sm mx-auto mb-4 border border-[#EADFC8]">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#546B41" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="17 8 12 3 7 8" /><line x1="12" y1="3" x2="12" y2="15" /></svg>
                       </div>
-                      <h3 className="text-base font-bold text-[#0F172A] mb-1">Drop CSV / Excel here or click to upload</h3>
-                      <p className="text-sm text-[#64748B]">Max 500 rows per file. File must match the template format.</p>
+                      <h3 className="text-base font-bold text-[#2F3A22] mb-1">Drop CSV / Excel here or click to upload</h3>
+                      <p className="text-sm text-[#8A9270]">Max 500 rows per file. File must match the template format.</p>
                     </div>
                   </div>
                 )}
@@ -115,9 +115,9 @@ export function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () 
                 {validated && (
                   <div className="p-6 animate-fade-in">
                     <div className="grid grid-cols-3 gap-4 mb-6">
-                      <div className="bg-[#F8F9FB] p-4 rounded-xl border border-[#E5E8EF]">
-                        <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-1">Total Rows</div>
-                        <div className="text-2xl font-bold text-[#0F172A] font-mono">{SAMPLE_ROWS.length}</div>
+                      <div className="bg-[#FFF8EC] p-4 rounded-xl border border-[#EADFC8]">
+                        <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-1">Total Rows</div>
+                        <div className="text-2xl font-bold text-[#2F3A22] font-mono">{SAMPLE_ROWS.length}</div>
                       </div>
                       <div className="bg-[#F0FDF4] p-4 rounded-xl border border-[#BBF7D0]">
                         <div className="text-[10px] font-bold text-[#166534] uppercase tracking-widest mb-1">Valid Orders</div>
@@ -129,25 +129,25 @@ export function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () 
                       </div>
                     </div>
 
-                    <div className="border border-[#E5E8EF] rounded-xl overflow-hidden mb-6">
+                    <div className="border border-[#EADFC8] rounded-xl overflow-hidden mb-6">
                       <div className="overflow-x-auto">
                         <table className="w-full text-sm">
-                          <thead className="bg-[#F8F9FB] border-b border-[#E5E8EF]">
+                          <thead className="bg-[#FFF8EC] border-b border-[#EADFC8]">
                             <tr>
-                              <th className="px-4 py-3 text-left text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest w-12">#</th>
-                              <th className="px-4 py-3 text-left text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Order ID</th>
-                              <th className="px-4 py-3 text-left text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Name</th>
-                              <th className="px-4 py-3 text-left text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Pincode</th>
-                              <th className="px-4 py-3 text-left text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest">Status</th>
+                              <th className="px-4 py-3 text-left text-[10px] font-bold text-[#8A9270] uppercase tracking-widest w-12">#</th>
+                              <th className="px-4 py-3 text-left text-[10px] font-bold text-[#8A9270] uppercase tracking-widest">Order ID</th>
+                              <th className="px-4 py-3 text-left text-[10px] font-bold text-[#8A9270] uppercase tracking-widest">Name</th>
+                              <th className="px-4 py-3 text-left text-[10px] font-bold text-[#8A9270] uppercase tracking-widest">Pincode</th>
+                              <th className="px-4 py-3 text-left text-[10px] font-bold text-[#8A9270] uppercase tracking-widest">Status</th>
                             </tr>
                           </thead>
                           <tbody>
                             {SAMPLE_ROWS.map((r) => (
-                              <tr key={r.row} className={`border-b border-[#F1F3F7] last:border-0 ${r.status === "error" ? "bg-[#FEF2F2]" : "hover:bg-[#F8F9FB]"} transition-colors`}>
-                                <td className="px-4 py-3.5 font-mono text-xs text-[#64748B]">{r.row}</td>
-                                <td className="px-4 py-3.5 font-mono text-xs font-bold text-[#0F172A]">{r.orderId}</td>
-                                <td className="px-4 py-3.5 text-xs font-medium text-[#0F172A]">{r.name}</td>
-                                <td className="px-4 py-3.5 font-mono text-xs text-[#475569]">{r.pincode}</td>
+                              <tr key={r.row} className={`border-b border-[#F6EEDB] last:border-0 ${r.status === "error" ? "bg-[#FEF2F2]" : "hover:bg-[#FFF8EC]"} transition-colors`}>
+                                <td className="px-4 py-3.5 font-mono text-xs text-[#8A9270]">{r.row}</td>
+                                <td className="px-4 py-3.5 font-mono text-xs font-bold text-[#2F3A22]">{r.orderId}</td>
+                                <td className="px-4 py-3.5 text-xs font-medium text-[#2F3A22]">{r.name}</td>
+                                <td className="px-4 py-3.5 font-mono text-xs text-[#6B7556]">{r.pincode}</td>
                                 <td className="px-4 py-3.5">
                                   {r.status === "valid" ? (
                                     <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-[#D1FAE5] text-[#065F46]">✓ Valid</span>
@@ -171,32 +171,32 @@ export function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () 
 
             {/* Right Column: History & Actions */}
             <div className="space-y-6">
-              <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden">
-                <div className="px-6 py-5 border-b border-[#E5E8EF] bg-white">
-                  <h2 className="text-sm font-bold text-[#0F172A]">Upload History</h2>
+              <div className="bg-white rounded-2xl shadow-sm border border-[#EADFC8] overflow-hidden">
+                <div className="px-6 py-5 border-b border-[#EADFC8] bg-white">
+                  <h2 className="text-sm font-bold text-[#2F3A22]">Upload History</h2>
                 </div>
                 <div className="p-0">
                   <table className="w-full text-xs">
-                    <thead className="bg-[#F8F9FB] border-b border-[#E5E8EF]">
+                    <thead className="bg-[#FFF8EC] border-b border-[#EADFC8]">
                       <tr>
-                        <th className="px-4 py-3 text-left font-bold text-[#94A3B8] uppercase tracking-widest text-[9px]">Date</th>
-                        <th className="px-4 py-3 text-left font-bold text-[#94A3B8] uppercase tracking-widest text-[9px]">File</th>
-                        <th className="px-4 py-3 text-left font-bold text-[#94A3B8] uppercase tracking-widest text-[9px]">OK</th>
-                        <th className="px-4 py-3 text-left font-bold text-[#94A3B8] uppercase tracking-widest text-[9px]">Fail</th>
+                        <th className="px-4 py-3 text-left font-bold text-[#8A9270] uppercase tracking-widest text-[9px]">Date</th>
+                        <th className="px-4 py-3 text-left font-bold text-[#8A9270] uppercase tracking-widest text-[9px]">File</th>
+                        <th className="px-4 py-3 text-left font-bold text-[#8A9270] uppercase tracking-widest text-[9px]">OK</th>
+                        <th className="px-4 py-3 text-left font-bold text-[#8A9270] uppercase tracking-widest text-[9px]">Fail</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-[#F1F3F7]">
-                      <tr className="hover:bg-[#F8F9FB]">
-                        <td className="px-4 py-3 text-[#475569] font-medium whitespace-nowrap">01 Jun</td>
-                        <td className="px-4 py-3 font-mono text-[10px] text-[#0F172A] font-medium truncate max-w-[100px]">orders_jun1.csv</td>
+                    <tbody className="divide-y divide-[#F6EEDB]">
+                      <tr className="hover:bg-[#FFF8EC]">
+                        <td className="px-4 py-3 text-[#6B7556] font-medium whitespace-nowrap">01 Jun</td>
+                        <td className="px-4 py-3 font-mono text-[10px] text-[#2F3A22] font-medium truncate max-w-[100px]">orders_jun1.csv</td>
                         <td className="px-4 py-3"><span className="text-[#16A34A] font-mono font-bold">115</span></td>
                         <td className="px-4 py-3"><span className="text-[#EF4444] font-mono font-bold">5</span></td>
                       </tr>
-                      <tr className="hover:bg-[#F8F9FB]">
-                        <td className="px-4 py-3 text-[#475569] font-medium whitespace-nowrap">31 May</td>
-                        <td className="px-4 py-3 font-mono text-[10px] text-[#0F172A] font-medium truncate max-w-[100px]">bulk_may31.xlsx</td>
+                      <tr className="hover:bg-[#FFF8EC]">
+                        <td className="px-4 py-3 text-[#6B7556] font-medium whitespace-nowrap">31 May</td>
+                        <td className="px-4 py-3 font-mono text-[10px] text-[#2F3A22] font-medium truncate max-w-[100px]">bulk_may31.xlsx</td>
                         <td className="px-4 py-3"><span className="text-[#16A34A] font-mono font-bold">84</span></td>
-                        <td className="px-4 py-3"><span className="text-[#94A3B8] font-mono font-bold">0</span></td>
+                        <td className="px-4 py-3"><span className="text-[#8A9270] font-mono font-bold">0</span></td>
                       </tr>
                     </tbody>
                   </table>
@@ -207,12 +207,12 @@ export function BulkUploadModal({ open, onClose }: { open: boolean; onClose: () 
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#E5E8EF] bg-white flex justify-end gap-3 shrink-0">
-          <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-lg border border-[#E5E8EF] bg-white text-sm font-semibold text-[#475569] hover:bg-[#F4F6F9] transition-colors">
+        <div className="px-6 py-4 border-t border-[#EADFC8] bg-white flex justify-end gap-3 shrink-0">
+          <button type="button" onClick={onClose} className="px-5 py-2.5 rounded-lg border border-[#E2D4B8] bg-white text-sm font-semibold text-[#6B7556] hover:bg-[#FFF8EC] transition-colors">
             Close
           </button>
           {validated && (
-            <button className="px-5 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-lg hover:bg-[#4338CA] transition-colors shadow-sm">
+            <button className="px-5 py-2.5 bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] text-sm font-semibold rounded-lg hover:bg-[#E0E7CE] transition-colors shadow-sm">
               Process {SAMPLE_ROWS.filter((r) => r.status === "valid").length} valid orders
             </button>
           )}

@@ -175,87 +175,109 @@ export default function NdrPage() {
           <p className="text-xs text-[#8A9270]">All your deliveries are on track. Great job!</p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {records.map((n) => {
-            const isCritical = n.attempt_number >= 3;
-            const isSelected = selected.includes(n.id);
+        <div className="bg-white border border-[#EADFC8] rounded-xl overflow-hidden shadow-sm mt-4">
+          {/* Grid Table Header */}
+          <div className="grid grid-cols-[34px_1.2fr_1.6fr_0.9fr_1.5fr_1.4fr_1.3fr_1fr] gap-3 px-4 py-3 bg-[#F6EEDB] text-[11px] font-semibold text-[#8A9270] uppercase tracking-wider items-center border-b border-[#EADFC8]">
+            <div>
+              <input
+                type="checkbox"
+                checked={selected.length === records.length && records.length > 0}
+                onChange={() => setSelected(p => p.length === records.length ? [] : records.map(n => n.id))}
+                className="w-4 h-4 rounded border-[#E2D4B8] accent-[#546B41] cursor-pointer"
+              />
+            </div>
+            <div>Order ID</div>
+            <div>Product</div>
+            <div>Payment</div>
+            <div>Failure Reason</div>
+            <div>Status</div>
+            <div>Customer</div>
+            <div>Attempts</div>
+          </div>
 
-            return (
-              <div
-                key={n.id}
-                className={`bg-white rounded-xl border transition-colors shadow-sm overflow-hidden flex flex-col ${
-                  isSelected ? 'border-[#546B41] bg-[#FFF8EC]' : 'border-[#EADFC8] hover:border-[#CBD7B5]'
-                }`}
-              >
-                {/* Card Header */}
-                <div className={`px-4 py-3 border-b ${isCritical ? 'bg-[#F1E2D8] border-[#DDBBA8]' : 'bg-[#EDF0E4] border-[#CBD7B5]'} flex items-center justify-between`}>
-                  <div className="flex items-center gap-2.5">
+          <div className="divide-y divide-[#F6EEDB]">
+            {records.map((n) => {
+              const isCritical = n.attempt_number >= 3;
+              const isSelected = selected.includes(n.id);
+              
+              return (
+                <div
+                  key={n.id}
+                  className={`grid grid-cols-[34px_1.2fr_1.6fr_0.9fr_1.5fr_1.4fr_1.3fr_1fr] gap-3 px-4 py-4 text-xs items-start transition-colors ${
+                    isSelected ? 'bg-[#FFF8EC]' : 'hover:bg-[#FFF8EC]/50'
+                  }`}
+                >
+                  <div>
                     <input
                       type="checkbox"
                       checked={isSelected}
                       onChange={() => toggleSelect(n.id)}
-                      className="w-4 h-4 rounded border-[#E2D4B8] accent-[#546B41] cursor-pointer"
+                      className="w-4 h-4 rounded border-[#E2D4B8] accent-[#546B41] cursor-pointer mt-0.5"
                     />
-                    <div>
-                      <div className={`font-mono-nb text-xs font-bold ${isCritical ? 'text-[#B4623F]' : 'text-[#546B41]'}`}>
-                        #{n.mozopost_order_id}
-                      </div>
-                      <div className="text-[11px] text-[#8A9270] mt-0.5 font-mono-nb">
-                        {n.courier_name || 'DELHIVERY'} · Attempt {n.attempt_number}/3
-                      </div>
+                  </div>
+                  <div>
+                    <div className="font-mono-nb font-semibold text-[#2F3A22] text-xs">#{n.mozopost_order_id}</div>
+                    <div className="text-[11px] text-[#8A9270] mt-1 font-mono-nb">
+                      {new Date(n.created_at).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
                     </div>
                   </div>
-                  <span className={`inline-block px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono-nb border ${isCritical ? 'bg-[#F1E2D8] text-[#B4623F] border-[#DDBBA8]' : 'bg-[#FFF8EC] text-[#546B41] border-[#E2D4B8]'}`}>
+                  <div className="flex gap-2.5">
+                    <div className="w-9 h-9 rounded-md bg-[#F6EEDB] border border-[#E2D4B8] shrink-0" style={{ backgroundImage: 'repeating-linear-gradient(45deg, #EADFC8 0 4px, transparent 4px 8px)' }}></div>
+                    <div className="text-[11px] text-[#2F3A22] leading-snug">
+                      {n.consignee_name}&apos;s Item
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-mono-nb text-[#2F3A22]">₹{parseFloat(n.total_freight || n.cod_amount || 0).toFixed(0)}</div>
+                    <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded border bg-[#F3ECD8] text-[#A9842E] border-[#DEC98F]">
+                      {n.payment_mode?.toUpperCase() || 'COD'}
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-[#6B7556] leading-snug">
                     {REASON_LABELS[n.ndr_reason] || n.ndr_reason || 'Customer not contactable'}
-                  </span>
-                </div>
-
-                {/* Card Body */}
-                <div className="p-4 flex-1 flex flex-col justify-between space-y-4">
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <div className="text-xs font-bold text-[#2F3A22]">{n.consignee_name}</div>
-                      <div className="text-[11px] text-[#8A9270] font-mono-nb mt-0.5">{n.consignee_phone}</div>
-                      <div className="text-[11px] text-[#8A9270] mt-0.5">{n.consignee_city}, {n.consignee_state}</div>
+                  </div>
+                  <div>
+                    <span className={`inline-block text-[10px] font-semibold font-mono-nb px-2 py-0.5 rounded-full border ${isCritical ? 'bg-[#F1E2D8] text-[#B4623F] border-[#DDBBA8]' : 'bg-[#EDF0E4] text-[#546B41] border-[#CBD7B5]'}`}>
+                      {n.status || 'NDR'}
+                    </span>
+                    <div className="text-[11px] text-[#8A9270] font-mono-nb mt-1.5">
+                      {n.courier_name || 'DELHIVERY'}
+                    </div>
+                    <div className="text-[11px] text-[#546B41] font-mono-nb mt-0.5 font-medium">
+                      {n.awb_number || 'DL5566120934'}
                     </div>
                   </div>
-
-                  {isCritical && (
-                    <div className="p-2.5 rounded-lg bg-[#F1E2D8] border border-[#DDBBA8] text-[11px] font-medium text-[#B4623F]">
-                      Max attempts reached. You must initiate RTO.
+                  <div>
+                    <div className="font-semibold text-[#2F3A22]">{n.consignee_name}</div>
+                    <div className="text-[11px] text-[#8A9270] font-mono-nb mt-0.5">{n.consignee_phone}</div>
+                  </div>
+                  <div>
+                    <div className="text-[11px] text-[#8A9270]">
+                      Attempts: <span className="text-[#2F3A22] font-mono-nb font-medium">{n.attempt_number}</span>
                     </div>
-                  )}
-
-                  {/* Actions */}
-                  <div className="flex items-center gap-2 pt-2 border-t border-[#F6EEDB]">
-                    {n.attempt_number < 3 && (
+                    <div className="mt-1.5 flex gap-1.5 flex-col w-24">
+                      {n.attempt_number < 3 && (
+                        <button
+                          disabled={actionId === n.order_id}
+                          onClick={() => takeAction(n.order_id, 'reattempt')}
+                          className="w-full text-[10px] text-[#A9842E] bg-[#F3ECD8] border border-[#DEC98F] rounded py-1 font-semibold hover:bg-[#E8DFC6] transition-colors disabled:opacity-50 cursor-pointer text-center"
+                        >
+                          Re-attempt
+                        </button>
+                      )}
                       <button
                         disabled={actionId === n.order_id}
-                        onClick={() => takeAction(n.order_id, 'reattempt')}
-                        className="flex-1 bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] text-xs font-semibold py-1.5 rounded-lg hover:bg-[#E0E7CE] transition-colors disabled:opacity-50 cursor-pointer"
+                        onClick={() => takeAction(n.order_id, 'rto')}
+                        className="w-full text-[10px] text-[#B4623F] bg-[#F1E2D8] border border-[#DDBBA8] rounded py-1 font-semibold hover:bg-[#E8D4C7] transition-colors disabled:opacity-50 cursor-pointer text-center"
                       >
-                        Re-attempt
+                        Mark RTO
                       </button>
-                    )}
-                    <button
-                      disabled={actionId === n.order_id}
-                      onClick={() => takeAction(n.order_id, 'update_address')}
-                      className="flex-1 bg-white border border-[#E2D4B8] text-[#2F3A22] text-xs font-semibold py-1.5 rounded-lg hover:border-[#D8CBAE] transition-colors disabled:opacity-50 cursor-pointer"
-                    >
-                      Update Address
-                    </button>
-                    <button
-                      disabled={actionId === n.order_id}
-                      onClick={() => takeAction(n.order_id, 'rto')}
-                      className="bg-[#F1E2D8] border border-[#DDBBA8] text-[#B4623F] text-xs font-semibold px-3 py-1.5 rounded-lg hover:bg-[#E8D4C7] transition-colors disabled:opacity-50 cursor-pointer"
-                    >
-                      Mark RTO
-                    </button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
       )}
     </div>

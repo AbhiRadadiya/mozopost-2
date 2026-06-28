@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { api, apiErrorMessage } from '@/lib/api';
 import { Btn, Card, CardHead, StatCard, Badge } from '@/components/ui';
-import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, Line } from 'recharts';
+import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ComposedChart, Line, PieChart, Pie } from 'recharts';
 
 /* ── Status badge mapping ────────────────────────────────── */
 const STATUS_MAP: Record<string, { label: string; classes: string }> = {
@@ -122,33 +122,56 @@ export default function DashboardHome() {
         { n: 7, state: 'Telangana', share: '1.80%', del: '9.09%', rto: '59.09%' },
       ];
 
-  // Prepare dynamic donut data
-  const paymentDonutItems = analytics?.byPaymentMode?.length
-    ? analytics.byPaymentMode.map((p: any) => ({ label: p.label.toUpperCase(), value: p.value, color: p.label.toLowerCase() === 'cod' ? '#546B41' : '#7E8C5A' }))
-    : [{ label: 'COD', value: 1219, color: '#546B41' }];
+  // Palette helper for dynamic payment modes
+  const PAYMENT_COLORS: Record<string, string> = {
+    COD: '#546B41',        // Olive Green
+    PREPAID: '#2563EB',    // Vibrant Blue
+    UPI: '#7C3AED',        // Royal Purple
+    CARD: '#D97706',       // Warm Amber
+    NET_BANKING: '#059669',// Emerald
+    WALLET: '#E11D48',     // Rose Red
+  };
+  const FALLBACK_PALETTE = ['#546B41', '#2563EB', '#7C3AED', '#D97706', '#059669', '#E11D48', '#0891B2'];
 
-  const confirmationDonutItems = [{ label: 'CONFIRMED', value: stats?.total || 1219, color: '#546B41' }];
+  // Prepare dynamic donut data with distinct readable colors
+  const paymentDonutItems = analytics?.byPaymentMode?.length
+    ? analytics.byPaymentMode.map((p: any, idx: number) => {
+        const key = String(p.label).toUpperCase();
+        return {
+          label: key,
+          value: Number(p.value),
+          color: PAYMENT_COLORS[key] || FALLBACK_PALETTE[idx % FALLBACK_PALETTE.length],
+        };
+      })
+    : [];
+
+  const totalConfirmed = stats?.total ? Number(stats.total) : 0;
+  const confirmationDonutItems = totalConfirmed > 0
+    ? [{ label: 'CONFIRMED', value: totalConfirmed, color: '#546B41' }]
+    : [];
 
   const statusDonutColors: Record<string, string> = {
-    DELIVERED: '#546B41',
-    OUT_FOR_DELIVERY: '#6F7E50',
-    RTO: '#A9842E',
-    RTO_INITIATED: '#8FA06A',
-    SHIPPED: '#3C4E2D',
-    UNDELIVERED: '#D8CBAE',
-    BOOKED: '#7E8C5A',
+    DELIVERED: '#16A34A',        // Green
+    OUT_FOR_DELIVERY: '#2563EB', // Blue
+    SHIPPED: '#0891B2',          // Cyan / Teal
+    BOOKED: '#7C3AED',           // Purple
+    UNDELIVERED: '#D97706',      // Amber
+    RTO_INITIATED: '#EA580C',   // Orange
+    RTO: '#DC2626',              // Red
+    CANCELLED: '#64748B',        // Slate
+    FAILED: '#991B1B',           // Dark Red
   };
 
   const statusDonutItems = analytics?.byStatus?.length
-    ? analytics.byStatus.map((s: any) => ({ label: s.label, value: s.value, color: statusDonutColors[s.label] || '#546B41' }))
-    : [
-        { label: 'DELIVERED', value: 125, color: '#546B41' },
-        { label: 'OUT_FOR_DELIVERY', value: 125, color: '#6F7E50' },
-        { label: 'RTO', value: 22, color: '#A9842E' },
-        { label: 'RTO_INITIATED', value: 588, color: '#8FA06A' },
-        { label: 'SHIPPED', value: 239, color: '#3C4E2D' },
-        { label: 'UNDELIVERED', value: 120, color: '#D8CBAE' },
-      ];
+    ? analytics.byStatus.map((s: any, idx: number) => {
+        const key = String(s.label).toUpperCase();
+        return {
+          label: key,
+          value: Number(s.value),
+          color: statusDonutColors[key] || FALLBACK_PALETTE[idx % FALLBACK_PALETTE.length],
+        };
+      })
+    : [];
 
   return (
     <div className="space-y-6 animate-fade-up">
@@ -351,16 +374,42 @@ export default function DashboardHome() {
         <div style={{ background: '#FFFFFF', border: '1px solid #E2D4B8', borderRadius: '12px', padding: '20px' }}>
           <div style={{ fontSize: '15px', fontWeight: 600, color: '#2F3A22' }}>Orders by Payment Mode</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginTop: '18px' }}>
-            <div style={{ width: '148px', height: '148px', borderRadius: '50%', background: computeConicGradient(paymentDonutItems), flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: '90px', height: '90px', borderRadius: '50%', background: '#FFFFFF' }}></div>
+            <div style={{ width: '148px', height: '148px', flexShrink: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={paymentDonutItems.length ? paymentDonutItems : [{ label: 'NO DATA', value: 1, color: '#EADFC8' }]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={38}
+                    outerRadius={62}
+                    paddingAngle={paymentDonutItems.length > 1 ? 3 : 0}
+                    dataKey="value"
+                    nameKey="label"
+                    stroke="none"
+                  >
+                    {(paymentDonutItems.length ? paymentDonutItems : [{ label: 'NO DATA', value: 1, color: '#EADFC8' }]).map((entry: any, i: number) => (
+                      <Cell key={`cell-pay-${i}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(val: any) => [val, 'Orders']}
+                    contentStyle={{ background: '#FFF8EC', borderRadius: '8px', border: '1px solid #EADFC8', fontSize: '12px', fontWeight: 600, color: '#2F3A22' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
-              {paymentDonutItems.map((g: any, i: number) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#6B7556' }}>
-                  <span style={{ width: '11px', height: '11px', borderRadius: '3px', background: g.color, flexShrink: 0 }}></span>
-                  <span style={{ whiteSpace: 'nowrap' }}>{g.label} <span style={{ color: '#8A9270', fontFamily: "'IBM Plex Mono', monospace" }}>({g.value})</span></span>
-                </div>
-              ))}
+              {paymentDonutItems.length === 0 ? (
+                <div style={{ fontSize: '12px', color: '#8A9270' }}>No payment data found</div>
+              ) : (
+                paymentDonutItems.map((g: any, i: number) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#6B7556' }}>
+                    <span style={{ width: '11px', height: '11px', borderRadius: '3px', background: g.color, flexShrink: 0 }}></span>
+                    <span style={{ whiteSpace: 'nowrap' }}>{g.label} <span style={{ color: '#8A9270', fontFamily: "'IBM Plex Mono', monospace" }}>({g.value})</span></span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -369,16 +418,42 @@ export default function DashboardHome() {
         <div style={{ background: '#FFFFFF', border: '1px solid #E2D4B8', borderRadius: '12px', padding: '20px' }}>
           <div style={{ fontSize: '15px', fontWeight: 600, color: '#2F3A22' }}>Orders by Confirmation Status</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginTop: '18px' }}>
-            <div style={{ width: '148px', height: '148px', borderRadius: '50%', background: computeConicGradient(confirmationDonutItems), flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: '90px', height: '90px', borderRadius: '50%', background: '#FFFFFF' }}></div>
+            <div style={{ width: '148px', height: '148px', flexShrink: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={confirmationDonutItems.length ? confirmationDonutItems : [{ label: 'NO DATA', value: 1, color: '#EADFC8' }]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={38}
+                    outerRadius={62}
+                    paddingAngle={0}
+                    dataKey="value"
+                    nameKey="label"
+                    stroke="none"
+                  >
+                    {(confirmationDonutItems.length ? confirmationDonutItems : [{ label: 'NO DATA', value: 1, color: '#EADFC8' }]).map((entry: any, i: number) => (
+                      <Cell key={`cell-conf-${i}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(val: any) => [val, 'Orders']}
+                    contentStyle={{ background: '#FFF8EC', borderRadius: '8px', border: '1px solid #EADFC8', fontSize: '12px', fontWeight: 600, color: '#2F3A22' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
-              {confirmationDonutItems.map((g: any, i: number) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#6B7556' }}>
-                  <span style={{ width: '11px', height: '11px', borderRadius: '3px', background: g.color, flexShrink: 0 }}></span>
-                  <span style={{ whiteSpace: 'nowrap' }}>{g.label} <span style={{ color: '#8A9270', fontFamily: "'IBM Plex Mono', monospace" }}>({g.value})</span></span>
-                </div>
-              ))}
+              {confirmationDonutItems.length === 0 ? (
+                <div style={{ fontSize: '12px', color: '#8A9270' }}>No confirmation data found</div>
+              ) : (
+                confirmationDonutItems.map((g: any, i: number) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '12px', color: '#6B7556' }}>
+                    <span style={{ width: '11px', height: '11px', borderRadius: '3px', background: g.color, flexShrink: 0 }}></span>
+                    <span style={{ whiteSpace: 'nowrap' }}>{g.label} <span style={{ color: '#8A9270', fontFamily: "'IBM Plex Mono', monospace" }}>({g.value})</span></span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
@@ -387,16 +462,42 @@ export default function DashboardHome() {
         <div style={{ background: '#FFFFFF', border: '1px solid #E2D4B8', borderRadius: '12px', padding: '20px' }}>
           <div style={{ fontSize: '15px', fontWeight: 600, color: '#2F3A22' }}>Confirmed Orders by Order Status</div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '18px', marginTop: '18px' }}>
-            <div style={{ width: '148px', height: '148px', borderRadius: '50%', background: computeConicGradient(statusDonutItems), flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <div style={{ width: '90px', height: '90px', borderRadius: '50%', background: '#FFFFFF' }}></div>
+            <div style={{ width: '148px', height: '148px', flexShrink: 0 }}>
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statusDonutItems.length ? statusDonutItems : [{ label: 'NO DATA', value: 1, color: '#EADFC8' }]}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={38}
+                    outerRadius={62}
+                    paddingAngle={statusDonutItems.length > 1 ? 3 : 0}
+                    dataKey="value"
+                    nameKey="label"
+                    stroke="none"
+                  >
+                    {(statusDonutItems.length ? statusDonutItems : [{ label: 'NO DATA', value: 1, color: '#EADFC8' }]).map((entry: any, i: number) => (
+                      <Cell key={`cell-stat-${i}`} fill={entry.color} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    formatter={(val: any) => [val, 'Orders']}
+                    contentStyle={{ background: '#FFF8EC', borderRadius: '8px', border: '1px solid #EADFC8', fontSize: '12px', fontWeight: 600, color: '#2F3A22' }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
             </div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', minWidth: 0 }}>
-              {statusDonutItems.map((g: any, i: number) => (
-                <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#6B7556' }}>
-                  <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: g.color, flexShrink: 0 }}></span>
-                  <span style={{ whiteSpace: 'nowrap' }}>{g.label} <span style={{ color: '#8A9270', fontFamily: "'IBM Plex Mono', monospace" }}>({g.value})</span></span>
-                </div>
-              ))}
+              {statusDonutItems.length === 0 ? (
+                <div style={{ fontSize: '12px', color: '#8A9270' }}>No status data found</div>
+              ) : (
+                statusDonutItems.map((g: any, i: number) => (
+                  <div key={i} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', color: '#6B7556' }}>
+                    <span style={{ width: '10px', height: '10px', borderRadius: '3px', background: g.color, flexShrink: 0 }}></span>
+                    <span style={{ whiteSpace: 'nowrap' }}>{g.label} <span style={{ color: '#8A9270', fontFamily: "'IBM Plex Mono', monospace" }}>({g.value})</span></span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>

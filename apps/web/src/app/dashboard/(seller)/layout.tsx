@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import { useAuthStore } from "@/store/auth";
+import { AddMoneyModal } from "@/components/AddMoneyModal";
 
 /* ── Nav Structure ───────────────────────────────────────── */
 const NAV_GROUPS = [
@@ -140,6 +141,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const { user, loading, fetchMe, logout } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
+  const [walletModalOpen, setWalletModalOpen] = useState(false);
 
   useEffect(() => {
     fetchMe();
@@ -149,6 +151,12 @@ export default function DashboardLayout({
     if (!loading && user && user.role !== "seller")
       router.replace("/dashboard/admin");
   }, [loading, user, router]);
+
+  useEffect(() => {
+    const handleOpen = () => setWalletModalOpen(true);
+    window.addEventListener("openWalletModal", handleOpen);
+    return () => window.removeEventListener("openWalletModal", handleOpen);
+  }, []);
 
   if (loading || !user) {
     return (
@@ -339,17 +347,17 @@ export default function DashboardLayout({
           </div>
           <div className="flex items-center gap-3.5">
             {/* Wallet Quick Pill */}
-            <Link
-              href="/dashboard/wallet"
-              className="flex items-center gap-2 bg-[#F1E2D8] border border-[#DDBBA8] rounded-full pl-3 pr-1.5 py-1 text-xs hover:bg-[#EADFC8] transition-colors"
+            <button
+              onClick={() => setWalletModalOpen(true)}
+              className="flex items-center gap-3 bg-[#F1E3D9] border border-[#D4A895] rounded-full pl-4 pr-1.5 py-1.5 hover:bg-[#E8D4C8] transition-colors cursor-pointer"
             >
-              <span className="font-mono-nb font-bold text-[#B4623F]">
-                ₹{user.walletBalance?.toLocaleString("en-IN") ?? 0}
+              <span className="font-mono-nb font-medium text-sm text-[#AE5A3E] tracking-tight">
+                ₹ {user.walletBalance! < 0 ? "-" : ""}{Math.abs(user.walletBalance ?? 0).toLocaleString("en-IN")}
               </span>
-              <span className="w-5.5 h-5.5 rounded-full bg-[#B4623F] text-white flex items-center justify-center text-xs font-bold">
+              <span className="w-7 h-7 rounded-full bg-[#AE5A3E] text-white flex items-center justify-center text-lg font-medium leading-none pb-0.5">
                 +
               </span>
-            </Link>
+            </button>
 
             {/* Notification bell */}
             <button className="w-8.5 h-8.5 rounded-lg flex items-center justify-center text-[#6B7556] bg-white border border-[#E2D4B8] hover:border-[#D8CBAE] transition-colors relative">
@@ -391,6 +399,12 @@ export default function DashboardLayout({
         {/* ── Page content ── */}
         <div className="flex-1 p-6">{children}</div>
       </main>
+
+      {/* ── Modals ── */}
+      <AddMoneyModal 
+        open={walletModalOpen} 
+        onClose={() => setWalletModalOpen(false)} 
+      />
     </div>
   );
 }

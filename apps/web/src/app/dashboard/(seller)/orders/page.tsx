@@ -75,11 +75,11 @@ function ProInput(props: React.InputHTMLAttributes<HTMLInputElement> & { label: 
   const { label, required, ...rest } = props;
   return (
     <div>
-      <label className="block text-xs font-semibold text-[#475569] mb-1.5" style={{ letterSpacing: '0.03em' }}>
+      <label className="block text-xs font-semibold text-[#6B7556] mb-1.5" style={{ letterSpacing: '0.03em' }}>
         {label}{required && <span className="text-[#EF4444] ml-0.5">*</span>}
       </label>
       <input {...rest}
-        className="w-full border border-[#E5E8EF] rounded-lg px-3 py-2.5 text-sm text-[#0F172A] bg-white outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 placeholder:text-[#CBD5E1]"
+        className="w-full border border-[#E2D4B8] rounded-lg px-3 py-2.5 text-sm text-[#2F3A22] bg-white outline-none transition-all focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 placeholder:text-[#B3B596]"
       />
     </div>
   );
@@ -87,11 +87,11 @@ function ProInput(props: React.InputHTMLAttributes<HTMLInputElement> & { label: 
 function ProSelect({ label, required, children, ...rest }: React.SelectHTMLAttributes<HTMLSelectElement> & { label: string; required?: boolean }) {
   return (
     <div>
-      <label className="block text-xs font-semibold text-[#475569] mb-1.5" style={{ letterSpacing: '0.03em' }}>
+      <label className="block text-xs font-semibold text-[#6B7556] mb-1.5" style={{ letterSpacing: '0.03em' }}>
         {label}{required && <span className="text-[#EF4444] ml-0.5">*</span>}
       </label>
       <select {...rest}
-        className="w-full border border-[#E5E8EF] rounded-lg px-3 py-2.5 text-sm text-[#0F172A] bg-white outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
+        className="w-full border border-[#E2D4B8] rounded-lg px-3 py-2.5 text-sm text-[#2F3A22] bg-white outline-none transition-all focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
       >
         {children}
       </select>
@@ -133,16 +133,16 @@ function ShipModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-up">
+      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-up border border-[#EADFC8]">
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E8EF]">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#EADFC8]">
           <div>
-            <h2 className="text-base font-bold text-[#0F172A]">Schedule Pickup</h2>
-            <p className="text-xs text-[#94A3B8] mt-0.5">
+            <h2 className="text-base font-bold text-[#2F3A22]">Schedule Pickup</h2>
+            <p className="text-xs text-[#8A9270] mt-0.5">
               {orderIds.length} order{orderIds.length > 1 ? 's' : ''} will be included
             </p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#94A3B8] hover:bg-[#F4F6F9] transition-colors">
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8A9270] hover:bg-[#FFF8EC] hover:text-[#546B41] transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12" /></svg>
           </button>
         </div>
@@ -150,28 +150,28 @@ function ShipModal({
         {/* Body */}
         <div className="p-6 space-y-4">
           {/* Package summary */}
-          <div className="flex items-center gap-3 p-4 rounded-xl bg-[#EEF2FF] border border-[#C7D2FE]">
-            <div className="w-10 h-10 rounded-xl bg-[#4F46E5] flex items-center justify-center text-white shrink-0">
+          <div className="flex items-center gap-3 p-4 rounded-xl bg-[#FFF8EC] border border-[#E2D4B8]">
+            <div className="w-10 h-10 rounded-xl bg-[#EDF0E4] border border-[#CBD7B5] flex items-center justify-center text-[#546B41] shrink-0">
               <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75">
                 <path d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </div>
             <div>
-              <div className="text-sm font-bold text-[#4338CA]">{orderIds.length} Package{orderIds.length > 1 ? 's' : ''}</div>
-              <div className="text-xs text-[#6366F1]">Ready for pickup scheduling</div>
+              <div className="text-sm font-bold text-[#2F3A22]">{orderIds.length} Package{orderIds.length > 1 ? 's' : ''}</div>
+              <div className="text-xs text-[#6B7556]">Ready for pickup scheduling</div>
             </div>
           </div>
 
           {/* Pickup date and Courier */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-[#475569] mb-1.5">Pickup Date</label>
+              <label className="block text-xs font-semibold text-[#6B7556] mb-1.5">Pickup Date</label>
               <input
                 type="date"
                 value={pickupDate}
                 min={today}
                 onChange={e => setPickupDate(e.target.value)}
-                className="w-full border border-[#E5E8EF] rounded-lg px-3 py-2.5 text-sm text-[#0F172A] bg-white outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
+                className="w-full border border-[#E2D4B8] rounded-lg px-3 py-2.5 text-sm text-[#2F3A22] bg-white outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
               />
             </div>
             <ProSelect label="Courier Partner" value={courierId} onChange={e => setCourierId(e.target.value)}>
@@ -195,14 +195,14 @@ function ShipModal({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 px-6 py-4 border-t border-[#E5E8EF] bg-[#F8F9FB] rounded-b-2xl">
-          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-[#E5E8EF] bg-white text-sm font-semibold text-[#475569] hover:bg-[#F4F6F9] transition-colors">
+        <div className="flex gap-3 px-6 py-4 border-t border-[#EADFC8] bg-[#FFF8EC] rounded-b-2xl">
+          <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-[#E2D4B8] bg-white text-sm font-semibold text-[#6B7556] hover:bg-[#F9FAFC] transition-colors">
             Cancel
           </button>
           <button
             onClick={handleShip}
             disabled={submitting}
-            className="flex-1 py-2.5 rounded-xl bg-[#4F46E5] text-sm font-semibold text-white hover:bg-[#4338CA] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+            className="flex-1 py-2.5 rounded-xl bg-[#EDF0E4] border border-[#CBD7B5] text-sm font-semibold text-[#546B41] hover:bg-[#E0E7CE] transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
           >
             {submitting ? (
               <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.25" /><path d="M12 2a10 10 0 0110 10" /></svg>
@@ -282,14 +282,14 @@ function AddOrderDrawer({ open, onClose, onSuccess, couriers }: {
   return (
     <>
       <div className={`fixed inset-0 z-40 bg-black/30 backdrop-blur-sm transition-opacity duration-300 ${open ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`} onClick={onClose} />
-      <div className={`fixed right-0 top-0 z-50 h-full w-full max-w-2xl bg-white shadow-2xl transition-transform duration-300 ease-out flex flex-col ${open ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className={`fixed right-0 top-0 z-50 h-full w-full max-w-2xl bg-[#FAFAFA] shadow-2xl transition-transform duration-300 ease-out flex flex-col ${open ? 'translate-x-0' : 'translate-x-full'}`}>
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#E5E8EF] bg-white shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 border-b border-[#EADFC8] bg-white shrink-0">
           <div>
-            <h2 className="text-base font-bold text-[#0F172A]">Create New Order</h2>
-            <p className="text-xs text-[#94A3B8] mt-0.5">Fill in the shipment details below</p>
+            <h2 className="text-base font-bold text-[#2F3A22]">Create New Order</h2>
+            <p className="text-xs text-[#8A9270] mt-0.5">Fill in the shipment details below</p>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#94A3B8] hover:bg-[#F4F6F9] hover:text-[#475569] transition-colors">
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8A9270] hover:bg-[#FFF8EC] hover:text-[#546B41] transition-colors">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12" /></svg>
           </button>
         </div>
@@ -297,19 +297,19 @@ function AddOrderDrawer({ open, onClose, onSuccess, couriers }: {
         {/* Scrollable body */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
           {/* Step 1 */}
-          <div>
+          <div className="bg-white p-5 rounded-xl border border-[#EADFC8]">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 rounded-full bg-[#4F46E5] flex items-center justify-center text-white text-xs font-bold">1</div>
-              <h3 className="text-sm font-bold text-[#0F172A]">Customer & Address</h3>
+              <div className="w-6 h-6 rounded-full bg-[#EDF0E4] border border-[#CBD7B5] flex items-center justify-center text-[#546B41] text-xs font-bold">1</div>
+              <h3 className="text-sm font-bold text-[#2F3A22]">Customer & Address</h3>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <ProInput label="Full Name" required placeholder="Rahul Sharma" value={form.consigneeName} onChange={e => set('consigneeName', e.target.value)} />
               <ProInput label="Mobile Number" required placeholder="9876543210" maxLength={10} value={form.consigneePhone} onChange={e => set('consigneePhone', e.target.value.replace(/\D/g, ''))} />
             </div>
             <div className="mt-4">
-              <label className="block text-xs font-semibold text-[#475569] mb-1.5">Delivery Address <span className="text-[#EF4444]">*</span></label>
+              <label className="block text-xs font-semibold text-[#6B7556] mb-1.5">Delivery Address <span className="text-[#EF4444]">*</span></label>
               <textarea rows={2} placeholder="House No, Street, Locality..."
-                className="w-full border border-[#E5E8EF] rounded-lg px-3 py-2.5 text-sm text-[#0F172A] bg-white outline-none resize-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 placeholder:text-[#CBD5E1]"
+                className="w-full border border-[#E2D4B8] rounded-lg px-3 py-2.5 text-sm text-[#2F3A22] bg-white outline-none resize-none transition-all focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 placeholder:text-[#B3B596]"
                 value={form.consigneeAddress1} onChange={e => set('consigneeAddress1', e.target.value)} />
             </div>
             <div className="grid grid-cols-3 gap-4 mt-4">
@@ -321,18 +321,18 @@ function AddOrderDrawer({ open, onClose, onSuccess, couriers }: {
 
           {/* Fraud */}
           {(checking || fraud) && (
-            <div className={`rounded-xl border p-4 ${band ? 'border-current/20' : 'border-[#E5E8EF]'} bg-[#F8F9FB]`}>
+            <div className={`rounded-xl border p-4 ${band ? 'border-current/20' : 'border-[#EADFC8]'} bg-white`}>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={band?.ring || '#94A3B8'} strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
-                  <span className="text-xs font-semibold text-[#475569]">Risk Check</span>
-                  {checking && <span className="text-[10px] text-[#94A3B8] animate-pulse-soft">Checking...</span>}
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke={band?.ring || '#8A9270'} strokeWidth="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>
+                  <span className="text-xs font-semibold text-[#6B7556]">Risk Check</span>
+                  {checking && <span className="text-[10px] text-[#8A9270] animate-pulse-soft">Checking...</span>}
                 </div>
                 {fraud && (
                   <div className="flex items-center gap-2">
                     <span className="font-mono-nb text-lg font-bold" style={{ color: band?.ring }}>{fraud.score}</span>
-                    <span className="text-[10px] text-[#94A3B8]">/100</span>
-                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full" style={{ background: `${band?.ring}20`, color: band?.text }}>{band?.label}</span>
+                    <span className="text-[10px] text-[#8A9270]">/100</span>
+                    <span className="text-xs font-semibold px-2 py-0.5 rounded-full border" style={{ borderColor: band?.ring, background: `${band?.ring}10`, color: band?.text }}>{band?.label}</span>
                   </div>
                 )}
               </div>
@@ -341,7 +341,7 @@ function AddOrderDrawer({ open, onClose, onSuccess, couriers }: {
                   {fraud.flags.map((f, i) => (
                     <div key={i} className="flex items-start gap-2 text-xs">
                       <span className={`mt-0.5 w-1.5 h-1.5 rounded-full shrink-0 ${f.type === 'error' ? 'bg-[#EF4444]' : 'bg-[#F59E0B]'}`} />
-                      <span className="text-[#475569]">{f.message}</span>
+                      <span className="text-[#6B7556]">{f.message}</span>
                     </div>
                   ))}
                 </div>
@@ -350,17 +350,17 @@ function AddOrderDrawer({ open, onClose, onSuccess, couriers }: {
           )}
 
           {/* Step 2 */}
-          <div>
+          <div className="bg-white p-5 rounded-xl border border-[#EADFC8]">
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-6 h-6 rounded-full bg-[#4F46E5] flex items-center justify-center text-white text-xs font-bold">2</div>
-              <h3 className="text-sm font-bold text-[#0F172A]">Package & Payment</h3>
+              <div className="w-6 h-6 rounded-full bg-[#EDF0E4] border border-[#CBD7B5] flex items-center justify-center text-[#546B41] text-xs font-bold">2</div>
+              <h3 className="text-sm font-bold text-[#2F3A22]">Package & Payment</h3>
             </div>
             <div className="mb-4">
-              <label className="block text-xs font-semibold text-[#475569] mb-1.5">Payment Mode</label>
-              <div className="flex rounded-lg border border-[#E5E8EF] overflow-hidden w-fit">
+              <label className="block text-xs font-semibold text-[#6B7556] mb-1.5">Payment Mode</label>
+              <div className="flex rounded-lg border border-[#E2D4B8] overflow-hidden w-fit p-1 bg-[#F9FAFC]">
                 {['prepaid','cod'].map(mode => (
                   <button key={mode} type="button" onClick={() => set('paymentMode', mode as any)}
-                    className={`px-6 py-2.5 text-sm font-semibold transition-colors ${form.paymentMode === mode ? 'bg-[#4F46E5] text-white' : 'bg-white text-[#475569] hover:bg-[#F4F6F9]'}`}>
+                    className={`px-6 py-2 text-sm font-semibold transition-colors rounded-md ${form.paymentMode === mode ? 'bg-white shadow-sm border border-[#E2D4B8] text-[#2F3A22]' : 'bg-transparent text-[#8A9270] hover:text-[#546B41]'}`}>
                     {mode === 'prepaid' ? 'Prepaid' : 'COD'}
                   </button>
                 ))}
@@ -378,9 +378,9 @@ function AddOrderDrawer({ open, onClose, onSuccess, couriers }: {
               <ProInput label="Height (cm)" type="number" placeholder="10" value={form.heightCm} onChange={e => set('heightCm', e.target.value)} />
             </div>
             {calcVolWeight() > 0 && (
-              <div className="mt-3 flex items-center gap-2 text-xs text-[#4F46E5] bg-[#EEF2FF] rounded-lg px-3 py-2">
+              <div className="mt-3 flex items-center gap-2 text-xs text-[#546B41] bg-[#EDF0E4] border border-[#CBD7B5] rounded-lg px-3 py-2">
                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" /></svg>
-                Volumetric: <strong>{calcVolWeight().toFixed(3)} kg</strong> — billed at the higher of dead/vol weight
+                Volumetric: <strong className="font-mono-nb">{calcVolWeight().toFixed(3)} kg</strong> — billed at the higher of dead/vol weight
               </div>
             )}
             <div className="grid grid-cols-2 gap-4 mt-4">
@@ -407,10 +407,10 @@ function AddOrderDrawer({ open, onClose, onSuccess, couriers }: {
         </div>
 
         {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#E5E8EF] bg-[#F8F9FB] flex gap-3 shrink-0">
-          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-[#E5E8EF] bg-white text-sm font-semibold text-[#475569] hover:bg-[#F4F6F9] transition-colors">Cancel</button>
+        <div className="px-6 py-4 border-t border-[#EADFC8] bg-white flex gap-3 shrink-0">
+          <button type="button" onClick={onClose} className="flex-1 py-2.5 rounded-lg border border-[#E2D4B8] bg-white text-sm font-semibold text-[#6B7556] hover:bg-[#F9FAFC] transition-colors">Cancel</button>
           <button type="button" onClick={handleSubmit} disabled={submitting}
-            className="flex-1 py-2.5 rounded-lg bg-[#4F46E5] text-sm font-semibold text-white hover:bg-[#4338CA] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
+            className="flex-1 py-2.5 rounded-lg bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] text-sm font-semibold hover:bg-[#E0E7CE] transition-colors disabled:opacity-50 flex items-center justify-center gap-2">
             {submitting ? <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10" strokeOpacity="0.25" /><path d="M12 2a10 10 0 0110 10" /></svg> : <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M5 13l4 4L19 7" /></svg>}
             {submitting ? 'Booking...' : 'Book Shipment'}
           </button>

@@ -176,7 +176,7 @@ export default function LabelsPage() {
 
   if (loading)
     return (
-      <div className="p-8 text-center text-sm text-[#94A3B8]">
+      <div className="p-8 text-center text-sm text-[#8A9270] font-medium">
         Loading settings...
       </div>
     );
@@ -271,19 +271,19 @@ export default function LabelsPage() {
           </div>
 
           {/* Brand details */}
-          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden">
-            <div className="px-6 py-5 border-b border-[#E5E8EF] bg-[#F8F9FB]">
-              <h2 className="text-sm font-bold text-[#0F172A]">
+          <div className="bg-white rounded-xl shadow-sm border border-[#EADFC8] overflow-hidden">
+            <div className="px-6 py-5 border-b border-[#EADFC8] bg-[#F6EEDB]">
+              <h2 className="text-sm font-bold text-[#2F3A22]">
                 Brand Details
               </h2>
             </div>
             <div className="p-6 space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
+                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
                   Brand Name
                 </label>
                 <input
-                  className="w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
+                  className="w-full px-3 py-2.5 text-sm border border-[#EADFC8] rounded-xl bg-white text-[#2F3A22] outline-none transition-all focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
                   value={settings?.brand_name || ""}
                   onChange={(e) =>
                     setSettings((p: any) => ({
@@ -294,11 +294,11 @@ export default function LabelsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
+                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
                   Return Address
                 </label>
                 <textarea
-                  className="w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
+                  className="w-full px-3 py-2.5 text-sm border border-[#EADFC8] rounded-xl bg-white text-[#2F3A22] outline-none transition-all focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
                   rows={3}
                   value={settings?.return_address || ""}
                   onChange={(e) =>
@@ -311,27 +311,27 @@ export default function LabelsPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
+                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
                   Bottom Label Image
                 </label>
                 <input
                   type="file"
                   accept="image/*"
                   onChange={handleImageUpload}
-                  className="w-full text-xs text-[#64748B] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#EEF2FF] file:text-[#4F46E5] hover:file:bg-[#E0E7FF] file:cursor-pointer cursor-pointer border border-[#E5E8EF] rounded-xl p-1"
+                  className="w-full text-xs text-[#8A9270] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#EDF0E4] file:text-[#546B41] hover:file:bg-[#DCE1D0] file:cursor-pointer cursor-pointer border border-[#EADFC8] rounded-xl p-1"
                 />
                 {uploadingImage && (
-                  <div className="text-xs text-[#4F46E5] mt-1 font-semibold animate-pulse">
+                  <div className="text-xs text-[#546B41] mt-1 font-bold animate-pulse">
                     Uploading image...
                   </div>
                 )}
                 {uploadImageError && (
-                  <div className="text-xs text-[#EF4444] mt-1 font-semibold">
+                  <div className="text-xs text-[#EF4444] mt-1 font-bold">
                     {uploadImageError}
                   </div>
                 )}
                 {settings?.label_image_url && (
-                  <div className="text-xs text-[#16A34A] mt-1 font-semibold flex items-center gap-1">
+                  <div className="text-xs text-[#16A34A] mt-1 font-bold flex items-center gap-1">
                     <svg
                       width="12"
                       height="12"
@@ -350,9 +350,9 @@ export default function LabelsPage() {
           </div>
 
           {/* Label size */}
-          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden">
-            <div className="px-6 py-5 border-b border-[#E5E8EF] bg-[#F8F9FB]">
-              <h2 className="text-sm font-bold text-[#0F172A]">Label Size</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-[#EADFC8] overflow-hidden">
+            <div className="px-6 py-5 border-b border-[#EADFC8] bg-[#F6EEDB]">
+              <h2 className="text-sm font-bold text-[#2F3A22]">Label Size</h2>
             </div>
             <div className="flex flex-wrap gap-3 p-6">
               {SIZES.map((s) => {
@@ -363,7 +363,7 @@ export default function LabelsPage() {
                     onClick={() =>
                       setSettings((p: any) => ({ ...p, label_size: s }))
                     }
-                    className={`px-6 py-2.5 text-sm font-bold font-mono rounded-xl transition-all ${isActive ? "bg-[#EEF2FF] text-[#4F46E5] ring-2 ring-[#4F46E5]" : "bg-[#F8F9FB] border border-[#E5E8EF] text-[#475569] hover:bg-white hover:border-[#CBD5E1]"}`}
+                    className={`px-6 py-2.5 text-sm font-bold font-mono rounded-xl transition-all ${isActive ? "bg-[#EDF0E4] text-[#546B41] ring-2 ring-[#546B41]" : "bg-[#F8F9F7] border border-[#EADFC8] text-[#6B7556] hover:bg-white hover:border-[#CBD7B5]"}`}
                   >
                     {s}
                   </button>
@@ -375,7 +375,7 @@ export default function LabelsPage() {
           <button
             disabled={saving}
             onClick={save}
-            className="w-full flex items-center justify-center py-3.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors shadow-sm disabled:opacity-50"
+            className="w-full flex items-center justify-center py-3.5 bg-[#546B41] text-white text-sm font-bold rounded-xl hover:bg-[#435534] transition-colors shadow-sm disabled:opacity-50"
           >
             {saving ? "Saving..." : "Save Label Settings"}
           </button>
@@ -383,9 +383,9 @@ export default function LabelsPage() {
 
         <div className="space-y-6">
           {/* Template picker */}
-          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden">
-            <div className="px-6 py-5 border-b border-[#E5E8EF] bg-[#F8F9FB]">
-              <h2 className="text-sm font-bold text-[#0F172A]">
+          <div className="bg-white rounded-xl shadow-sm border border-[#EADFC8] overflow-hidden">
+            <div className="px-6 py-5 border-b border-[#EADFC8] bg-[#F6EEDB]">
+              <h2 className="text-sm font-bold text-[#2F3A22]">
                 Label Templates
               </h2>
             </div>
@@ -398,12 +398,12 @@ export default function LabelsPage() {
                     onClick={() =>
                       setSettings((p: any) => ({ ...p, template_id: t.id }))
                     }
-                    className={`p-4 text-left rounded-xl border transition-all relative ${isActive ? "bg-[#EEF2FF] border-[#4F46E5] ring-1 ring-[#4F46E5]" : "bg-white border-[#E5E8EF] hover:border-[#CBD5E1] hover:shadow-sm"}`}
+                    className={`p-4 text-left rounded-xl border transition-all relative ${isActive ? "bg-[#EDF0E4] border-[#546B41] ring-1 ring-[#546B41]" : "bg-white border-[#EADFC8] hover:border-[#CBD7B5] hover:shadow-sm"}`}
                   >
-                    <div className="font-bold text-sm text-[#0F172A] mb-1">
+                    <div className="font-bold text-sm text-[#2F3A22] mb-1">
                       {t.name}
                     </div>
-                    <div className="text-xs text-[#64748B]">{t.desc}</div>
+                    <div className="text-xs text-[#8A9270]">{t.desc}</div>
                     {isActive && (
                       <div className="absolute top-4 right-4">
                         <svg
@@ -411,7 +411,7 @@ export default function LabelsPage() {
                           height="18"
                           viewBox="0 0 24 24"
                           fill="none"
-                          stroke="#4F46E5"
+                          stroke="#546B41"
                           strokeWidth="2.5"
                         >
                           <path d="M20 6L9 17l-5-5" />
@@ -425,18 +425,18 @@ export default function LabelsPage() {
           </div>
 
           {/* Live preview */}
-          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden sticky top-6">
-            <div className="px-6 py-5 border-b border-[#E5E8EF] bg-[#F8F9FB] flex items-center justify-between">
-              <h2 className="text-sm font-bold text-[#0F172A]">Live Preview</h2>
-              <span className="text-[10px] font-bold text-[#64748B] uppercase tracking-widest bg-[#E5E8EF] px-2 py-0.5 rounded-full">
+          <div className="bg-white rounded-xl shadow-sm border border-[#EADFC8] overflow-hidden sticky top-6">
+            <div className="px-6 py-5 border-b border-[#EADFC8] bg-[#F6EEDB] flex items-center justify-between">
+              <h2 className="text-sm font-bold text-[#2F3A22]">Live Preview</h2>
+              <span className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest bg-[#EADFC8] px-2 py-0.5 rounded-full">
                 {TEMPLATES.find((t) => t.id === settings?.template_id)?.name} •{" "}
                 {settings?.label_size}
               </span>
             </div>
-            <div className="p-6 bg-[#F4F6F9] flex flex-col items-center">
+            <div className="p-6 bg-[#F8F9F7] flex flex-col items-center">
               {/* Fake Label Box */}
               <div
-                className="w-full max-w-[350px] bg-white border border-[#CBD5E1] shadow-sm p-4 font-mono text-xs text-black relative"
+                className="w-full max-w-[350px] bg-white border border-[#CBD7B5] shadow-sm p-4 font-mono text-xs text-black relative"
                 style={{ aspectRatio: "4/6" }}
               >
                 <div className="flex justify-between items-start border-b-2 border-black pb-3 mb-3">
@@ -500,7 +500,7 @@ export default function LabelsPage() {
               <div className="flex gap-3 mt-6 w-full max-w-[350px]">
                 <button
                   onClick={handlePrint}
-                  className="flex-1 py-2.5 bg-white border border-[#E5E8EF] text-[#0F172A] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] transition-colors shadow-sm flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-white border border-[#EADFC8] text-[#2F3A22] text-sm font-bold rounded-xl hover:bg-[#FFF8EC] transition-colors shadow-sm flex items-center justify-center gap-2"
                 >
                   <svg
                     width="16"
@@ -518,7 +518,7 @@ export default function LabelsPage() {
                 </button>
                 <button
                   onClick={handlePrint}
-                  className="flex-1 py-2.5 bg-[#F8F9FB] border border-[#E5E8EF] text-[#475469] text-sm font-semibold rounded-xl hover:bg-white hover:text-[#0F172A] hover:border-[#CBD5E1] transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 py-2.5 bg-[#FFF8EC] border border-[#EADFC8] text-[#6B7556] text-sm font-bold rounded-xl hover:bg-white hover:text-[#546B41] transition-colors flex items-center justify-center gap-2"
                 >
                   <svg
                     width="16"

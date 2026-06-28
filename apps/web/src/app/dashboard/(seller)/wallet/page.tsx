@@ -118,50 +118,57 @@ export default function WalletPage() {
   }
 
   return (
-    <div className="animate-fade-up mx-auto">
+    <div className="animate-fade-up mx-auto max-w-7xl">
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
         strategy="lazyOnload"
       />
 
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <h1 className="text-2xl font-bold text-[#2F3A22] tracking-tight">
-            Wallet &amp; Billing
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <h1 className="text-[22px] font-bold text-[#2F3A22] tracking-tight">
+            Wallet
           </h1>
-          <p className="text-sm text-[#8A9270] mt-1">
-            Manage your prepaid balance, recharges, and credit limits.
-          </p>
+          <span className="px-2.5 py-0.5 bg-[#F4F6F0] border border-[#CBD7B5] text-[#546B41] text-[10px] font-bold uppercase tracking-widest rounded-full">
+            Active
+          </span>
         </div>
+        <button className="px-4 py-1.5 border border-[#EADFC8] bg-[#F4F6F0] text-[#546B41] text-[13px] font-bold rounded-lg hover:bg-[#E0E7CE] transition-colors shadow-sm">
+          View Shipping Rates
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="bg-white p-4 rounded-xl border border-[#EADFC8] shadow-sm">
-          <div className="text-[11px] font-bold text-[#8A9270] uppercase tracking-wider mb-1">
-            Wallet Balance
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white p-5 rounded-xl border border-[#A84A3B] shadow-sm relative overflow-hidden">
+          <div className="text-[11px] font-bold text-[#A84A3B] opacity-70 uppercase tracking-wider mb-2">
+            Current Balance
           </div>
-          <div className="text-2xl font-bold text-[#2F3A22] font-mono-nb">
+          <div className="text-2xl font-bold text-[#A84A3B] font-mono-nb">
             {loading ? "..." : `₹${balance?.toLocaleString("en-IN")}`}
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-[#EADFC8] shadow-sm">
-          <div className="text-[11px] font-bold text-[#8A9270] uppercase tracking-wider mb-1">
-            Total Transactions
+        <div className="bg-white p-5 rounded-xl border-l-4 border-l-[#546B41] border border-[#EADFC8] shadow-sm">
+          <div className="text-[11px] font-bold text-[#8A9270] uppercase tracking-wider mb-2">
+            Withdrawn Till Date
           </div>
           <div className="text-2xl font-bold text-[#2F3A22] font-mono-nb">
-            {txns.length}
+            ₹0
           </div>
         </div>
-        <div className="bg-white p-4 rounded-xl border border-[#EADFC8] shadow-sm flex flex-col justify-center">
-          <div className="text-[11px] font-bold text-[#8A9270] uppercase tracking-wider mb-1">
-            Payment Mode
+        <div className="bg-white p-5 rounded-xl border-l-4 border-l-[#546B41] border border-[#EADFC8] shadow-sm">
+          <div className="text-[11px] font-bold text-[#8A9270] uppercase tracking-wider mb-2">
+            7 Days Avg. Payments
           </div>
-          <div>
-            <span
-              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-semibold font-mono-nb border ${RAZORPAY_KEY ? "bg-[#EDF0E4] text-[#546B41] border-[#CBD7B5]" : "bg-[#FFF8EC] text-[#A9842E] border-[#E2D4B8]"}`}
-            >
-              {RAZORPAY_KEY ? "Live" : "Mock Mode"}
-            </span>
+          <div className="text-2xl font-bold text-[#2F3A22] font-mono-nb">
+            ₹5,179
+          </div>
+        </div>
+        <div className="bg-white p-5 rounded-xl border-l-4 border-l-[#A9842E] border border-[#EADFC8] shadow-sm">
+          <div className="text-[11px] font-bold text-[#8A9270] uppercase tracking-wider mb-2">
+            Outstanding
+          </div>
+          <div className="text-2xl font-bold text-[#2F3A22] font-mono-nb">
+            ₹40,222
           </div>
         </div>
       </div>
@@ -262,165 +269,112 @@ export default function WalletPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Recharge Card */}
-        <div className="lg:col-span-1">
-          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden sticky top-6">
-            <div className="px-5 py-4 border-b border-[#E5E8EF] bg-[#F8F9FB]">
-              <h2 className="text-sm font-bold text-[#0F172A]">
-                Recharge Wallet
-              </h2>
-            </div>
-            <div className="p-5">
-              <div className="relative mb-4">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 font-medium text-[#94A3B8]">
-                  ₹
-                </div>
-                <input
-                  type="number"
-                  value={amount}
-                  onChange={(e) => setAmount(e.target.value)}
-                  className="w-full pl-8 pr-4 py-3 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] font-mono outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
-                />
-              </div>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {[1000, 2000, 5000, 10000].map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => setAmount(String(v))}
-                    className="flex-1 bg-[#F8F9FB] border border-[#E5E8EF] text-[#475569] text-xs font-semibold px-3 py-2 rounded-lg hover:bg-white hover:border-[#CBD5E1] transition-colors"
-                  >
-                    +₹{v.toLocaleString("en-IN")}
-                  </button>
-                ))}
-              </div>
-
-              {!RAZORPAY_KEY && (
-                <div className="mb-4 p-3 rounded-xl bg-[#F8F9FB] border border-[#E5E8EF] text-[11px] font-medium text-[#64748B] leading-relaxed">
-                  Running in mock mode. Wallet credits instantly without actual
-                  payment.
-                </div>
-              )}
-
-              {error && (
-                <div className="mb-4 p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-xs font-medium text-[#991B1B]">
-                  {error}
-                </div>
-              )}
-              {message && (
-                <div className="mb-4 p-3 rounded-xl bg-[#F0FDF4] border border-[#BBF7D0] text-xs font-medium text-[#166534]">
-                  {message}
-                </div>
-              )}
-
-              <button
-                disabled={recharging}
-                onClick={handleRecharge}
-                className="w-full flex items-center justify-center py-3 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors shadow-sm disabled:opacity-50"
-              >
-                {recharging
-                  ? "Processing..."
-                  : RAZORPAY_KEY
-                    ? "Pay via Razorpay"
-                    : "Recharge Wallet"}
-              </button>
-            </div>
-          </div>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-lg font-bold text-[#2F3A22]">Transactions</h2>
+        <div className="flex gap-2">
+          <button onClick={() => {
+            const evt = new CustomEvent('openWalletModal');
+            window.dispatchEvent(evt);
+          }} className="px-4 py-1.5 bg-[#F6EEDB] border border-[#EADFC8] text-[#546B41] text-[13px] font-bold rounded-lg hover:bg-[#E0E7CE] transition-colors flex items-center gap-1.5 shadow-sm">
+            <span className="text-[#A9842E]">⚡</span> Recharge
+          </button>
+          <button className="px-4 py-1.5 bg-white border border-[#EADFC8] text-[#6B7556] text-[13px] font-bold rounded-lg hover:bg-[#FFF8EC] transition-colors shadow-sm">
+            Withdraw
+          </button>
+          <button className="px-4 py-1.5 bg-white border border-[#EADFC8] text-[#6B7556] text-[13px] font-bold rounded-lg hover:bg-[#FFF8EC] transition-colors shadow-sm">
+            Invoices
+          </button>
         </div>
+      </div>
+      
+      <div className="flex items-center gap-3 mb-4">
+        <div className="relative">
+          <input type="text" placeholder="Filter by" className="bg-white border border-[#EADFC8] rounded-lg pl-8 pr-4 py-1.5 text-xs font-medium text-[#2F3A22] outline-none focus:border-[#546B41] shadow-sm w-40" />
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#8A9270]" />
+        </div>
+        <select className="bg-white border border-[#EADFC8] rounded-lg px-4 py-1.5 text-xs text-[#6B7556] outline-none focus:border-[#546B41] font-medium shadow-sm">
+          <option>Select Day</option>
+        </select>
+        <select className="bg-white border border-[#EADFC8] rounded-lg px-4 py-1.5 text-xs text-[#6B7556] outline-none focus:border-[#546B41] font-medium shadow-sm">
+          <option>Select Month</option>
+        </select>
+        <button className="px-4 py-1.5 bg-white border border-[#EADFC8] text-[#6B7556] text-xs font-bold rounded-lg hover:bg-[#FFF8EC] transition-colors flex items-center gap-1.5 shadow-sm">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+          Reset Filter
+        </button>
+      </div>
 
-        {/* Transactions Card */}
-        <div className="lg:col-span-2">
-          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#E5E8EF] bg-white flex items-center justify-between">
-              <h2 className="text-sm font-bold text-[#0F172A]">
-                Transaction History
-              </h2>
-            </div>
-
-            {loading ? (
-              <div className="p-8 text-center text-[#94A3B8] text-sm">
-                Loading transactions...
-              </div>
-            ) : txns.length === 0 ? (
-              <div className="p-16 text-center">
-                <div className="w-12 h-12 rounded-xl bg-[#F4F6F9] flex items-center justify-center mx-auto mb-3">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#94A3B8"
-                    strokeWidth="2"
-                  >
-                    <rect x="2" y="5" width="20" height="14" rx="2" />
-                    <path d="M2 10h20" />
-                  </svg>
-                </div>
-                <p className="text-sm font-medium text-[#64748B]">
-                  No transactions found.
-                </p>
-              </div>
-            ) : (
-              <div className="overflow-x-auto max-h-[500px]">
-                <table className="w-full text-sm">
-                  <thead className="sticky top-0 bg-[#F8F9FB] shadow-sm z-10">
-                    <tr>
-                      <th className="px-5 py-3.5 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">
-                        Date
-                      </th>
-                      <th className="px-5 py-3.5 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">
-                        Description
-                      </th>
-                      <th className="px-5 py-3.5 text-left text-xs font-semibold text-[#64748B] uppercase tracking-wide">
-                        Type
-                      </th>
-                      <th className="px-5 py-3.5 text-right text-xs font-semibold text-[#64748B] uppercase tracking-wide">
-                        Amount
-                      </th>
+      <div className="bg-white rounded-xl border border-[#EADFC8] overflow-hidden shadow-sm">
+        {loading ? (
+          <div className="p-8 text-center text-[#8A9270] text-sm font-medium">
+            Loading transactions...
+          </div>
+        ) : txns.length === 0 ? (
+          <div className="p-16 text-center">
+            <p className="text-sm font-medium text-[#8A9270]">
+              No transactions found.
+            </p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto max-h-[600px]">
+            <table className="w-full text-xs">
+              <thead className="sticky top-0 bg-[#FFF8EC] border-b border-[#EADFC8] z-10">
+                <tr>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">DATE</th>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest">DESCRIPTION</th>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest">STATUS</th>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">CREDIT</th>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">DEBIT</th>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">COD COLLECTED</th>
+                  <th className="px-5 py-3 text-center text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">INVOICE</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#F6EEDB]">
+                {txns.map((t) => {
+                  const isDebit = t.type === "debit";
+                  const dt = new Date(t.created_at);
+                  const dateStr = dt.toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" });
+                  const timeStr = dt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
+                  
+                  return (
+                    <tr key={t.id} className="hover:bg-[#FFF8EC] transition-colors">
+                      <td className="px-5 py-4 whitespace-nowrap">
+                        <div className="font-bold text-[#2F3A22]">{dateStr}</div>
+                        <div className="text-[10px] font-medium text-[#8A9270]">{timeStr}</div>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="font-bold text-[#2F3A22]">{t.description || (isDebit ? "Wallet Deduction" : "Wallet Recharge")}</span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="px-2 py-0.5 rounded bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] text-[9px] font-bold uppercase tracking-wider shadow-sm">COMPLETED</span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="font-mono-nb text-[13px] font-bold text-[#546B41]">
+                          {!isDebit ? `₹${Math.abs(parseFloat(t.amount)).toLocaleString("en-IN")}` : "—"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="font-mono-nb text-[13px] font-medium text-[#A84A3B]">
+                          {isDebit ? `₹${Math.abs(parseFloat(t.amount)).toLocaleString("en-IN")}` : "—"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4">
+                        <span className="font-mono-nb text-[13px] font-bold text-[#2F3A22]">
+                          {!isDebit ? `₹${Math.abs(parseFloat(t.amount)).toLocaleString("en-IN")}` : "—"}
+                        </span>
+                      </td>
+                      <td className="px-5 py-4 text-center text-[#8A9270]">
+                        <button className="hover:text-[#546B41] transition-colors">
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        </button>
+                      </td>
                     </tr>
-                  </thead>
-                  <tbody>
-                    {txns.map((t) => {
-                      const isDebit = t.type === "debit";
-                      return (
-                        <tr
-                          key={t.id}
-                          className="border-b border-[#F1F3F7] hover:bg-[#F8F9FB] transition-colors"
-                        >
-                          <td className="px-5 py-4 text-[#475569] font-medium text-xs whitespace-nowrap">
-                            {new Date(t.created_at).toLocaleString("en-IN", {
-                              day: "numeric",
-                              month: "short",
-                              year: "numeric",
-                              hour: "2-digit",
-                              minute: "2-digit",
-                            })}
-                          </td>
-                          <td className="px-5 py-4 text-[#0F172A] font-medium text-sm">
-                            {t.description}
-                          </td>
-                          <td className="px-5 py-4">
-                            <span
-                              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${isDebit ? "bg-[#FEF2F2] text-[#991B1B]" : "bg-[#D1FAE5] text-[#065F46]"}`}
-                            >
-                              {t.type}
-                            </span>
-                          </td>
-                          <td
-                            className={`px-5 py-4 text-right font-mono text-sm font-bold whitespace-nowrap ${isDebit ? "text-[#0F172A]" : "text-[#16A34A]"}`}
-                          >
-                            {isDebit ? "-" : "+"}₹
-                            {Math.abs(parseFloat(t.amount)).toFixed(2)}
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-              </div>
-            )}
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );

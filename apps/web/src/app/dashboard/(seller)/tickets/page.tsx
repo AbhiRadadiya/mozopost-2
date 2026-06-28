@@ -1,26 +1,26 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { api, apiErrorMessage } from "@/lib/api";
 
 const STATUS_COLOR: Record<string, { bg: string; text: string }> = {
-  open: { bg: "bg-[#FEF3C7]", text: "text-[#92400E]" },
-  closed: { bg: "bg-[#F1F5F9]", text: "text-[#475569]" },
-  escalated: { bg: "bg-[#FECACA]", text: "text-[#991B1B]" },
-  in_progress: { bg: "bg-[#DBEAFE]", text: "text-[#1E40AF]" },
-};
-
-const PRIORITY_COLOR: Record<string, { bg: string; text: string }> = {
-  high: { bg: "bg-[#FEF2F2]", text: "text-[#DC2626]" },
-  medium: { bg: "bg-[#FFFBEB]", text: "text-[#D97706]" },
-  low: { bg: "bg-[#F8F9FB]", text: "text-[#64748B]" },
-  critical: { bg: "bg-[#991B1B]", text: "text-[#FFFFFF]" },
+  open: { bg: "bg-[#FEF2F2]", text: "text-[#A84A3B]" }, // Olive error red
+  closed: { bg: "bg-[#F8F9F7]", text: "text-[#6B7556]" },
+  escalated: { bg: "bg-[#FFFBEB]", text: "text-[#D97706]" },
+  in_progress: { bg: "bg-[#EDF0E4]", text: "text-[#546B41]" },
 };
 
 export default function TicketsPage() {
+  const [mounted, setMounted] = useState(false);
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const [form, setForm] = useState({
     type: "weight_dispute",
@@ -107,20 +107,54 @@ export default function TicketsPage() {
     }
   }
 
+  const supportCards = [
+    {
+      label: "Total Tickets",
+      sub: "All time",
+      value: tickets.length,
+      color: "#2F3A22",
+      iconBg: "#F6EEDB",
+      icon: "🎫",
+    },
+    {
+      label: "Open Tickets",
+      sub: "Needs attention",
+      value: tickets.filter((t) => t.status === "open").length,
+      color: "#A84A3B",
+      iconBg: "#FEF2F2",
+      icon: "⚠️",
+    },
+    {
+      label: "Resolved",
+      sub: "Successfully closed",
+      value: tickets.filter((t) => t.status === "closed").length,
+      color: "#546B41",
+      iconBg: "#EDF0E4",
+      icon: "✓",
+    },
+    {
+      label: "Escalated",
+      sub: "High priority",
+      value: tickets.filter((t) => t.status === "escalated").length,
+      color: "#D97706",
+      iconBg: "#FFFBEB",
+      icon: "🔥",
+    },
+  ];
+
   return (
-    <div className="animate-fade-up mx-auto">
+    <div className="animate-fade-up mx-auto max-w-7xl pb-12">
+      {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <div>
-          <h1 className="text-2xl font-bold text-[#0F172A] flex items-center gap-3">
-            Support Tickets
-            <span className="px-2.5 py-1 bg-[#EEF2FF] text-[#4F46E5] text-[10px] font-bold uppercase tracking-widest rounded-full">
-              {tickets.filter((t) => t.status === "open").length} Open
-            </span>
-          </h1>
-          <p className="text-sm text-[#64748B] mt-1">
-            Get help with shipments, billing, and technical issues.
-          </p>
-        </div>
+        <h1 className="text-2xl font-bold text-[#2F3A22] tracking-tight">
+          Support Tickets
+        </h1>
+        <button
+          onClick={() => setIsModalOpen(true)}
+          className="bg-[#546B41] text-[#FFF8EC] rounded-lg px-5 py-2.5 text-[13px] font-bold hover:bg-[#435534] transition-colors shadow-sm"
+        >
+          + Raise Ticket
+        </button>
       </div>
 
       {error && (
@@ -129,124 +163,114 @@ export default function TicketsPage() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Ticket List */}
-        <div className="space-y-4">
-          {loading ? (
-            <div className="text-center py-12 text-[#94A3B8] text-sm">
-              Loading tickets...
-            </div>
-          ) : tickets.length === 0 ? (
-            <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] p-12 text-center">
-              <div className="w-16 h-16 bg-[#F8F9FB] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#E5E8EF]">
-                <svg
-                  width="24"
-                  height="24"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="#94A3B8"
-                  strokeWidth="2"
-                >
-                  <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2v10z"></path>
-                </svg>
+      {/* Support Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        {supportCards.map((c, i) => (
+          <div
+            key={i}
+            className="bg-white border border-[#EADFC8] rounded-xl p-5 flex items-start justify-between shadow-sm"
+          >
+            <div>
+              <div className="text-[11px] text-[#8A9270] uppercase tracking-widest font-bold">
+                {c.label}
               </div>
-              <h3 className="text-lg font-bold text-[#0F172A] mb-1">
-                No tickets found
-              </h3>
-              <p className="text-sm text-[#64748B]">
-                You haven't created any support tickets yet.
-              </p>
+              <div className="text-xs text-[#8A9270] mt-1.5">{c.sub}</div>
+              <div
+                className="text-3xl font-bold font-mono mt-3.5"
+                style={{ color: c.color }}
+              >
+                {c.value}
+              </div>
             </div>
-          ) : (
-            tickets.map((t) => {
+            <div
+              className="w-10 h-10 rounded-xl flex items-center justify-center text-lg"
+              style={{ backgroundColor: c.iconBg, color: c.color }}
+            >
+              {c.icon}
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Ticket Overview Table */}
+      <div className="bg-white border border-[#EADFC8] rounded-xl p-5 shadow-sm">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-2 text-[15px] font-bold text-[#2F3A22]">
+            ▤ Ticket Overview
+          </div>
+          <div className="text-xs text-[#8A9270] font-medium">
+            Total: {tickets.length} tickets
+          </div>
+        </div>
+
+        <div className="grid grid-cols-[1fr_2fr_1fr_1fr] gap-3 py-3 border-b border-[#EADFC8] text-[11px] text-[#8A9270] uppercase tracking-wider font-bold">
+          <div>Ticket ID</div>
+          <div>Issue Description</div>
+          <div>Status</div>
+          <div>Created Date</div>
+        </div>
+
+        {loading ? (
+          <div className="py-16 text-center text-[#8A9270] text-sm font-medium">
+            Loading tickets...
+          </div>
+        ) : tickets.length === 0 ? (
+          <div className="py-16 text-center text-[#B3B596] text-sm">
+            No tickets yet
+          </div>
+        ) : (
+          <div className="divide-y divide-[#EADFC8]">
+            {tickets.map((t) => {
               const statusStyle = STATUS_COLOR[t.status] || STATUS_COLOR.open;
-              const priorityStyle =
-                PRIORITY_COLOR[t.priority] || PRIORITY_COLOR.low;
 
               return (
                 <div
                   key={t.id}
-                  className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] p-5 hover:border-[#CBD5E1] transition-colors relative overflow-hidden group"
+                  className="grid grid-cols-[1fr_2fr_1fr_1fr] gap-3 py-4 text-[13px] items-center hover:bg-[#F8F9F7] transition-colors -mx-5 px-5"
                 >
-                  <div
-                    className={`absolute left-0 top-0 bottom-0 w-1 ${t.status === "open" ? "bg-[#4F46E5]" : "bg-[#E5E8EF]"}`}
-                  />
-
-                  <div className="flex items-start justify-between mb-3 pl-2">
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="font-mono text-[10px] font-bold text-[#64748B] uppercase tracking-wider">
-                          {t.ticket_number}
-                        </span>
-                        <span className="w-1 h-1 rounded-full bg-[#CBD5E1]" />
-                        <span className="text-xs font-bold text-[#4F46E5]">
-                          {t.type
-                            .replace("_", " ")
-                            .replace(/\b\w/g, (l: string) => l.toUpperCase())}
-                        </span>
-                      </div>
-                      <h3 className="text-sm font-bold text-[#0F172A] pr-4">
-                        {t.subject}
-                      </h3>
+                  <div className="font-mono text-[11px] font-bold text-[#6B7556] uppercase">
+                    {t.ticket_number}
+                  </div>
+                  <div className="pr-4">
+                    <div className="font-bold text-[#2F3A22] text-[13px] line-clamp-1">
+                      {t.subject}
                     </div>
+                    <div className="text-[11px] text-[#8A9270] mt-1 capitalize">
+                      {t.type.replace(/_/g, " ")}
+                    </div>
+                  </div>
+                  <div>
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest shrink-0 ${statusStyle.bg} ${statusStyle.text}`}
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${statusStyle.bg} ${statusStyle.text}`}
                     >
-                      {t.status.replace("_", " ")}
+                      {t.status.replace(/_/g, " ")}
                     </span>
                   </div>
-
-                  <div className="flex items-center justify-between pl-2 mt-4">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-widest ${priorityStyle.bg} ${priorityStyle.text}`}
-                      >
-                        {t.priority}
-                      </span>
-                      <span className="text-xs font-medium text-[#94A3B8] flex items-center gap-1.5">
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                        >
-                          <circle cx="12" cy="12" r="10" />
-                          <polyline points="12 6 12 12 16 14" />
-                        </svg>
-                        {new Date(t.created_at).toLocaleDateString("en-IN", {
-                          day: "2-digit",
-                          month: "short",
-                        })}
-                      </span>
+                  <div className="text-[#8A9270] text-xs flex items-center justify-between">
+                    <span>
+                      {new Date(t.created_at).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric"
+                      })}
+                    </span>
+                    <div className="flex gap-2">
                       {t.attachment_url && (
                         <a
                           href={`${api.defaults.baseURL?.replace("/api/v1", "") || ""}${t.attachment_url}`}
                           target="_blank"
                           rel="noreferrer"
-                          className="text-xs font-bold text-[#4F46E5] hover:text-[#4338CA] flex items-center gap-1"
+                          title="View Attachment"
+                          className="text-[#546B41] hover:text-[#435534]"
                         >
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                          >
-                            <path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path>
-                          </svg>
-                          Attachment
+                          📎
                         </a>
                       )}
-                    </div>
-
-                    <div className="flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       {t.status === "open" && (
                         <button
                           onClick={() => escalate(t.id)}
-                          className="px-3 py-1.5 bg-[#FFFBEB] border border-[#FEF08A] text-[#B45309] text-xs font-semibold rounded-lg hover:bg-[#FEF3C7] hover:border-[#FDE047] transition-colors"
+                          className="text-[#A84A3B] hover:underline text-[11px] font-bold"
+                          title="Escalate Issue"
                         >
                           Escalate
                         </button>
@@ -255,69 +279,85 @@ export default function TicketsPage() {
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
+      </div>
 
-        {/* Create Ticket Form */}
-        <div>
-          <div className="bg-white rounded-2xl shadow-sm border border-[#E5E8EF] overflow-hidden sticky top-6">
-            <div className="px-6 py-5 border-b border-[#E5E8EF] bg-[#F8F9FB]">
-              <h2 className="text-sm font-bold text-[#0F172A]">
-                Create New Ticket
-              </h2>
+      {/* Raise Ticket Modal */}
+      {isModalOpen && mounted && createPortal(
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div 
+            className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+            onClick={() => { setIsModalOpen(false); setSubmitted(false); }}
+          />
+
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-up border border-[#EADFC8] flex flex-col max-h-[90vh] overflow-hidden">
+            {/* Header (Fixed at top) */}
+            <div className="p-6 pb-4 shrink-0 bg-white z-10">
+              <div className="flex items-start justify-between">
+                <div className="flex gap-3 items-center">
+                  <div className="w-10 h-10 rounded-xl bg-[#546B41] flex items-center justify-center text-white shrink-0 shadow-sm">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z"></path></svg>
+                  </div>
+                  <div>
+                    <h2 className="text-base font-bold text-[#2F3A22]">
+                      Create New Ticket
+                    </h2>
+                    <p className="text-xs text-[#8A9270] mt-0.5">
+                      We're here to help resolve any issues.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setIsModalOpen(false);
+                    setSubmitted(false);
+                  }}
+                  className="text-[#8A9270] hover:bg-[#FFF8EC] hover:text-[#546B41] w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0"
+                >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12" /></svg>
+                </button>
+              </div>
             </div>
 
             {submitted ? (
-              <div className="p-10 text-center animate-fade-in">
-                <div className="w-16 h-16 bg-[#F0FDF4] rounded-full flex items-center justify-center mx-auto mb-4 border border-[#BBF7D0]">
-                  <svg
-                    width="28"
-                    height="28"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="#16A34A"
-                    strokeWidth="2.5"
-                  >
-                    <polyline points="20 6 9 17 4 12"></polyline>
-                  </svg>
+              <div className="p-10 text-center overflow-y-auto">
+                <div className="w-16 h-16 bg-[#EDF0E4] rounded-full flex items-center justify-center mx-auto mb-5 border border-[#CBD7B5]">
+                  <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#546B41" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
                 </div>
-                <h3 className="text-lg font-bold text-[#0F172A] mb-1">
-                  Ticket submitted successfully
+                <h3 className="text-lg font-bold text-[#2F3A22] mb-1">
+                  Ticket Submitted
                 </h3>
-                <p className="text-sm text-[#64748B] mb-6">
-                  Our support team will respond within 24 hours.
+                <p className="text-[13px] text-[#8A9270] mb-8 max-w-[250px] mx-auto leading-relaxed">
+                  Our support team has received your request and will respond within 24 hours.
                 </p>
                 <button
                   onClick={() => {
                     setSubmitted(false);
-                    setForm({
-                      type: "weight_dispute",
-                      subject: "",
-                      description: "",
-                      attachmentUrl: "",
-                    });
+                    setForm({ type: "weight_dispute", subject: "", description: "", attachmentUrl: "" });
+                    setIsModalOpen(false);
                   }}
-                  className="px-5 py-2.5 bg-white border border-[#E5E8EF] text-[#475569] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] hover:text-[#0F172A] transition-colors shadow-sm"
+                  className="px-8 py-3 bg-[#546B41] text-[#FFF8EC] text-[13px] font-bold rounded-xl hover:bg-[#435534] transition-colors shadow-sm"
                 >
-                  Create Another Ticket
+                  Done
                 </button>
               </div>
             ) : (
-              <form className="p-6" onSubmit={handleSubmit}>
-                <div className="space-y-5 mb-6">
+              <form className="overflow-y-auto flex-1 min-h-0" onSubmit={handleSubmit}>
+                
+                {/* Body (Scrollable) */}
+                <div className="px-6 pb-6 space-y-5">
                   <div>
-                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
+                    <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
                       Ticket Type
-                    </label>
+                    </div>
                     <div className="relative">
                       <select
                         required
-                        className="w-full pl-3 pr-10 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 appearance-none cursor-pointer"
+                        className="w-full bg-[#FFF8EC] border border-[#EADFC8] rounded-xl pl-4 pr-10 py-3 text-[#2F3A22] font-semibold text-[13px] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 transition-all appearance-none cursor-pointer"
                         value={form.type}
-                        onChange={(e) =>
-                          setForm((p) => ({ ...p, type: e.target.value }))
-                        }
+                        onChange={(e) => setForm((p) => ({ ...p, type: e.target.value }))}
                       >
                         <option value="weight_dispute">Weight Dispute</option>
                         <option value="billing_dispute">Billing Dispute</option>
@@ -325,110 +365,93 @@ export default function TicketsPage() {
                         <option value="ndr">NDR / Delivery Issue</option>
                         <option value="other">Other</option>
                       </select>
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-[#94A3B8]">
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                        >
-                          <polyline points="6 9 12 15 18 9"></polyline>
-                        </svg>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#546B41]">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="6 9 12 15 18 9"/></svg>
                       </div>
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
+                    <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
                       Subject
-                    </label>
+                    </div>
                     <input
                       required
-                      className="w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
+                      className="w-full bg-[#FFF8EC] border border-[#EADFC8] rounded-xl px-4 py-3 text-[#2F3A22] font-semibold text-[13px] placeholder:text-[#C2BC9E] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 transition-all"
                       value={form.subject}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, subject: e.target.value }))
-                      }
+                      onChange={(e) => setForm((p) => ({ ...p, subject: e.target.value }))}
                       placeholder="Briefly summarize the issue..."
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
+                    <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
                       Description
-                    </label>
+                    </div>
                     <textarea
                       required
-                      className="w-full px-3 py-3 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none transition-all focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10 resize-y min-h-[120px]"
-                      rows={5}
+                      className="w-full bg-[#FFF8EC] border border-[#EADFC8] rounded-xl px-4 py-3 text-[#2F3A22] font-semibold text-[13px] placeholder:text-[#C2BC9E] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 transition-all min-h-[90px] resize-y"
+                      rows={3}
                       value={form.description}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, description: e.target.value }))
-                      }
-                      placeholder="Please provide all relevant details, AWB numbers, and context to help us resolve this quickly..."
+                      onChange={(e) => setForm((p) => ({ ...p, description: e.target.value }))}
+                      placeholder="Provide all relevant details, AWB numbers, etc."
                     />
                   </div>
 
                   <div>
-                    <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
-                      Upload Image / PDF
+                    <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
+                      Attachment (Optional)
+                    </div>
+                    <label className={`w-full flex flex-col items-center justify-center py-5 px-4 border-2 border-dashed rounded-xl cursor-pointer transition-all ${form.attachmentUrl ? 'border-[#546B41] bg-[#EDF0E4]' : 'border-[#EADFC8] bg-[#FFF8EC] hover:bg-white hover:border-[#CBD7B5]'}`}>
+                      <input type="file" accept="image/*,application/pdf" onChange={handleFileChange} className="hidden" />
+                      
+                      {uploading ? (
+                         <div className="flex flex-col items-center gap-2 text-[#546B41]">
+                           <svg className="animate-spin" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                           <span className="text-[11px] font-bold">Uploading...</span>
+                         </div>
+                      ) : form.attachmentUrl ? (
+                         <div className="flex flex-col items-center gap-1.5 text-[#546B41]">
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                           <span className="text-[12px] font-bold">File Attached</span>
+                           <span className="text-[10px] font-semibold text-[#6B7556] hover:underline mt-0.5">Click to replace</span>
+                         </div>
+                      ) : (
+                         <div className="flex flex-col items-center gap-2 text-[#8A9270]">
+                           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="17 8 12 3 7 8"></polyline><line x1="12" y1="3" x2="12" y2="15"></line></svg>
+                           <span className="text-[12px] font-bold text-[#6B7556]">Click to upload</span>
+                           <span className="text-[10px] font-medium">JPG, PNG, or PDF</span>
+                         </div>
+                      )}
                     </label>
-                    <input
-                      type="file"
-                      accept="image/*,application/pdf"
-                      onChange={handleFileChange}
-                      className="w-full text-xs text-[#64748B] file:mr-4 file:py-2.5 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#EEF2FF] file:text-[#4F46E5] hover:file:bg-[#E0E7FF] file:cursor-pointer cursor-pointer border border-[#E5E8EF] rounded-xl p-1"
-                    />
-                    {uploading && (
-                      <div className="text-xs text-[#4F46E5] mt-1 font-semibold animate-pulse">
-                        Uploading file...
-                      </div>
-                    )}
                     {uploadError && (
-                      <div className="text-xs text-[#EF4444] mt-1 font-semibold">
+                      <div className="text-[11px] text-[#A84A3B] mt-2 font-bold text-center">
                         {uploadError}
                       </div>
                     )}
-                    {form.attachmentUrl && (
-                      <div className="text-xs text-[#16A34A] mt-1 font-semibold flex items-center gap-1">
-                        <svg
-                          width="12"
-                          height="12"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                        >
-                          <polyline points="20 6 9 17 4 12"></polyline>
-                        </svg>{" "}
-                        File attached successfully!
-                      </div>
-                    )}
                   </div>
-                </div>
+                  
+                  {submitError && (
+                    <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-bold text-[#A84A3B]">
+                      {submitError}
+                    </div>
+                  )}
 
-                {submitError && (
-                  <div className="mb-4 p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B]">
-                    {submitError}
-                  </div>
-                )}
-
-                <div className="pt-2 border-t border-[#E5E8EF]">
                   <button
                     type="submit"
                     disabled={submitting}
-                    className="w-full flex items-center justify-center py-3 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors shadow-sm disabled:opacity-50"
+                    className="w-full py-3.5 rounded-xl bg-[#546B41] text-white font-semibold text-sm hover:bg-[#3C4E2D] transition-colors shadow-sm flex items-center justify-center gap-2 mt-2 shrink-0"
                   >
                     {submitting ? "Submitting..." : "Submit Ticket"}
+                    {!submitting && <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" /></svg>}
                   </button>
                 </div>
               </form>
             )}
           </div>
-        </div>
-      </div>
+        </div>,
+        document.body
+      )}
     </div>
   );
 }
