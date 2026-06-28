@@ -18,7 +18,8 @@ storeIntegrationsRouter.get('/', ah(async (req: AuthedRequest, res) => {
   const stores = await query(
     `SELECT id, platform, store_name, store_url, sync_interval_min, auto_sync,
             import_pending, import_prepaid, import_cod, push_tracking, push_awb,
-            status, is_active, last_sync_at, last_sync_orders, last_error, total_imported, created_at
+            status, is_active, last_sync_at, last_sync_orders, last_error, total_imported, created_at,
+            uuid
      FROM store_integrations WHERE seller_id=$1 ORDER BY created_at DESC`,
     [sid(req)],
   );
@@ -44,20 +45,18 @@ const connectSchema = z.object({
 storeIntegrationsRouter.post('/', ah(async (req: AuthedRequest, res) => {
   const sellerId = sid(req);
   const dto = connectSchema.parse(req.body);
-  const webhookSecret = 'whstore_' + crypto.randomBytes(16).toString('hex');
-
   const store = await queryOne(
     `INSERT INTO store_integrations
        (seller_id, platform, store_name, store_url, api_key_encrypted, api_secret_encrypted,
-        access_token_encrypted, webhook_secret, sync_interval_min, auto_sync,
+        access_token_encrypted, sync_interval_min, auto_sync,
         import_pending, import_prepaid, import_cod, push_tracking, push_awb)
-     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15) RETURNING *`,
+     VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14) RETURNING *`,
     [sellerId, dto.platform, dto.storeName, dto.storeUrl,
      dto.apiKey, dto.apiSecret || null, dto.accessToken || null,
-     webhookSecret, dto.syncIntervalMin, dto.autoSync,
+     dto.syncIntervalMin, dto.autoSync,
      dto.importPending, dto.importPrepaid, dto.importCod, dto.pushTracking, dto.pushAwb],
   );
-  res.status(201).json({ store, webhookSecret, message: 'Store connected. Store the webhook secret for order push verification.' });
+  res.status(201).json({ store, message: 'Store connected successfully.' });
 }));
 
 storeIntegrationsRouter.patch('/:id', ah(async (req: AuthedRequest, res) => {

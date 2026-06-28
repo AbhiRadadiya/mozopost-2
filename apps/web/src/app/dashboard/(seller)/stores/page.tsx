@@ -69,9 +69,7 @@ export default function StoresPage() {
     setError("");
     try {
       const { data } = await api.post("/stores", form);
-      alert(
-        `Store connected!\nWebhook secret: ${data.webhookSecret}\nSave this for order push verification.`,
-      );
+      alert('Store connected successfully.');
       setShowForm(false);
       load();
     } catch (err) {

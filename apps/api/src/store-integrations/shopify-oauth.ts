@@ -103,7 +103,6 @@ shopifyOAuthRouter.get('/callback', ah(async (req: Request, res: Response) => {
   const encryptedToken = iv.toString('hex') + ':' + encrypted;
 
   // 3. Store the integration in Mozopost Database
-  const webhookSecret = 'whstore_' + crypto.randomBytes(16).toString('hex');
   const storeUrl = `https://${shop}`;
   
   // Check if store already exists for this seller
@@ -125,10 +124,10 @@ shopifyOAuthRouter.get('/callback', ah(async (req: Request, res: Response) => {
   } else {
     const store = await queryOne(
       `INSERT INTO store_integrations
-         (seller_id, platform, store_name, store_url, access_token_encrypted, webhook_secret, sync_interval_min, auto_sync,
+         (seller_id, platform, store_name, store_url, access_token_encrypted, sync_interval_min, auto_sync,
           import_pending, import_prepaid, import_cod, push_tracking, push_awb)
-       VALUES ($1, 'shopify', $2, $3, $4, $5, 15, true, true, true, true, true, true) RETURNING id`,
-      [sellerId, shop, storeUrl, encryptedToken, webhookSecret]
+       VALUES ($1, 'shopify', $2, $3, $4, 15, true, true, true, true, true, true) RETURNING id`,
+      [sellerId, shop, storeUrl, encryptedToken]
     );
     storeId = store.id;
   }
