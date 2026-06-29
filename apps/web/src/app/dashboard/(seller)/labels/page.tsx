@@ -1,17 +1,45 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { api, apiErrorMessage } from "@/lib/api";
 
-const SIZES = ["4x6", "3x5", "A5", "A6"];
+const SIZES = ["A4", "4X6"];
 const TEMPLATES = [
-  { id: 1, name: "Standard", desc: "Classic layout with all details" },
-  { id: 2, name: "Compact", desc: "Minimal info, larger barcode" },
-  { id: 3, name: "Branded", desc: "Your logo prominently displayed" },
-  { id: 4, name: "COD Bold", desc: "COD amount highlighted in red" },
-  { id: 5, name: "Thermal", desc: "Optimised for thermal printers" },
-  { id: 6, name: "A4 Sheet", desc: "6 labels per A4 page" },
+  { id: 1, name: "MozoPost Standard", desc: "Classic layout with all details" },
+  { id: 2, name: "Ekart Classic", desc: "Minimal info, larger barcode" },
+  { id: 3, name: "Delhivery Surface", desc: "Your logo prominently displayed" },
+  { id: 4, name: "Shadowfax", desc: "COD amount highlighted" },
+  { id: 5, name: "Shadowfax DS", desc: "Optimised for thermal" },
+  { id: 6, name: "Ekart Prime", desc: "Premium template" },
 ];
+
+const PALETTE = [
+  { id: "brand", icon: "✧", label: "Brand / Logo" },
+  { id: "name", icon: "👤", label: "Ship To Name" },
+  { id: "address", icon: "⌖", label: "Address" },
+  { id: "cod", icon: "₹", label: "COD Amount" },
+  { id: "order", icon: "≡", label: "Order ID" },
+  { id: "awb", icon: "ǁ", label: "AWB Barcode" },
+  { id: "qr", icon: "▦", label: "QR Code" },
+  { id: "weight", icon: "⚖", label: "Weight" },
+  { id: "courier", icon: "🚚", label: "Courier" },
+  { id: "table", icon: "▤", label: "Product Table" },
+  { id: "divider", icon: "—", label: "Divider" },
+];
+
+const META: Record<string, any> = {
+  brand: { kind: "text", text: "MozoPost Shipping", big: true },
+  name: { kind: "text", text: "Simran Simran", bold: true },
+  address: { kind: "text", text: "B-113 Rajveer colony, Delhi 110096", small: true },
+  cod: { kind: "text", text: "COD ₹ 698.00", box: true, bold: true },
+  order: { kind: "text", text: "Order: 184785" },
+  awb: { kind: "barcode", text: "CMDC0004156753" },
+  qr: { kind: "qr" },
+  weight: { kind: "text", text: "Weight: 0.40 kg" },
+  courier: { kind: "text", text: "EKART", bold: true },
+  table: { kind: "table" },
+  divider: { kind: "divider" },
+};
 
 export default function LabelsPage() {
   const [settings, setSettings] = useState<any>(null);
@@ -22,6 +50,68 @@ export default function LabelsPage() {
   const [couriers, setCouriers] = useState<any[]>([]);
   const [uploadingImage, setUploadingImage] = useState(false);
   const [uploadImageError, setUploadImageError] = useState("");
+
+  const [activeTab, setActiveTab] = useState("Templates");
+  const [print4up, setPrint4up] = useState(false);
+
+  // Design Studio Dragging State
+  const [labelEls, setLabelEls] = useState<any[]>([]);
+  const [elSeq, setElSeq] = useState(0);
+  const [selId, setSelId] = useState<number | null>(null);
+  const [dragId, setDragId] = useState<number | null>(null);
+  const [offX, setOffX] = useState(0);
+  const [offY, setOffY] = useState(0);
+  const canvasRef = useRef<HTMLDivElement>(null);
+
+  const onMove = (e: React.MouseEvent) => {
+    if (dragId == null || !canvasRef.current) return;
+    const r = canvasRef.current.getBoundingClientRect();
+    let x = e.clientX - r.left - offX;
+    let y = e.clientY - r.top - offY;
+    x = Math.max(0, Math.min(x, r.width - 24));
+    y = Math.max(0, Math.min(y, r.height - 16));
+    setLabelEls((els) => els.map((el) => (el.id === dragId ? { ...el, x, y } : el)));
+  };
+  const endDrag = () => {
+    if (dragId != null) setDragId(null);
+  };
+  const startDrag = (id: number, e: React.MouseEvent) => {
+    const el = labelEls.find((x) => x.id === id);
+    if (!el || !canvasRef.current) return;
+    const r = canvasRef.current.getBoundingClientRect();
+    const px = e.clientX - r.left;
+    const py = e.clientY - r.top;
+    setSelId(id);
+    setDragId(id);
+    setOffX(px - el.x);
+    setOffY(py - el.y);
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  const addEl = (type: string) => {
+    setElSeq((seq) => {
+      const id = seq + 1;
+      const n = labelEls.length;
+      setLabelEls((els) => [...els, { id, type, x: 30 + (n % 4) * 16, y: 24 + n * 22 }]);
+      setSelId(id);
+      return id;
+    });
+  };
+  const delEl = (id: number, e: React.MouseEvent) => {
+    e.stopPropagation();
+    setLabelEls((els) => els.filter((x) => x.id !== id));
+    setSelId(null);
+  };
+
+  useEffect(() => {
+    Promise.all([api.get("/labels/settings"), api.get("/couriers")])
+      .then(([settingsRes, couriersRes]) => {
+        setSettings(settingsRes.data.settings);
+        setCouriers(couriersRes.data.couriers || []);
+      })
+      .catch((err) => setError(apiErrorMessage(err)))
+      .finally(() => setLoading(false));
+  }, []);
 
   async function handleImageUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -52,97 +142,8 @@ export default function LabelsPage() {
   }
 
   function handlePrint() {
-    const printWindow = window.open("", "_blank");
-    if (!printWindow) return;
-
-    const apiBase = api.defaults.baseURL?.replace("/api/v1", "") || "";
-    const logoHtml =
-      settings?.show_logo && settings?.logo_url
-        ? `<img src="${settings.logo_url}" class="max-h-10 object-contain mb-2" />`
-        : "";
-    const imgHtml = settings?.label_image_url
-      ? `<div class="mb-4 flex justify-center"><img src="${apiBase}${settings.label_image_url}" class="max-h-20 object-contain" /></div>`
-      : "";
-    const phoneHtml =
-      settings?.show_mobile && settings?.phone_number
-        ? `<div class="mt-0.5 font-bold">Ph: ${settings.phone_number}</div>`
-        : "";
-
-    printWindow.document.write(`
-      <html>
-        <head>
-          <title>Mozopost Label Preview</title>
-          <script src="https://cdn.tailwindcss.com"></script>
-          <style>
-            @media print {
-              body { margin: 0; padding: 0; }
-              @page { size: auto; margin: 0; }
-            }
-          </style>
-        </head>
-        <body class="bg-white flex items-center justify-center p-6">
-          <div class="w-[360px] bg-white border-2 border-black p-5 font-mono text-xs text-black relative" style="min-height: 520px;">
-            <div class="flex justify-between items-start border-b-2 border-black pb-3 mb-3">
-              <div>
-                ${logoHtml}
-                ${settings?.show_brand_name && settings?.brand_name ? `<div class="font-bold text-sm mb-1">${settings.brand_name}</div>` : ""}
-                <div class="font-black text-lg tracking-wide mb-1">
-                  ${(couriers.length > 0 ? couriers[0].name : "DELHIVERY").toUpperCase()}
-                </div>
-                <div class="text-[10px]">AWB: DEL1234567890</div>
-              </div>
-              <div class="bg-black text-white px-2 py-1 font-bold text-[10px]">PREPAID</div>
-            </div>
-            
-            <div class="mb-4">
-               <div class="font-bold text-[10px] mb-1">SHIP TO:</div>
-               <div class="font-semibold text-sm">Rahul Sharma</div>
-               <div>204 MG Road, Bengaluru 560001</div>
-               <div>Ph: 9876543210</div>
-            </div>
-            
-            ${
-              settings?.show_return_addr && settings?.return_address
-                ? `
-               <div class="mb-4 pt-3 border-t border-black/20 text-[10px]">
-                 <div class="font-bold mb-1">RETURN TO:</div>
-                 <div>${settings.return_address}</div>
-                 ${phoneHtml}
-               </div>
-            `
-                : ""
-            }
-            
-            ${imgHtml}
-            
-            <div class="absolute bottom-4 left-4 right-4">
-               <div class="h-16 bg-[repeating-linear-gradient(90deg,#000,#000_2px,transparent_2px,transparent_4px)] w-full mb-2 opacity-80"></div>
-               <div class="border-t-2 border-black pt-2 flex justify-between text-[10px] font-semibold">
-                 <div>Wt: 0.5kg • ORD-2026-001</div>
-                 ${settings?.show_gst ? "<div>GST: 24AAAA0000A1Z5</div>" : ""}
-               </div>
-            </div>
-          </div>
-          <script>
-            window.onload = function() {
-              window.print();
-            }
-          </script>
-        </body>
-      </html>
-    `);
-    printWindow.document.close();
+    alert("Printing...");
   }
-
-  useEffect(() => {
-    Promise.all([api.get("/labels/settings"), api.get("/couriers")])
-      .then(([settingsRes, couriersRes]) => {
-        setSettings(settingsRes.data.settings);
-        setCouriers(couriersRes.data.couriers || []);
-      })
-      .catch((err) => setError(apiErrorMessage(err)))
-      .finally(() => setLoading(false));
-  }, []);
 
   function toggle(key: string) {
     setSettings((p: any) => ({ ...p, [key]: !p[key] }));
@@ -174,116 +175,622 @@ export default function LabelsPage() {
     }
   }
 
-  if (loading)
-    return (
-      <div className="p-8 text-center text-sm text-[#8A9270] font-medium">
-        Loading settings...
+  if (loading) return <div className="p-8 text-center text-sm text-[#8A9270] font-medium">Loading settings...</div>;
+
+  const selDesignName = TEMPLATES.find((t) => t.id === settings?.template_id)?.name || "MozoPost Standard";
+
+  const renderFakeLabel = (templateId: number) => {
+    const name = "Simran Simran";
+    const addr = "B-113 Rajveer colony, Delhi 110096";
+    const phone = "9876543210";
+    const product = "Women's Pack of 3 Pure Cotton...";
+
+    const Barcode = ({ text }: { text?: string }) => (
+      <div>
+        <div className="h-[30px] w-full bg-[repeating-linear-gradient(90deg,#000,#000_2px,#fff_2px,#fff_4px,#000_4px,#000_6px,#fff_6px,#fff_8px)]"></div>
+        {text && <div className="text-[9px] text-center mt-[2px]">{text}</div>}
       </div>
     );
 
-  return (
-    <div className="animate-fade-up space-y-5 mx-auto">
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#2F3A22] tracking-tight">
-            Label Management
-          </h1>
-          <p className="text-sm text-[#8A9270] mt-1">
-            Customize your shipping labels and printer settings.
-          </p>
+    const apiBase = api.defaults.baseURL?.replace("/api/v1", "") || "";
+    const bottomImg = settings?.label_image_url ? (
+      <div className="mb-4 flex justify-center pt-2 border-t border-black/10">
+        <img src={`${apiBase}${settings.label_image_url}`} className="max-h-12 object-contain" alt="Label Bottom" />
+      </div>
+    ) : null;
+
+    if (templateId === 1) { // MozoPost Standard
+      return (
+        <div className="w-[380px] h-[560px] bg-white border border-[#000] text-black font-[Arial,sans-serif]">
+          <div className="flex items-center justify-between p-[10px_12px] border-b border-[#000]">
+            <div className="text-[13px] font-[800] leading-[1.1]">{settings?.show_brand_name ? settings.brand_name || "WOMEN\nATTIRE" : "WOMEN\nATTIRE"}</div>
+            <div className="text-center">
+              <div className="text-[14px] font-[800] tracking-[0.5px]">MozoPost</div>
+              <div className="text-[8px] tracking-[2px]">SHIPPING</div>
+            </div>
+            <div className="text-[13px] font-[800] tracking-[1px]">DELHIVERY</div>
+          </div>
+          <div className="p-[8px_12px] border-b border-[#000]">
+            <div className="text-[10px] font-[700] text-center mb-[5px]">AWB# 41332221588194</div>
+            <Barcode />
+            <div className="text-[9px] text-center mt-[3px]">AWB# 41332221588194</div>
+          </div>
+          <div className="grid grid-cols-[1.3fr_1fr] border-b border-[#000]">
+            <div className="p-[10px] border-r border-[#000] text-[10px] leading-[1.55]">
+              <div>Ship to: <b>{name}</b></div>
+              <div>{addr}</div>
+              {settings?.show_mobile && <div className="font-[700] mt-[3px]">Phone: {phone}</div>}
+              <div className="font-[700]">PIN - 533287</div>
+            </div>
+            <div className="p-[10px] text-[11px] leading-[1.6]">
+              <div className="font-[700]">COD</div>
+              <div className="font-[800]">INR 999.00</div>
+              <div className="mt-[6px] text-[9px]">Date</div>
+              <div className="text-[9px]">15 Apr 26 | 11:21 AM</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-[1.3fr_1fr] border-b border-[#000] items-center">
+            <div className="p-[10px] border-r border-[#000] text-[10px] font-[700]">Seller: {settings?.show_brand_name ? settings.brand_name || "WOMEN ATTIRE" : "WOMEN ATTIRE"}</div>
+            <div className="p-[8px_10px] text-center">
+              <Barcode text="154858" />
+            </div>
+          </div>
+          {bottomImg}
+          <div className="grid grid-cols-[1fr_40px_60px_60px] text-[9px] font-[700] border-b border-[#000]">
+            <div className="p-[6px]">Product Name</div><div className="p-[6px]">Qty.</div><div className="p-[6px]">Price</div><div className="p-[6px]">Total</div>
+          </div>
+          <div className="grid grid-cols-[1fr_40px_60px_60px] text-[9px]">
+            <div className="p-[6px]">{product}</div><div className="p-[6px]">1</div><div className="p-[6px]">₹999.00</div><div className="p-[6px]">₹999.00</div>
+          </div>
         </div>
+      );
+    }
+    if (templateId === 2) { // Ekart Classic
+      return (
+        <div className="w-[380px] h-[560px] bg-white border border-[#000] p-[14px] text-black font-[Arial,sans-serif]">
+          <div className="text-[11px] font-[700]">Shipped To</div>
+          <div className="text-[13px] font-[800] mt-[8px]">{name}</div>
+          <div className="text-[10px] leading-[1.5] mt-[4px]">{addr}</div>
+          <div className="border-t-[2px] border-[#000] my-[12px]"></div>
+          <div className="flex justify-between">
+            <div>
+              <div className="text-[15px] font-[800]">CASH ON DELIVERY</div>
+              <div className="text-[10px] font-[700] mt-[9px]">Amount To Collect - ₹ 698.00</div>
+              <div className="text-[10px] mt-[6px]">Order Date: 18 Jun 2026</div>
+              <div className="text-[10px] mt-[6px]">Weight: 0.40 kg</div>
+            </div>
+            <div className="text-center">
+              <div className="w-[62px] h-[62px] border-[3px] border-black bg-[repeating-conic-gradient(#000_0%_25%,#fff_0%_50%)] bg-[length:9px_9px] mx-auto"></div>
+              <div className="text-[10px] font-[700] mt-[4px]">EKART</div>
+            </div>
+          </div>
+          <div className="text-[9px] text-right mt-[2px]">CMDC0004156753</div>
+          <div className="mt-[8px]"><Barcode /></div>
+          <div className="text-[11px] font-[700] mt-[5px]">Order: 184785</div>
+          <div className="border border-[#000] mt-[14px]">
+            <div className="grid grid-cols-[38px_1fr_42px] bg-[#f3dfe3] text-[9px] font-[700] text-center border-b border-[#000]">
+              <div className="p-[5px] border-r border-[#000]">Sr No</div><div className="p-[5px] border-r border-[#000]">Product Name</div><div className="p-[5px]">Qty</div>
+            </div>
+            <div className="grid grid-cols-[38px_1fr_42px] text-[9px]">
+              <div className="p-[6px] border-r border-[#000] text-center">1</div><div className="p-[6px] border-r border-[#000] leading-[1.4]">{product}</div><div className="p-[6px] text-center">1</div>
+            </div>
+          </div>
+          {bottomImg}
+          <div className="mt-[16px] text-center"><Barcode text="CMDC0004156753" /></div>
+        </div>
+      );
+    }
+    if (templateId === 3) { // Delhivery Surface
+      return (
+        <div className="w-[380px] h-[560px] bg-white border-[2px] border-[#000] text-black font-[Arial,sans-serif]">
+          <div className="grid grid-cols-2 border-b-[2px] border-[#000]">
+            <div className="p-[12px] border-r-[2px] border-[#000] text-[16px] font-[800]">{settings?.show_brand_name ? settings.brand_name || "Herbal Products" : "Herbal Products"}</div>
+            <div className="p-[12px] text-center">
+              <div className="text-[15px] font-[800] tracking-[1px]">DELHIVERY</div>
+              <div className="text-[10px] font-[700] tracking-[3px]">SURFACE</div>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 border-b-[2px] border-[#000]">
+            <div className="p-[12px] border-r-[2px] border-[#000] text-center"><Barcode text="13630511683253" /></div>
+            <div className="p-[12px] text-center flex flex-col justify-center"><div className="text-[14px] font-[800]">(COD)</div><div className="text-[16px] font-[800] mt-[6px]">Rs. 599.00</div></div>
+          </div>
+          <div className="grid grid-cols-[1.1fr_1fr] border-b-[2px] border-[#000] text-[10px]">
+            <div className="p-[10px] border-r-[2px] border-[#000] leading-[1.5]">
+              <div className="flex justify-between"><span>Deliver To:</span><b>MEE/PCK</b></div>
+              <div className="font-[800] mt-[4px]">{name}</div>
+              <div className="font-[700]">Contact: {phone}</div>
+              <div className="font-[700] mt-[3px]">Address: {addr}</div>
+            </div>
+            <div className="p-[10px] leading-[1.7]">
+              <div>Order Id: 21017686</div><div>Ref./Invoice#: #1635</div><div>Date: 20-06-2026</div><div>Weight: 0.20 kg</div>
+            </div>
+          </div>
+          {bottomImg}
+          <div className="grid grid-cols-[1fr_50px_36px_70px] text-[9px] font-[700] border-b border-[#000]">
+            <div className="p-[6px] border-r border-[#000]">Product Name</div><div className="p-[6px] border-r border-[#000]">SKU</div><div className="p-[6px] border-r border-[#000]">Qty</div><div className="p-[6px] text-right">Price</div>
+          </div>
+          <div className="grid grid-cols-[1fr_50px_36px_70px] text-[9px] border-b border-[#000]">
+            <div className="p-[6px] border-r border-[#000] leading-[1.4]">{product}</div><div className="p-[6px] border-r border-[#000]"></div><div className="p-[6px] border-r border-[#000] text-center">1</div><div className="p-[6px] text-right">599.00</div>
+          </div>
+          <div className="grid grid-cols-[1fr_36px_70px] text-[9px] font-[700]">
+            <div className="p-[6px] border-r border-[#000] text-right">Total</div><div className="p-[6px] border-r border-[#000] text-center">1</div><div className="p-[6px] text-right">Rs.599.00</div>
+          </div>
+        </div>
+      );
+    }
+    if (templateId === 4) { // Shadowfax
+      return (
+        <div className="w-[380px] h-[560px] bg-white border border-[#000] text-black font-[Arial,sans-serif]">
+          <div className="border-b border-[#000] p-[6px_10px] text-[11px] font-[700]">{settings?.show_brand_name ? settings.brand_name || "herbal products" : "herbal products"}</div>
+          <div className="p-[10px]">
+            <div className="flex justify-between items-start">
+              <div className="text-[11px] font-[700]">Ship To</div>
+              <div className="text-[10px] font-[700]">Shadowfax-S</div>
+            </div>
+            <div className="flex justify-between gap-[12px] mt-[6px]">
+              <div className="text-[10px] leading-[1.55]">
+                <div className="font-[700]">{name}</div>
+                <div>{addr}</div>
+                <div>Ph: <b>+91{phone}</b></div>
+              </div>
+              <div className="shrink-0 w-[120px]"><Barcode /></div>
+            </div>
+            <div className="flex justify-between gap-[12px] mt-[10px]">
+              <div className="text-[10px] leading-[1.7]">
+                <div>AWB: <b>SF3117462190SFS</b></div><div>Route Code:</div><div>Weight: <b>0.40 kg</b></div>
+              </div>
+              <div className="shrink-0 self-start w-[120px]"><Barcode text="Order: 2732" /></div>
+            </div>
+            <div className="border border-[#000] mt-[10px]">
+              <div className="grid grid-cols-[1fr_44px] text-[9px] font-[700] border-b border-[#000]">
+                <div className="p-[5px] border-r border-[#000]">Product</div><div className="p-[5px]">Qty</div>
+              </div>
+              <div className="grid grid-cols-[1fr_44px] text-[9px]">
+                <div className="p-[6px] border-r border-[#000] leading-[1.4]">{product}</div><div className="p-[6px] text-center">1</div>
+              </div>
+              <div className="grid grid-cols-[1fr_44px] text-[9px] font-[700] border-t border-[#000]">
+                <div className="p-[5px] border-r border-[#000] text-right">Total Quantity</div><div className="p-[5px] text-center">1</div>
+              </div>
+            </div>
+            {bottomImg}
+            <div className="text-[10px] font-[700] mt-[9px]">Payment Mode: COD</div>
+            <div className="text-[10px] font-[700]">Collectable Amount: ₹ 599.00</div>
+          </div>
+        </div>
+      );
+    }
+    if (templateId === 5) { // Shadowfax DS
+      return (
+        <div className="w-[380px] h-[560px] bg-white border border-[#000] p-[14px] text-black font-[Arial,sans-serif]">
+          <div className="text-[11px] font-[700]">To:</div>
+          <div className="text-[12px] font-[800] mt-[5px]">{name}</div>
+          <div className="text-[10px] leading-[1.5] mt-[3px]">{addr}</div>
+          <div className="border-t-[2px] border-[#000] my-[12px]"></div>
+          <div className="flex justify-between">
+            <div className="text-[10px] leading-[1.7]">
+              <div>Order Date: <b>2026-06-26</b></div><div>Invoice No: Retail07930</div>
+            </div>
+            <div className="text-center w-[120px]"><Barcode text="#ZS100671001" /></div>
+          </div>
+          <div className="border-t-[2px] border-[#000] my-[12px]"></div>
+          <div className="flex justify-between items-start">
+            <div>
+              <div className="text-[22px] font-[800]">COD</div>
+              <div className="text-[14px]">Rs. 799.00</div>
+              <div className="text-[11px] mt-[4px]">DEAD WEIGHT: 0.70 kg</div>
+            </div>
+            <div className="text-center w-[120px]">
+              <div className="text-[9px] font-[700] mb-[3px]">Shadowfax DS 1kg</div>
+              <Barcode />
+              <div className="text-[8px] mt-[3px] leading-[1.4]">Awb: SF3566747685KAD</div>
+            </div>
+          </div>
+          {bottomImg}
+          <div className="border border-[#000] mt-[12px]">
+            <div className="grid grid-cols-[1fr_1.2fr_36px_60px] text-[9px] font-[700] text-center border-b border-[#000]">
+              <div className="p-[5px] border-r border-[#000]">SKU</div><div className="p-[5px] border-r border-[#000]">Item</div><div className="p-[5px] border-r border-[#000]">Qty</div><div className="p-[5px]">Amount</div>
+            </div>
+            <div className="grid grid-cols-[1fr_1.2fr_36px_60px] text-[9px]">
+              <div className="p-[6px] border-r border-[#000] text-center">171000163</div><div className="p-[6px] border-r border-[#000] leading-[1.3] truncate">{product}</div><div className="p-[6px] border-r border-[#000] text-center">1</div><div className="p-[6px] text-center">Rs. 799</div>
+            </div>
+          </div>
+          <div className="text-[8px] leading-[1.5] mt-[12px]">This is a computer generated document, hence does not require signature.</div>
+        </div>
+      );
+    }
+    if (templateId === 6) { // Ekart Prime
+      return (
+        <div className="w-[380px] h-[560px] bg-white border-[2px] border-dashed border-[#000] p-[12px] text-black font-[Arial,sans-serif]">
+          <div className="text-[10px] text-right font-[700]">{settings?.show_brand_name ? settings.brand_name || "fashion shop" : "fashion shop"}</div>
+          <div className="flex justify-between gap-[12px] border-b border-[#000] pb-[10px]">
+            <div className="text-[10px] leading-[1.5]">
+              <div className="font-[800]">Deliver To:</div>
+              <div className="font-[800]">{name}</div>
+              <div>{addr}</div>
+              <div>Mobile: <b>{phone}</b></div>
+            </div>
+            <div className="text-center border-l border-[#000] pl-[12px] shrink-0">
+              <div className="text-[13px] font-[800]">COD</div>
+              <div className="text-[13px] font-[800]">Rs. 999</div>
+              <div className="text-[9px] mt-[4px]">Weight - 0.5 Kg</div>
+            </div>
+          </div>
+          <div className="text-[10px] font-[700] text-center mt-[10px]">Order ID - 62738  Date: 25-09-2026</div>
+          <div className="text-center mt-[8px] flex justify-center"><div className="w-[180px]"><Barcode /></div></div>
+          <div className="text-[10px] font-[700] text-center mt-[4px] border-b border-[#000] pb-[10px]">Ekart Prime - FSNC0016999522</div>
+          {bottomImg}
+          <div className="border border-[#000] mt-[12px]">
+            <div className="grid grid-cols-[1fr_36px_30px_54px_56px] text-[8px] font-[700] border-b border-[#000]">
+              <div className="p-[5px] border-r border-[#000]">Product</div><div className="p-[5px] border-r border-[#000]">SKU</div><div className="p-[5px] border-r border-[#000]">Qty</div><div className="p-[5px] border-r border-[#000]">Amt</div><div className="p-[5px]">Total</div>
+            </div>
+            <div className="grid grid-cols-[1fr_36px_30px_54px_56px] text-[8px]">
+              <div className="p-[6px] border-r border-[#000] truncate">{product}</div><div className="p-[6px] border-r border-[#000]"></div><div className="p-[6px] border-r border-[#000] text-center">1</div><div className="p-[6px] border-r border-[#000]">999.00</div><div className="p-[6px]">999.00</div>
+            </div>
+          </div>
+          <div className="text-[7px] leading-[1.5] mt-[14px] border-t border-[#000] pt-[8px]">This is computer generated document, hence not required signature.</div>
+        </div>
+      );
+    }
+    return null;
+  };
+
+  return (
+    <div className="mx-auto animate-fade-up pb-[100px]">
+      <div className="flex items-center justify-between">
+        <h1 className="text-[24px] font-bold text-[#2F3A22] tracking-[-0.4px]">
+          Label Settings
+        </h1>
+        <button
+          disabled={saving}
+          onClick={save}
+          className="bg-[#546B41] text-[#FFF8EC] rounded-[8px] px-[16px] py-[8px] text-[13px] font-semibold cursor-pointer hover:bg-[#63794E] transition-colors disabled:opacity-50"
+        >
+          {saving ? "Saving..." : "Save Settings"}
+        </button>
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B] flex items-center gap-3">
+        <div className="p-4 mt-4 rounded-[12px] bg-[#FEF2F2] border border-[#FECACA] text-sm font-medium text-[#991B1B] flex items-center gap-3">
           <span>⚠️</span> {error}
         </div>
       )}
       {success && (
-        <div className="p-4 rounded-xl bg-[#EDF0E4] border border-[#CBD7B5] text-sm font-medium text-[#546B41] flex items-center gap-3">
+        <div className="p-4 mt-4 rounded-[12px] bg-[#EDF0E4] border border-[#CBD7B5] text-sm font-medium text-[#546B41] flex items-center gap-3">
           <span>✓</span> {success}
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="space-y-6">
-          {/* Toggle options */}
-          <div className="bg-white rounded-xl border border-[#EADFC8] shadow-sm overflow-hidden">
-            <div className="px-5 py-4 border-b border-[#EADFC8] bg-[#F6EEDB]">
-              <h2 className="text-xs font-bold text-[#2F3A22] uppercase tracking-wider">
-                Label Content Options
-              </h2>
+      <div className="inline-flex bg-[#FFFFFF] border border-[#E2D4B8] rounded-[9px] p-[3px] mt-[18px]">
+        <div
+          onClick={() => setActiveTab("Templates")}
+          className={`px-[16px] py-[7px] text-[13px] font-semibold cursor-pointer rounded-[6px] transition-colors ${
+            activeTab === "Templates"
+              ? "bg-[#EDF0E4] text-[#546B41]"
+              : "text-[#8A9270] hover:text-[#546B41]"
+          }`}
+        >
+          Templates
+        </div>
+        <div
+          onClick={() => setActiveTab("Design Studio")}
+          className={`px-[16px] py-[7px] text-[13px] font-semibold cursor-pointer rounded-[6px] transition-colors ${
+            activeTab === "Design Studio"
+              ? "bg-[#EDF0E4] text-[#546B41]"
+              : "text-[#8A9270] hover:text-[#546B41]"
+          }`}
+        >
+          Design Studio
+        </div>
+      </div>
+
+      {activeTab === "Templates" && (
+        <div className="grid grid-cols-1 lg:grid-cols-[auto_1fr] gap-[26px] mt-[18px]">
+          {/* Left Column - Template Selection */}
+          <div>
+            <div className="text-[13px] font-semibold mb-[10px] text-[#2F3A22]">
+              Choose a template
             </div>
-            <div className="divide-y divide-[#F6EEDB]">
-              {[
-                {
-                  key: "show_brand_name",
-                  label: "Show Brand Name",
-                  desc: "Print your store or brand name on the label",
-                },
-                {
-                  key: "show_logo",
-                  label: "Show Brand Logo",
-                  desc: "Display your store logo at the top",
-                },
-                {
-                  key: "show_gst",
-                  label: "Show GST Number",
-                  desc: "Include GSTIN for B2B shipments",
-                },
-                {
-                  key: "show_return_addr",
-                  label: "Show Return Address",
-                  desc: "Print return/pickup address",
-                },
-                {
-                  key: "show_mobile",
-                  label: "Show Mobile Number",
-                  desc: "Print your mobile number on the label",
-                },
-              ].map((opt) => {
-                const isActive = settings?.[opt.key];
+            <div className="grid grid-cols-2 gap-[14px]">
+              {TEMPLATES.map((t) => {
+                const isSelected = settings?.template_id === t.id;
                 return (
                   <div
-                    key={opt.key}
-                    className="flex items-center justify-between p-4 hover:bg-[#FFF8EC]/50 transition-colors cursor-pointer"
-                    onClick={() => toggle(opt.key)}
+                    key={t.id}
+                    onClick={() =>
+                      setSettings((p: any) => ({ ...p, template_id: t.id }))
+                    }
+                    className="cursor-pointer group"
                   >
-                    <div>
-                      <div className="font-semibold text-xs text-[#2F3A22]">
-                        {opt.label}
-                      </div>
-                      <div className="text-[11px] text-[#8A9270] mt-0.5">
-                        {opt.desc}
+                    <div
+                      className={`w-[148px] h-[218px] overflow-hidden bg-white rounded-[6px] transition-all duration-200 border-2 ${
+                        isSelected
+                          ? "border-[#546B41] shadow-md ring-2 ring-[#546B41]/20"
+                          : "border-[#E2D4B8] group-hover:border-[#CBD7B5]"
+                      }`}
+                    >
+                      <div className="origin-top-left scale-[0.385] w-[380px] h-[560px] pointer-events-none">
+                        {renderFakeLabel(t.id)}
                       </div>
                     </div>
-                    <button
-                      className={`w-10 h-5 rounded-full relative transition-colors ${isActive ? "bg-[#546B41]" : "bg-[#E2D4B8]"}`}
+                    <div
+                      className={`text-[12px] text-center mt-[8px] font-medium transition-colors ${
+                        isSelected ? "text-[#546B41] font-bold" : "text-[#8A9270]"
+                      }`}
                     >
-                      <span
-                        className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow-sm transition-all ${isActive ? "left-5.5" : "left-0.5"}`}
-                      />
-                    </button>
+                      {t.name}
+                    </div>
                   </div>
                 );
               })}
             </div>
           </div>
 
-          {/* Brand details */}
-          <div className="bg-white rounded-xl shadow-sm border border-[#EADFC8] overflow-hidden">
-            <div className="px-6 py-5 border-b border-[#EADFC8] bg-[#F6EEDB]">
-              <h2 className="text-sm font-bold text-[#2F3A22]">
-                Brand Details
-              </h2>
+          {/* Right Column - Live Preview */}
+          <div>
+            <div className="flex items-center justify-between">
+              <div className="text-[13px] font-semibold text-[#2F3A22]">
+                Live preview · {selDesignName}
+              </div>
+              <div className="flex gap-[10px]">
+                <button
+                  onClick={handlePrint}
+                  className="bg-[#546B41] text-[#FFF8EC] rounded-[8px] px-[16px] py-[8px] text-[13px] font-semibold cursor-pointer hover:bg-[#63794E] transition-colors"
+                >
+                  ⎙ Print Label
+                </button>
+                <button
+                  onClick={handlePrint}
+                  className="bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-[8px] px-[16px] py-[8px] text-[13px] font-medium cursor-pointer hover:bg-[#E0E7CE] transition-colors"
+                >
+                  ↧ Download PDF
+                </button>
+              </div>
             </div>
-            <div className="p-6 space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+            <div className="mt-[14px] bg-[#FFF8EC] border border-[#E2D4B8] rounded-[12px] p-[26px] flex justify-center overflow-auto min-h-[600px]">
+              <div className="shadow-[0_6px_24px_rgba(0,0,0,0.4)] shrink-0">
+                {renderFakeLabel(settings?.template_id || 1)}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "Design Studio" && (
+        <div className="grid grid-cols-[204px_1fr_196px] gap-[18px] mt-[18px]">
+          {/* Elements */}
+          <div>
+            <div className="text-[13px] font-semibold mb-[10px] text-[#2F3A22]">Elements</div>
+            <div className="flex flex-col gap-[8px]">
+              {PALETTE.map((p) => (
+                <div
+                  key={p.id}
+                  onClick={() => addEl(p.id)}
+                  className="flex items-center gap-[10px] bg-[#FFFFFF] border border-[#E2D4B8] rounded-[9px] px-[12px] py-[10px] text-[13px] text-[#2F3A22] font-medium cursor-pointer hover:border-[#546B41] transition-colors select-none"
+                >
+                  <span className="w-[22px] text-center text-[#546B41] text-[12px]">
+                    {p.icon}
+                  </span>
+                  {p.label}
+                  <span className="ml-auto text-[#8A9270]">+</span>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Canvas */}
+          <div>
+            <div className="text-[12px] text-[#8A9270] mb-[10px]">
+              Click an element to add it, then drag to position. Click a placed element to select & delete.
+            </div>
+            <div className="flex justify-center">
+              <div
+                ref={canvasRef}
+                onMouseMove={onMove}
+                onMouseUp={endDrag}
+                onMouseLeave={endDrag}
+                className="relative w-[380px] h-[560px] bg-white border border-[#E2D4B8] rounded-[4px] overflow-hidden shadow-[0_6px_24px_rgba(0,0,0,0.4)]"
+                style={{
+                  backgroundImage: "linear-gradient(#eef 1px, transparent 1px), linear-gradient(90deg, #eef 1px, transparent 1px)",
+                  backgroundSize: "20px 20px"
+                }}
+              >
+                {labelEls.length === 0 && (
+                  <div className="absolute inset-0 flex items-center justify-center text-[#bbb] text-[13px] pointer-events-none">
+                    Add elements from the left →
+                  </div>
+                )}
+                {labelEls.map((e) => {
+                  const m = META[e.type] || { kind: "text", text: e.type };
+                  const sel = e.id === selId;
+                  return (
+                    <div
+                      key={e.id}
+                      onMouseDown={(ev) => startDrag(e.id, ev)}
+                      style={{
+                        position: "absolute",
+                        left: e.x,
+                        top: e.y,
+                        cursor: "move",
+                        userSelect: "none",
+                        outline: sel ? "2px solid #546B41" : "none",
+                        outlineOffset: "2px",
+                      }}
+                    >
+                      {m.kind === "text" && (
+                        <div style={{
+                          color: "#000",
+                          fontSize: m.big ? 16 : m.small ? 9 : 11,
+                          fontWeight: m.bold || m.big ? 700 : 400,
+                          border: m.box ? "1px solid #000" : "none",
+                          padding: m.box ? "4px 8px" : 0,
+                          whiteSpace: "nowrap"
+                        }}>
+                          {m.text}
+                        </div>
+                      )}
+                      {m.kind === "barcode" && (
+                        <div>
+                          <div className="w-[160px] h-[40px] bg-[repeating-linear-gradient(90deg,#000_0_2px,#fff_2px_3px,#000_3px_6px,#fff_6px_8px,#000_8px_9px,#fff_9px_12px)]"></div>
+                          <div className="text-[9px] text-[#000] text-center mt-[2px]">{m.text}</div>
+                        </div>
+                      )}
+                      {m.kind === "qr" && (
+                        <div className="w-[62px] h-[62px] border-[3px] border-[#000] bg-[repeating-conic-gradient(#000_0%_25%,#fff_0%_50%)] bg-[length:9px_9px]"></div>
+                      )}
+                      {m.kind === "divider" && (
+                        <div className="w-[220px] border-t-[2px] border-[#000]"></div>
+                      )}
+                      {m.kind === "table" && (
+                        <div className="w-[200px] border border-[#000] text-[9px] text-[#000]">
+                          <div className="grid grid-cols-[1fr_34px] border-b border-[#000] font-[700]">
+                            <div className="p-[3px] border-r border-[#000]">Product</div>
+                            <div className="p-[3px]">Qty</div>
+                          </div>
+                          <div className="grid grid-cols-[1fr_34px]">
+                            <div className="p-[3px] border-r border-[#000]">Co-Ord Set (C-10)</div>
+                            <div className="p-[3px] text-center">1</div>
+                          </div>
+                        </div>
+                      )}
+                      {sel && (
+                        <span
+                          onClick={(ev) => delEl(e.id, ev)}
+                          className="absolute -top-[9px] -right-[9px] w-[18px] h-[18px] rounded-full bg-[#B4623F] text-white text-[11px] flex items-center justify-center cursor-pointer"
+                        >
+                          ✕
+                        </span>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* Layout */}
+          <div>
+            <div className="text-[13px] font-semibold mb-[10px] text-[#2F3A22]">Layout</div>
+            <div className="text-[12px] text-[#8A9270] leading-[1.6]">{labelEls.length} element(s) placed on the label.</div>
+            
+            <div onClick={() => { setLabelEls([]); setSelId(null); }} className="mt-[14px] bg-[#FFFFFF] border border-[#E2D4B8] rounded-[8px] py-[9px] px-[14px] text-[13px] cursor-pointer text-center text-[#2F3A22] font-medium hover:border-[#B4623F] hover:text-[#B4623F] transition-colors">
+              ↺ Clear canvas
+            </div>
+            <div onClick={() => alert("Layout saved!")} className="mt-[10px] bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-[8px] py-[9px] px-[14px] text-[13px] font-medium cursor-pointer text-center hover:bg-[#E0E7CE] transition-colors">
+              ⛁ Save Layout
+            </div>
+            <div onClick={handlePrint} className="mt-[10px] bg-[#546B41] text-[#FFF8EC] rounded-[8px] py-[9px] px-[14px] text-[13px] font-semibold cursor-pointer text-center hover:bg-[#63794E] transition-colors">
+              ⎙ Print Label
+            </div>
+          </div>
+        </div>
+      )}
+
+      <div className="text-[14px] font-semibold mt-[24px] text-[#2F3A22]">Format</div>
+      <div className="inline-flex bg-[#FFFFFF] border border-[#E2D4B8] rounded-[24px] p-[4px] mt-[12px]">
+        {SIZES.map((s) => (
+          <div
+            key={s}
+            onClick={() => setSettings((p: any) => ({ ...p, label_size: s }))}
+            className={`px-[16px] py-[6px] text-[13px] font-bold rounded-[20px] cursor-pointer transition-colors ${
+              settings?.label_size === s
+                ? "bg-[#546B41] text-[#FFF8EC]"
+                : "text-[#8A9270] hover:text-[#546B41]"
+            }`}
+          >
+            {s}
+          </div>
+        ))}
+      </div>
+      <div
+        onClick={() => setPrint4up(!print4up)}
+        className="flex items-center gap-[10px] mt-[16px] text-[13px] text-[#6B7556] cursor-pointer select-none group w-fit"
+      >
+        <span
+          className={`w-[18px] h-[18px] rounded-[4px] flex items-center justify-center border transition-colors ${
+            print4up ? "bg-[#546B41] border-[#546B41] text-white" : "bg-white border-[#E2D4B8] group-hover:border-[#CBD7B5]"
+          }`}
+        >
+          {print4up && "✓"}
+        </span>
+        Print 4 labels (4x6) on a single A4 page
+      </div>
+
+      <div className="bg-[#FFFFFF] border border-[#E2D4B8] rounded-[14px] p-[24px] mt-[24px]">
+        <div className="text-[15px] font-semibold text-[#2F3A22]">Details to show on label</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] mt-[18px]">
+          {[
+            {
+              key: "show_brand_name",
+              label: "Display order value in COD and Prepaid label",
+              hint: "For some TPLs, COD amount will be displayed even if disabled.",
+            },
+            {
+              key: "show_logo",
+              label: "Display Customer's Mobile Number in Label",
+              hint: "For some TPLs, mobile number will be displayed even if disabled.",
+            },
+            {
+              key: "show_return_addr",
+              label: "Display Customer's Address in Label",
+              hint: "If disabled, customer's address should not be visible on the label.",
+            },
+            {
+              key: "show_mobile",
+              label: "Display Shipper Address",
+              hint: "If disabled, shipper address should not be visible on the label.",
+            },
+            {
+              key: "show_gst",
+              label: "Include Customer Invoice",
+              hint: "Not available for 4x6 format due to size constraints.",
+            },
+            {
+              key: "hide_product", // Assuming a placeholder if it's not in DB yet
+              label: "Hide Product Name in Label",
+              hint: "If enabled, product name should not be visible on the label.",
+            },
+          ].map((o) => {
+            const isActive = settings?.[o.key];
+            return (
+              <div
+                key={o.key}
+                onClick={() => toggle(o.key)}
+                className="flex gap-[12px] cursor-pointer group"
+              >
+                <span
+                  className={`w-[20px] h-[20px] rounded-[6px] shrink-0 flex items-center justify-center border transition-colors mt-[2px] ${
+                    isActive
+                      ? "bg-[#546B41] border-[#546B41] text-white"
+                      : "bg-white border-[#E2D4B8] group-hover:border-[#CBD7B5]"
+                  }`}
+                >
+                  {isActive && <span className="text-[14px] leading-none">✓</span>}
+                </span>
+                <div>
+                  <div className={`text-[13px] font-semibold transition-colors ${isActive ? "text-[#2F3A22]" : "text-[#8A9270]"}`}>
+                    {o.label}
+                  </div>
+                  <div className="text-[11px] text-[#8A9270] mt-[5px] leading-[1.5]">
+                    {o.hint}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <div className="mt-[24px] pt-[24px] border-t border-[#E2D4B8]">
+          <div className="text-[14px] font-semibold text-[#2F3A22]">Brand & Address Details</div>
+          <div className="text-[11px] text-[#8A9270] mt-[6px] leading-[1.5]">
+            Configure the specific text values to be printed on your labels if enabled above.
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] mt-[14px]">
+             <div>
+                <label className="block text-[12px] font-semibold text-[#6B7556] mb-[6px] uppercase tracking-wide">
                   Brand Name
                 </label>
                 <input
-                  className="w-full px-3 py-2.5 text-sm border border-[#EADFC8] rounded-xl bg-white text-[#2F3A22] outline-none transition-all focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
+                  className="w-full bg-[#FFF8EC] border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] text-[#2F3A22] outline-none focus:border-[#546B41] transition-colors"
                   value={settings?.brand_name || ""}
                   onChange={(e) =>
                     setSettings((p: any) => ({
@@ -292,14 +799,13 @@ export default function LabelsPage() {
                     }))
                   }
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+             </div>
+             <div>
+                <label className="block text-[12px] font-semibold text-[#6B7556] mb-[6px] uppercase tracking-wide">
                   Return Address
                 </label>
-                <textarea
-                  className="w-full px-3 py-2.5 text-sm border border-[#EADFC8] rounded-xl bg-white text-[#2F3A22] outline-none transition-all focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
-                  rows={3}
+                <input
+                  className="w-full bg-[#FFF8EC] border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] text-[#2F3A22] outline-none focus:border-[#546B41] transition-colors"
                   value={settings?.return_address || ""}
                   onChange={(e) =>
                     setSettings((p: any) => ({
@@ -307,237 +813,38 @@ export default function LabelsPage() {
                       return_address: e.target.value,
                     }))
                   }
-                  placeholder="Plot 14, GIDC Sachin, Surat 394230"
+                  placeholder="Plot 14, Surat 394230"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
-                  Bottom Label Image
-                </label>
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className="w-full text-xs text-[#8A9270] file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-[#EDF0E4] file:text-[#546B41] hover:file:bg-[#DCE1D0] file:cursor-pointer cursor-pointer border border-[#EADFC8] rounded-xl p-1"
-                />
-                {uploadingImage && (
-                  <div className="text-xs text-[#546B41] mt-1 font-bold animate-pulse">
-                    Uploading image...
-                  </div>
-                )}
-                {uploadImageError && (
-                  <div className="text-xs text-[#EF4444] mt-1 font-bold">
-                    {uploadImageError}
-                  </div>
-                )}
-                {settings?.label_image_url && (
-                  <div className="text-xs text-[#16A34A] mt-1 font-bold flex items-center gap-1">
-                    <svg
-                      width="12"
-                      height="12"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="3"
-                    >
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>{" "}
-                    Image uploaded!
-                  </div>
-                )}
-              </div>
-            </div>
+             </div>
           </div>
-
-          {/* Label size */}
-          <div className="bg-white rounded-xl shadow-sm border border-[#EADFC8] overflow-hidden">
-            <div className="px-6 py-5 border-b border-[#EADFC8] bg-[#F6EEDB]">
-              <h2 className="text-sm font-bold text-[#2F3A22]">Label Size</h2>
-            </div>
-            <div className="flex flex-wrap gap-3 p-6">
-              {SIZES.map((s) => {
-                const isActive = settings?.label_size === s;
-                return (
-                  <button
-                    key={s}
-                    onClick={() =>
-                      setSettings((p: any) => ({ ...p, label_size: s }))
-                    }
-                    className={`px-6 py-2.5 text-sm font-bold font-mono rounded-xl transition-all ${isActive ? "bg-[#EDF0E4] text-[#546B41] ring-2 ring-[#546B41]" : "bg-[#F8F9F7] border border-[#EADFC8] text-[#6B7556] hover:bg-white hover:border-[#CBD7B5]"}`}
-                  >
-                    {s}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-
-          <button
-            disabled={saving}
-            onClick={save}
-            className="w-full flex items-center justify-center py-3.5 bg-[#546B41] text-white text-sm font-bold rounded-xl hover:bg-[#435534] transition-colors shadow-sm disabled:opacity-50"
-          >
-            {saving ? "Saving..." : "Save Label Settings"}
-          </button>
         </div>
 
-        <div className="space-y-6">
-          {/* Template picker */}
-          <div className="bg-white rounded-xl shadow-sm border border-[#EADFC8] overflow-hidden">
-            <div className="px-6 py-5 border-b border-[#EADFC8] bg-[#F6EEDB]">
-              <h2 className="text-sm font-bold text-[#2F3A22]">
-                Label Templates
-              </h2>
-            </div>
-            <div className="grid grid-cols-2 gap-4 p-6">
-              {TEMPLATES.map((t) => {
-                const isActive = settings?.template_id === t.id;
-                return (
-                  <button
-                    key={t.id}
-                    onClick={() =>
-                      setSettings((p: any) => ({ ...p, template_id: t.id }))
-                    }
-                    className={`p-4 text-left rounded-xl border transition-all relative ${isActive ? "bg-[#EDF0E4] border-[#546B41] ring-1 ring-[#546B41]" : "bg-white border-[#EADFC8] hover:border-[#CBD7B5] hover:shadow-sm"}`}
-                  >
-                    <div className="font-bold text-sm text-[#2F3A22] mb-1">
-                      {t.name}
-                    </div>
-                    <div className="text-xs text-[#8A9270]">{t.desc}</div>
-                    {isActive && (
-                      <div className="absolute top-4 right-4">
-                        <svg
-                          width="18"
-                          height="18"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="#546B41"
-                          strokeWidth="2.5"
-                        >
-                          <path d="M20 6L9 17l-5-5" />
-                        </svg>
-                      </div>
-                    )}
-                  </button>
-                );
-              })}
-            </div>
+        <div className="mt-[24px] pt-[24px] border-t border-[#E2D4B8]">
+          <div className="text-[14px] font-semibold text-[#2F3A22]">Label Badges & Logo</div>
+          <div className="text-[11px] text-[#8A9270] mt-[6px] leading-[1.5]">
+            Add up to 4 certification badges or a custom logo to display on your shipping label (JPG, PNG, &lt;200KB).
           </div>
-
-          {/* Live preview */}
-          <div className="bg-white rounded-xl shadow-sm border border-[#EADFC8] overflow-hidden sticky top-6">
-            <div className="px-6 py-5 border-b border-[#EADFC8] bg-[#F6EEDB] flex items-center justify-between">
-              <h2 className="text-sm font-bold text-[#2F3A22]">Live Preview</h2>
-              <span className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest bg-[#EADFC8] px-2 py-0.5 rounded-full">
-                {TEMPLATES.find((t) => t.id === settings?.template_id)?.name} •{" "}
-                {settings?.label_size}
-              </span>
-            </div>
-            <div className="p-6 bg-[#F8F9F7] flex flex-col items-center">
-              {/* Fake Label Box */}
+          <div className="flex gap-[12px] mt-[14px]">
+            <label className="w-[80px] h-[80px] rounded-[10px] border border-dashed border-[#D8CBAE] bg-[#FFF8EC] flex flex-col items-center justify-center text-[#C2BC9E] cursor-pointer hover:border-[#546B41] hover:text-[#546B41] transition-colors relative overflow-hidden group">
+              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              {settings?.label_image_url ? (
+                 <img src={`${api.defaults.baseURL?.replace("/api/v1", "") || ""}${settings.label_image_url}`} className="w-full h-full object-cover" alt="Badge" />
+              ) : (
+                <span className="text-[24px] leading-none mb-1">+</span>
+              )}
+              {uploadingImage && <div className="absolute inset-0 bg-[#FFF8EC]/80 flex items-center justify-center text-[10px] font-bold text-[#546B41]">Up...</div>}
+            </label>
+            {[1, 2, 3].map((slot) => (
               <div
-                className="w-full max-w-[350px] bg-white border border-[#CBD7B5] shadow-sm p-4 font-mono text-xs text-black relative"
-                style={{ aspectRatio: "4/6" }}
+                key={slot}
+                className="w-[80px] h-[80px] rounded-[10px] border border-dashed border-[#D8CBAE] bg-[#FFF8EC] flex items-center justify-center text-[#C2BC9E] text-[24px] cursor-pointer hover:border-[#546B41] hover:text-[#546B41] transition-colors"
               >
-                <div className="flex justify-between items-start border-b-2 border-black pb-3 mb-3">
-                  <div>
-                    {settings?.show_brand_name && settings?.brand_name && (
-                      <div className="font-bold text-sm mb-1">
-                        {settings.brand_name}
-                      </div>
-                    )}
-                    <div className="font-black text-lg tracking-wide mb-1">
-                      {(couriers.length > 0
-                        ? couriers[0].name
-                        : "DELHIVERY"
-                      ).toUpperCase()}
-                    </div>
-                    <div className="text-[10px]">AWB: DEL1234567890</div>
-                  </div>
-                  <div className="bg-black text-white px-2 py-1 font-bold text-[10px]">
-                    PREPAID
-                  </div>
-                </div>
-
-                <div className="mb-4">
-                  <div className="font-bold text-[10px] mb-1">SHIP TO:</div>
-                  <div className="font-semibold">Rahul Sharma</div>
-                  <div>204 MG Road, Bengaluru 560001</div>
-                  <div>Ph: 9876543210</div>
-                </div>
-
-                {settings?.show_return_addr && settings?.return_address && (
-                  <div className="mb-4 pt-3 border-t border-black/20 text-[10px]">
-                    <div className="font-bold mb-1">RETURN TO:</div>
-                    <div>{settings.return_address}</div>
-                    {settings?.show_mobile && settings?.phone_number && (
-                      <div className="mt-1 font-bold">
-                        Ph: {settings.phone_number}
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {settings?.label_image_url && (
-                  <div className="mb-4 flex justify-center pt-2 border-t border-black/10">
-                    <img
-                      src={`${api.defaults.baseURL?.replace("/api/v1", "") || ""}${settings.label_image_url}`}
-                      className="max-h-12 object-contain"
-                      alt="Label Bottom"
-                    />
-                  </div>
-                )}
-
-                <div className="mt-auto absolute bottom-4 left-4 right-4">
-                  <div className="h-16 bg-[repeating-linear-gradient(90deg,#000,#000_2px,transparent_2px,transparent_4px)] w-full mb-2 opacity-80" />
-                  <div className="border-t-2 border-black pt-2 flex justify-between text-[10px] font-semibold">
-                    <div>Wt: 0.5kg • ORD-2026-001</div>
-                    {settings?.show_gst && <div>GST: 24AAAA0000A1Z5</div>}
-                  </div>
-                </div>
+                +
               </div>
-
-              <div className="flex gap-3 mt-6 w-full max-w-[350px]">
-                <button
-                  onClick={handlePrint}
-                  className="flex-1 py-2.5 bg-white border border-[#EADFC8] text-[#2F3A22] text-sm font-bold rounded-xl hover:bg-[#FFF8EC] transition-colors shadow-sm flex items-center justify-center gap-2"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                  >
-                    <polyline points="6 9 6 2 18 2 18 9"></polyline>
-                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path>
-                    <rect x="6" y="14" width="12" height="8"></rect>
-                  </svg>
-                  Print Test
-                </button>
-                <button
-                  onClick={handlePrint}
-                  className="flex-1 py-2.5 bg-[#FFF8EC] border border-[#EADFC8] text-[#6B7556] text-sm font-bold rounded-xl hover:bg-white hover:text-[#546B41] transition-colors flex items-center justify-center gap-2"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2.5"
-                  >
-                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
-                    <polyline points="7 10 12 15 17 10"></polyline>
-                    <line x1="12" y1="15" x2="12" y2="3"></line>
-                  </svg>
-                  Download PDF
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
         </div>
+
       </div>
     </div>
   );

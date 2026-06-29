@@ -92,9 +92,9 @@ const NAV_GROUPS = [
         icon: "M18.364 5.636l-3.536 3.536m0 5.656l3.536 3.536M9.172 9.172L5.636 5.636m3.536 9.192l-3.536 3.536M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-5 0a4 4 0 11-8 0 4 4 0 018 0z",
       },
       {
-        href: "/dashboard/settings",
-        label: "Settings",
-        icon: "M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z",
+        href: "/dashboard/profile",
+        label: "Profile",
+        icon: "M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z",
       },
     ],
   },
@@ -340,30 +340,27 @@ export default function DashboardLayout({
           className="sticky top-0 z-20 flex items-center justify-between px-6 py-3 bg-[#FFF8EC] border-b border-[#EADFC8]"
           style={{ height: 60 }}
         >
-          <div className="flex items-center gap-3">
-            <div className="text-13px text-[#8A9270] font-mono-nb">
-              app.mozopost.live
-            </div>
-          </div>
+          <div className="flex items-center gap-3"></div>
           <div className="flex items-center gap-3.5">
             {/* Wallet Quick Pill */}
             <button
               onClick={() => setWalletModalOpen(true)}
-              className="flex items-center gap-3 bg-[#F1E3D9] border border-[#D4A895] rounded-full pl-4 pr-1.5 py-1.5 hover:bg-[#E8D4C8] transition-colors cursor-pointer"
+              className="flex items-center gap-3 bg-[#F1E3D9] border border-[#D4A895] rounded-[8px] pl-4 pr-1.5 py-1.5 hover:bg-[#E8D4C8] transition-colors cursor-pointer"
             >
               <span className="font-mono-nb font-medium text-sm text-[#AE5A3E] tracking-tight">
-                ₹ {user.walletBalance! < 0 ? "-" : ""}{Math.abs(user.walletBalance ?? 0).toLocaleString("en-IN")}
+                ₹ {user.walletBalance! < 0 ? "-" : ""}
+                {Math.abs(user.walletBalance ?? 0).toLocaleString("en-IN")}
               </span>
-              <span className="w-7 h-7 rounded-full bg-[#AE5A3E] text-white flex items-center justify-center text-lg font-medium leading-none pb-0.5">
+              <span className="w-7 h-7 rounded-[6px] bg-[#AE5A3E] text-white flex items-center justify-center text-lg font-medium leading-none pb-0.5">
                 +
               </span>
             </button>
 
             {/* Notification bell */}
-            <button className="w-8.5 h-8.5 rounded-lg flex items-center justify-center text-[#6B7556] bg-white border border-[#E2D4B8] hover:border-[#D8CBAE] transition-colors relative">
+            <button className="w-7 h-7 rounded-full flex items-center justify-center text-[#6B7556] bg-[#FFF8EC] border border-[#E2D4B8] hover:border-[#D8CBAE] transition-colors relative">
               <svg
-                width="16"
-                height="16"
+                width="18"
+                height="18"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -373,26 +370,30 @@ export default function DashboardLayout({
               </svg>
             </button>
 
-            {/* User chip */}
-            <div className="flex items-center gap-2 pl-3.5 border-l border-[#EADFC8]">
+            {/* User chip / Profile redirect */}
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center gap-3 pl-5 border-l border-[#EADFC8] group cursor-pointer"
+              title="View Profile"
+            >
               <div
-                className="w-8.5 h-8.5 rounded-full flex items-center justify-center text-white text-xs font-bold shrink-0 shadow-sm"
+                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-sm font-semibold shrink-0 shadow-sm transition-transform group-hover:scale-105"
                 style={{
                   background:
                     "linear-gradient(135deg, #546B41 0%, #3C4E2D 100%)",
                 }}
               >
-                {(user.businessName || user.email || "U")[0].toUpperCase()}
+                {(user.businessName || user.email || "U").charAt(0).toUpperCase()}
               </div>
               <div className="hidden sm:block">
-                <div className="text-xs font-bold text-[#2F3A22] leading-tight">
+                <div className="text-[15px] font-bold text-[#2F3A22] leading-tight group-hover:text-[#546B41] transition-colors">
                   {user.businessName || user.email}
                 </div>
-                <div className="text-[10px] text-[#8A9270] capitalize font-medium">
+                <div className="text-[13px] text-[#8A9270] capitalize font-medium mt-0.5">
                   {user.role.replace("_", " ")}
                 </div>
               </div>
-            </div>
+            </Link>
           </div>
         </header>
 
@@ -401,9 +402,9 @@ export default function DashboardLayout({
       </main>
 
       {/* ── Modals ── */}
-      <AddMoneyModal 
-        open={walletModalOpen} 
-        onClose={() => setWalletModalOpen(false)} 
+      <AddMoneyModal
+        open={walletModalOpen}
+        onClose={() => setWalletModalOpen(false)}
       />
     </div>
   );

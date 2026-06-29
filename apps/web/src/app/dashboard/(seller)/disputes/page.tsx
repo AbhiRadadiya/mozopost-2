@@ -160,7 +160,7 @@ export default function WeightDiscrepancyPage() {
   const getSlab = (gm: number) => (Math.ceil(gm / 500) * 0.5).toFixed(1) + " Kg";
 
   return (
-    <div className="flex flex-col h-full bg-[#FFF8EC] overflow-y-auto font-sans p-6">
+    <div className="animate-fade-up">
       
       {/* HEADER & OVERVIEW */}
       <div className="text-[24px] font-bold tracking-tight text-[#0F172A]">Weight Discrepancy</div>
