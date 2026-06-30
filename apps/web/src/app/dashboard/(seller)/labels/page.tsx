@@ -30,7 +30,11 @@ const PALETTE = [
 const META: Record<string, any> = {
   brand: { kind: "text", text: "MozoPost Shipping", big: true },
   name: { kind: "text", text: "Simran Simran", bold: true },
-  address: { kind: "text", text: "B-113 Rajveer colony, Delhi 110096", small: true },
+  address: {
+    kind: "text",
+    text: "B-113 Rajveer colony, Delhi 110096",
+    small: true,
+  },
   cod: { kind: "text", text: "COD ₹ 698.00", box: true, bold: true },
   order: { kind: "text", text: "Order: 184785" },
   awb: { kind: "barcode", text: "CMDC0004156753" },
@@ -70,7 +74,9 @@ export default function LabelsPage() {
     let y = e.clientY - r.top - offY;
     x = Math.max(0, Math.min(x, r.width - 24));
     y = Math.max(0, Math.min(y, r.height - 16));
-    setLabelEls((els) => els.map((el) => (el.id === dragId ? { ...el, x, y } : el)));
+    setLabelEls((els) =>
+      els.map((el) => (el.id === dragId ? { ...el, x, y } : el)),
+    );
   };
   const endDrag = () => {
     if (dragId != null) setDragId(null);
@@ -92,7 +98,10 @@ export default function LabelsPage() {
     setElSeq((seq) => {
       const id = seq + 1;
       const n = labelEls.length;
-      setLabelEls((els) => [...els, { id, type, x: 30 + (n % 4) * 16, y: 24 + n * 22 }]);
+      setLabelEls((els) => [
+        ...els,
+        { id, type, x: 30 + (n % 4) * 16, y: 24 + n * 22 },
+      ]);
       setSelId(id);
       return id;
     });
@@ -175,9 +184,16 @@ export default function LabelsPage() {
     }
   }
 
-  if (loading) return <div className="p-8 text-center text-sm text-[#8A9270] font-medium">Loading settings...</div>;
+  if (loading)
+    return (
+      <div className="p-8 text-center text-sm text-[#8A9270] font-medium">
+        Loading settings...
+      </div>
+    );
 
-  const selDesignName = TEMPLATES.find((t) => t.id === settings?.template_id)?.name || "MozoPost Standard";
+  const selDesignName =
+    TEMPLATES.find((t) => t.id === settings?.template_id)?.name ||
+    "MozoPost Standard";
 
   const renderFakeLabel = (templateId: number) => {
     const name = "Simran Simran";
@@ -195,31 +211,52 @@ export default function LabelsPage() {
     const apiBase = api.defaults.baseURL?.replace("/api/v1", "") || "";
     const bottomImg = settings?.label_image_url ? (
       <div className="mb-4 flex justify-center pt-2 border-t border-black/10">
-        <img src={`${apiBase}${settings.label_image_url}`} className="max-h-12 object-contain" alt="Label Bottom" />
+        <img
+          src={`${apiBase}${settings.label_image_url}`}
+          className="max-h-12 object-contain"
+          alt="Label Bottom"
+        />
       </div>
     ) : null;
 
-    if (templateId === 1) { // MozoPost Standard
+    if (templateId === 1) {
+      // MozoPost Standard
       return (
         <div className="w-[380px] h-[560px] bg-white border border-[#000] text-black font-[Arial,sans-serif]">
           <div className="flex items-center justify-between p-[10px_12px] border-b border-[#000]">
-            <div className="text-[13px] font-[800] leading-[1.1]">{settings?.show_brand_name ? settings.brand_name || "WOMEN\nATTIRE" : "WOMEN\nATTIRE"}</div>
+            <div className="text-[13px] font-[800] leading-[1.1]">
+              {settings?.show_brand_name
+                ? settings.brand_name || "WOMEN\nATTIRE"
+                : "WOMEN\nATTIRE"}
+            </div>
             <div className="text-center">
-              <div className="text-[14px] font-[800] tracking-[0.5px]">MozoPost</div>
+              <div className="text-[14px] font-[800] tracking-[0.5px]">
+                MozoPost
+              </div>
               <div className="text-[8px] tracking-[2px]">SHIPPING</div>
             </div>
-            <div className="text-[13px] font-[800] tracking-[1px]">DELHIVERY</div>
+            <div className="text-[13px] font-[800] tracking-[1px]">
+              DELHIVERY
+            </div>
           </div>
           <div className="p-[8px_12px] border-b border-[#000]">
-            <div className="text-[10px] font-[700] text-center mb-[5px]">AWB# 41332221588194</div>
+            <div className="text-[10px] font-[700] text-center mb-[5px]">
+              AWB# 41332221588194
+            </div>
             <Barcode />
-            <div className="text-[9px] text-center mt-[3px]">AWB# 41332221588194</div>
+            <div className="text-[9px] text-center mt-[3px]">
+              AWB# 41332221588194
+            </div>
           </div>
           <div className="grid grid-cols-[1.3fr_1fr] border-b border-[#000]">
             <div className="p-[10px] border-r border-[#000] text-[10px] leading-[1.55]">
-              <div>Ship to: <b>{name}</b></div>
+              <div>
+                Ship to: <b>{name}</b>
+              </div>
               <div>{addr}</div>
-              {settings?.show_mobile && <div className="font-[700] mt-[3px]">Phone: {phone}</div>}
+              {settings?.show_mobile && (
+                <div className="font-[700] mt-[3px]">Phone: {phone}</div>
+              )}
               <div className="font-[700]">PIN - 533287</div>
             </div>
             <div className="p-[10px] text-[11px] leading-[1.6]">
@@ -230,22 +267,34 @@ export default function LabelsPage() {
             </div>
           </div>
           <div className="grid grid-cols-[1.3fr_1fr] border-b border-[#000] items-center">
-            <div className="p-[10px] border-r border-[#000] text-[10px] font-[700]">Seller: {settings?.show_brand_name ? settings.brand_name || "WOMEN ATTIRE" : "WOMEN ATTIRE"}</div>
+            <div className="p-[10px] border-r border-[#000] text-[10px] font-[700]">
+              Seller:{" "}
+              {settings?.show_brand_name
+                ? settings.brand_name || "WOMEN ATTIRE"
+                : "WOMEN ATTIRE"}
+            </div>
             <div className="p-[8px_10px] text-center">
               <Barcode text="154858" />
             </div>
           </div>
           {bottomImg}
           <div className="grid grid-cols-[1fr_40px_60px_60px] text-[9px] font-[700] border-b border-[#000]">
-            <div className="p-[6px]">Product Name</div><div className="p-[6px]">Qty.</div><div className="p-[6px]">Price</div><div className="p-[6px]">Total</div>
+            <div className="p-[6px]">Product Name</div>
+            <div className="p-[6px]">Qty.</div>
+            <div className="p-[6px]">Price</div>
+            <div className="p-[6px]">Total</div>
           </div>
           <div className="grid grid-cols-[1fr_40px_60px_60px] text-[9px]">
-            <div className="p-[6px]">{product}</div><div className="p-[6px]">1</div><div className="p-[6px]">₹999.00</div><div className="p-[6px]">₹999.00</div>
+            <div className="p-[6px]">{product}</div>
+            <div className="p-[6px]">1</div>
+            <div className="p-[6px]">₹999.00</div>
+            <div className="p-[6px]">₹999.00</div>
           </div>
         </div>
       );
     }
-    if (templateId === 2) { // Ekart Classic
+    if (templateId === 2) {
+      // Ekart Classic
       return (
         <div className="w-[380px] h-[560px] bg-white border border-[#000] p-[14px] text-black font-[Arial,sans-serif]">
           <div className="text-[11px] font-[700]">Shipped To</div>
@@ -255,8 +304,12 @@ export default function LabelsPage() {
           <div className="flex justify-between">
             <div>
               <div className="text-[15px] font-[800]">CASH ON DELIVERY</div>
-              <div className="text-[10px] font-[700] mt-[9px]">Amount To Collect - ₹ 698.00</div>
-              <div className="text-[10px] mt-[6px]">Order Date: 18 Jun 2026</div>
+              <div className="text-[10px] font-[700] mt-[9px]">
+                Amount To Collect - ₹ 698.00
+              </div>
+              <div className="text-[10px] mt-[6px]">
+                Order Date: 18 Jun 2026
+              </div>
               <div className="text-[10px] mt-[6px]">Weight: 0.40 kg</div>
             </div>
             <div className="text-center">
@@ -265,63 +318,112 @@ export default function LabelsPage() {
             </div>
           </div>
           <div className="text-[9px] text-right mt-[2px]">CMDC0004156753</div>
-          <div className="mt-[8px]"><Barcode /></div>
+          <div className="mt-[8px]">
+            <Barcode />
+          </div>
           <div className="text-[11px] font-[700] mt-[5px]">Order: 184785</div>
           <div className="border border-[#000] mt-[14px]">
             <div className="grid grid-cols-[38px_1fr_42px] bg-[#f3dfe3] text-[9px] font-[700] text-center border-b border-[#000]">
-              <div className="p-[5px] border-r border-[#000]">Sr No</div><div className="p-[5px] border-r border-[#000]">Product Name</div><div className="p-[5px]">Qty</div>
+              <div className="p-[5px] border-r border-[#000]">Sr No</div>
+              <div className="p-[5px] border-r border-[#000]">Product Name</div>
+              <div className="p-[5px]">Qty</div>
             </div>
             <div className="grid grid-cols-[38px_1fr_42px] text-[9px]">
-              <div className="p-[6px] border-r border-[#000] text-center">1</div><div className="p-[6px] border-r border-[#000] leading-[1.4]">{product}</div><div className="p-[6px] text-center">1</div>
+              <div className="p-[6px] border-r border-[#000] text-center">
+                1
+              </div>
+              <div className="p-[6px] border-r border-[#000] leading-[1.4]">
+                {product}
+              </div>
+              <div className="p-[6px] text-center">1</div>
             </div>
           </div>
           {bottomImg}
-          <div className="mt-[16px] text-center"><Barcode text="CMDC0004156753" /></div>
+          <div className="mt-[16px] text-center">
+            <Barcode text="CMDC0004156753" />
+          </div>
         </div>
       );
     }
-    if (templateId === 3) { // Delhivery Surface
+    if (templateId === 3) {
+      // Delhivery Surface
       return (
         <div className="w-[380px] h-[560px] bg-white border-[2px] border-[#000] text-black font-[Arial,sans-serif]">
           <div className="grid grid-cols-2 border-b-[2px] border-[#000]">
-            <div className="p-[12px] border-r-[2px] border-[#000] text-[16px] font-[800]">{settings?.show_brand_name ? settings.brand_name || "Herbal Products" : "Herbal Products"}</div>
+            <div className="p-[12px] border-r-[2px] border-[#000] text-[16px] font-[800]">
+              {settings?.show_brand_name
+                ? settings.brand_name || "Herbal Products"
+                : "Herbal Products"}
+            </div>
             <div className="p-[12px] text-center">
-              <div className="text-[15px] font-[800] tracking-[1px]">DELHIVERY</div>
-              <div className="text-[10px] font-[700] tracking-[3px]">SURFACE</div>
+              <div className="text-[15px] font-[800] tracking-[1px]">
+                DELHIVERY
+              </div>
+              <div className="text-[10px] font-[700] tracking-[3px]">
+                SURFACE
+              </div>
             </div>
           </div>
           <div className="grid grid-cols-2 border-b-[2px] border-[#000]">
-            <div className="p-[12px] border-r-[2px] border-[#000] text-center"><Barcode text="13630511683253" /></div>
-            <div className="p-[12px] text-center flex flex-col justify-center"><div className="text-[14px] font-[800]">(COD)</div><div className="text-[16px] font-[800] mt-[6px]">Rs. 599.00</div></div>
+            <div className="p-[12px] border-r-[2px] border-[#000] text-center">
+              <Barcode text="13630511683253" />
+            </div>
+            <div className="p-[12px] text-center flex flex-col justify-center">
+              <div className="text-[14px] font-[800]">(COD)</div>
+              <div className="text-[16px] font-[800] mt-[6px]">Rs. 599.00</div>
+            </div>
           </div>
           <div className="grid grid-cols-[1.1fr_1fr] border-b-[2px] border-[#000] text-[10px]">
             <div className="p-[10px] border-r-[2px] border-[#000] leading-[1.5]">
-              <div className="flex justify-between"><span>Deliver To:</span><b>MEE/PCK</b></div>
+              <div className="flex justify-between">
+                <span>Deliver To:</span>
+                <b>MEE/PCK</b>
+              </div>
               <div className="font-[800] mt-[4px]">{name}</div>
               <div className="font-[700]">Contact: {phone}</div>
               <div className="font-[700] mt-[3px]">Address: {addr}</div>
             </div>
             <div className="p-[10px] leading-[1.7]">
-              <div>Order Id: 21017686</div><div>Ref./Invoice#: #1635</div><div>Date: 20-06-2026</div><div>Weight: 0.20 kg</div>
+              <div>Order Id: 21017686</div>
+              <div>Ref./Invoice#: #1635</div>
+              <div>Date: 20-06-2026</div>
+              <div>Weight: 0.20 kg</div>
             </div>
           </div>
           {bottomImg}
           <div className="grid grid-cols-[1fr_50px_36px_70px] text-[9px] font-[700] border-b border-[#000]">
-            <div className="p-[6px] border-r border-[#000]">Product Name</div><div className="p-[6px] border-r border-[#000]">SKU</div><div className="p-[6px] border-r border-[#000]">Qty</div><div className="p-[6px] text-right">Price</div>
+            <div className="p-[6px] border-r border-[#000]">Product Name</div>
+            <div className="p-[6px] border-r border-[#000]">SKU</div>
+            <div className="p-[6px] border-r border-[#000]">Qty</div>
+            <div className="p-[6px] text-right">Price</div>
           </div>
           <div className="grid grid-cols-[1fr_50px_36px_70px] text-[9px] border-b border-[#000]">
-            <div className="p-[6px] border-r border-[#000] leading-[1.4]">{product}</div><div className="p-[6px] border-r border-[#000]"></div><div className="p-[6px] border-r border-[#000] text-center">1</div><div className="p-[6px] text-right">599.00</div>
+            <div className="p-[6px] border-r border-[#000] leading-[1.4]">
+              {product}
+            </div>
+            <div className="p-[6px] border-r border-[#000]"></div>
+            <div className="p-[6px] border-r border-[#000] text-center">1</div>
+            <div className="p-[6px] text-right">599.00</div>
           </div>
           <div className="grid grid-cols-[1fr_36px_70px] text-[9px] font-[700]">
-            <div className="p-[6px] border-r border-[#000] text-right">Total</div><div className="p-[6px] border-r border-[#000] text-center">1</div><div className="p-[6px] text-right">Rs.599.00</div>
+            <div className="p-[6px] border-r border-[#000] text-right">
+              Total
+            </div>
+            <div className="p-[6px] border-r border-[#000] text-center">1</div>
+            <div className="p-[6px] text-right">Rs.599.00</div>
           </div>
         </div>
       );
     }
-    if (templateId === 4) { // Shadowfax
+    if (templateId === 4) {
+      // Shadowfax
       return (
         <div className="w-[380px] h-[560px] bg-white border border-[#000] text-black font-[Arial,sans-serif]">
-          <div className="border-b border-[#000] p-[6px_10px] text-[11px] font-[700]">{settings?.show_brand_name ? settings.brand_name || "herbal products" : "herbal products"}</div>
+          <div className="border-b border-[#000] p-[6px_10px] text-[11px] font-[700]">
+            {settings?.show_brand_name
+              ? settings.brand_name || "herbal products"
+              : "herbal products"}
+          </div>
           <div className="p-[10px]">
             <div className="flex justify-between items-start">
               <div className="text-[11px] font-[700]">Ship To</div>
@@ -331,35 +433,59 @@ export default function LabelsPage() {
               <div className="text-[10px] leading-[1.55]">
                 <div className="font-[700]">{name}</div>
                 <div>{addr}</div>
-                <div>Ph: <b>+91{phone}</b></div>
+                <div>
+                  Ph: <b>+91{phone}</b>
+                </div>
               </div>
-              <div className="shrink-0 w-[120px]"><Barcode /></div>
+              <div className="shrink-0 w-[120px]">
+                <Barcode />
+              </div>
             </div>
             <div className="flex justify-between gap-[12px] mt-[10px]">
               <div className="text-[10px] leading-[1.7]">
-                <div>AWB: <b>SF3117462190SFS</b></div><div>Route Code:</div><div>Weight: <b>0.40 kg</b></div>
+                <div>
+                  AWB: <b>SF3117462190SFS</b>
+                </div>
+                <div>Route Code:</div>
+                <div>
+                  Weight: <b>0.40 kg</b>
+                </div>
               </div>
-              <div className="shrink-0 self-start w-[120px]"><Barcode text="Order: 2732" /></div>
+              <div className="shrink-0 self-start w-[120px]">
+                <Barcode text="Order: 2732" />
+              </div>
             </div>
             <div className="border border-[#000] mt-[10px]">
               <div className="grid grid-cols-[1fr_44px] text-[9px] font-[700] border-b border-[#000]">
-                <div className="p-[5px] border-r border-[#000]">Product</div><div className="p-[5px]">Qty</div>
+                <div className="p-[5px] border-r border-[#000]">Product</div>
+                <div className="p-[5px]">Qty</div>
               </div>
               <div className="grid grid-cols-[1fr_44px] text-[9px]">
-                <div className="p-[6px] border-r border-[#000] leading-[1.4]">{product}</div><div className="p-[6px] text-center">1</div>
+                <div className="p-[6px] border-r border-[#000] leading-[1.4]">
+                  {product}
+                </div>
+                <div className="p-[6px] text-center">1</div>
               </div>
               <div className="grid grid-cols-[1fr_44px] text-[9px] font-[700] border-t border-[#000]">
-                <div className="p-[5px] border-r border-[#000] text-right">Total Quantity</div><div className="p-[5px] text-center">1</div>
+                <div className="p-[5px] border-r border-[#000] text-right">
+                  Total Quantity
+                </div>
+                <div className="p-[5px] text-center">1</div>
               </div>
             </div>
             {bottomImg}
-            <div className="text-[10px] font-[700] mt-[9px]">Payment Mode: COD</div>
-            <div className="text-[10px] font-[700]">Collectable Amount: ₹ 599.00</div>
+            <div className="text-[10px] font-[700] mt-[9px]">
+              Payment Mode: COD
+            </div>
+            <div className="text-[10px] font-[700]">
+              Collectable Amount: ₹ 599.00
+            </div>
           </div>
         </div>
       );
     }
-    if (templateId === 5) { // Shadowfax DS
+    if (templateId === 5) {
+      // Shadowfax DS
       return (
         <div className="w-[380px] h-[560px] bg-white border border-[#000] p-[14px] text-black font-[Arial,sans-serif]">
           <div className="text-[11px] font-[700]">To:</div>
@@ -368,9 +494,14 @@ export default function LabelsPage() {
           <div className="border-t-[2px] border-[#000] my-[12px]"></div>
           <div className="flex justify-between">
             <div className="text-[10px] leading-[1.7]">
-              <div>Order Date: <b>2026-06-26</b></div><div>Invoice No: Retail07930</div>
+              <div>
+                Order Date: <b>2026-06-26</b>
+              </div>
+              <div>Invoice No: Retail07930</div>
             </div>
-            <div className="text-center w-[120px]"><Barcode text="#ZS100671001" /></div>
+            <div className="text-center w-[120px]">
+              <Barcode text="#ZS100671001" />
+            </div>
           </div>
           <div className="border-t-[2px] border-[#000] my-[12px]"></div>
           <div className="flex justify-between items-start">
@@ -380,34 +511,60 @@ export default function LabelsPage() {
               <div className="text-[11px] mt-[4px]">DEAD WEIGHT: 0.70 kg</div>
             </div>
             <div className="text-center w-[120px]">
-              <div className="text-[9px] font-[700] mb-[3px]">Shadowfax DS 1kg</div>
+              <div className="text-[9px] font-[700] mb-[3px]">
+                Shadowfax DS 1kg
+              </div>
               <Barcode />
-              <div className="text-[8px] mt-[3px] leading-[1.4]">Awb: SF3566747685KAD</div>
+              <div className="text-[8px] mt-[3px] leading-[1.4]">
+                Awb: SF3566747685KAD
+              </div>
             </div>
           </div>
           {bottomImg}
           <div className="border border-[#000] mt-[12px]">
             <div className="grid grid-cols-[1fr_1.2fr_36px_60px] text-[9px] font-[700] text-center border-b border-[#000]">
-              <div className="p-[5px] border-r border-[#000]">SKU</div><div className="p-[5px] border-r border-[#000]">Item</div><div className="p-[5px] border-r border-[#000]">Qty</div><div className="p-[5px]">Amount</div>
+              <div className="p-[5px] border-r border-[#000]">SKU</div>
+              <div className="p-[5px] border-r border-[#000]">Item</div>
+              <div className="p-[5px] border-r border-[#000]">Qty</div>
+              <div className="p-[5px]">Amount</div>
             </div>
             <div className="grid grid-cols-[1fr_1.2fr_36px_60px] text-[9px]">
-              <div className="p-[6px] border-r border-[#000] text-center">171000163</div><div className="p-[6px] border-r border-[#000] leading-[1.3] truncate">{product}</div><div className="p-[6px] border-r border-[#000] text-center">1</div><div className="p-[6px] text-center">Rs. 799</div>
+              <div className="p-[6px] border-r border-[#000] text-center">
+                171000163
+              </div>
+              <div className="p-[6px] border-r border-[#000] leading-[1.3] truncate">
+                {product}
+              </div>
+              <div className="p-[6px] border-r border-[#000] text-center">
+                1
+              </div>
+              <div className="p-[6px] text-center">Rs. 799</div>
             </div>
           </div>
-          <div className="text-[8px] leading-[1.5] mt-[12px]">This is a computer generated document, hence does not require signature.</div>
+          <div className="text-[8px] leading-[1.5] mt-[12px]">
+            This is a computer generated document, hence does not require
+            signature.
+          </div>
         </div>
       );
     }
-    if (templateId === 6) { // Ekart Prime
+    if (templateId === 6) {
+      // Ekart Prime
       return (
         <div className="w-[380px] h-[560px] bg-white border-[2px] border-dashed border-[#000] p-[12px] text-black font-[Arial,sans-serif]">
-          <div className="text-[10px] text-right font-[700]">{settings?.show_brand_name ? settings.brand_name || "fashion shop" : "fashion shop"}</div>
+          <div className="text-[10px] text-right font-[700]">
+            {settings?.show_brand_name
+              ? settings.brand_name || "fashion shop"
+              : "fashion shop"}
+          </div>
           <div className="flex justify-between gap-[12px] border-b border-[#000] pb-[10px]">
             <div className="text-[10px] leading-[1.5]">
               <div className="font-[800]">Deliver To:</div>
               <div className="font-[800]">{name}</div>
               <div>{addr}</div>
-              <div>Mobile: <b>{phone}</b></div>
+              <div>
+                Mobile: <b>{phone}</b>
+              </div>
             </div>
             <div className="text-center border-l border-[#000] pl-[12px] shrink-0">
               <div className="text-[13px] font-[800]">COD</div>
@@ -415,19 +572,41 @@ export default function LabelsPage() {
               <div className="text-[9px] mt-[4px]">Weight - 0.5 Kg</div>
             </div>
           </div>
-          <div className="text-[10px] font-[700] text-center mt-[10px]">Order ID - 62738  Date: 25-09-2026</div>
-          <div className="text-center mt-[8px] flex justify-center"><div className="w-[180px]"><Barcode /></div></div>
-          <div className="text-[10px] font-[700] text-center mt-[4px] border-b border-[#000] pb-[10px]">Ekart Prime - FSNC0016999522</div>
+          <div className="text-[10px] font-[700] text-center mt-[10px]">
+            Order ID - 62738 Date: 25-09-2026
+          </div>
+          <div className="text-center mt-[8px] flex justify-center">
+            <div className="w-[180px]">
+              <Barcode />
+            </div>
+          </div>
+          <div className="text-[10px] font-[700] text-center mt-[4px] border-b border-[#000] pb-[10px]">
+            Ekart Prime - FSNC0016999522
+          </div>
           {bottomImg}
           <div className="border border-[#000] mt-[12px]">
             <div className="grid grid-cols-[1fr_36px_30px_54px_56px] text-[8px] font-[700] border-b border-[#000]">
-              <div className="p-[5px] border-r border-[#000]">Product</div><div className="p-[5px] border-r border-[#000]">SKU</div><div className="p-[5px] border-r border-[#000]">Qty</div><div className="p-[5px] border-r border-[#000]">Amt</div><div className="p-[5px]">Total</div>
+              <div className="p-[5px] border-r border-[#000]">Product</div>
+              <div className="p-[5px] border-r border-[#000]">SKU</div>
+              <div className="p-[5px] border-r border-[#000]">Qty</div>
+              <div className="p-[5px] border-r border-[#000]">Amt</div>
+              <div className="p-[5px]">Total</div>
             </div>
             <div className="grid grid-cols-[1fr_36px_30px_54px_56px] text-[8px]">
-              <div className="p-[6px] border-r border-[#000] truncate">{product}</div><div className="p-[6px] border-r border-[#000]"></div><div className="p-[6px] border-r border-[#000] text-center">1</div><div className="p-[6px] border-r border-[#000]">999.00</div><div className="p-[6px]">999.00</div>
+              <div className="p-[6px] border-r border-[#000] truncate">
+                {product}
+              </div>
+              <div className="p-[6px] border-r border-[#000]"></div>
+              <div className="p-[6px] border-r border-[#000] text-center">
+                1
+              </div>
+              <div className="p-[6px] border-r border-[#000]">999.00</div>
+              <div className="p-[6px]">999.00</div>
             </div>
           </div>
-          <div className="text-[7px] leading-[1.5] mt-[14px] border-t border-[#000] pt-[8px]">This is computer generated document, hence not required signature.</div>
+          <div className="text-[7px] leading-[1.5] mt-[14px] border-t border-[#000] pt-[8px]">
+            This is computer generated document, hence not required signature.
+          </div>
         </div>
       );
     }
@@ -514,7 +693,9 @@ export default function LabelsPage() {
                     </div>
                     <div
                       className={`text-[12px] text-center mt-[8px] font-medium transition-colors ${
-                        isSelected ? "text-[#546B41] font-bold" : "text-[#8A9270]"
+                        isSelected
+                          ? "text-[#546B41] font-bold"
+                          : "text-[#8A9270]"
                       }`}
                     >
                       {t.name}
@@ -559,7 +740,9 @@ export default function LabelsPage() {
         <div className="grid grid-cols-[204px_1fr_196px] gap-[18px] mt-[18px]">
           {/* Elements */}
           <div>
-            <div className="text-[13px] font-semibold mb-[10px] text-[#2F3A22]">Elements</div>
+            <div className="text-[13px] font-semibold mb-[10px] text-[#2F3A22]">
+              Elements
+            </div>
             <div className="flex flex-col gap-[8px]">
               {PALETTE.map((p) => (
                 <div
@@ -580,7 +763,8 @@ export default function LabelsPage() {
           {/* Canvas */}
           <div>
             <div className="text-[12px] text-[#8A9270] mb-[10px]">
-              Click an element to add it, then drag to position. Click a placed element to select & delete.
+              Click an element to add it, then drag to position. Click a placed
+              element to select & delete.
             </div>
             <div className="flex justify-center">
               <div
@@ -590,8 +774,9 @@ export default function LabelsPage() {
                 onMouseLeave={endDrag}
                 className="relative w-[380px] h-[560px] bg-white border border-[#E2D4B8] rounded-[4px] overflow-hidden shadow-[0_6px_24px_rgba(0,0,0,0.4)]"
                 style={{
-                  backgroundImage: "linear-gradient(#eef 1px, transparent 1px), linear-gradient(90deg, #eef 1px, transparent 1px)",
-                  backgroundSize: "20px 20px"
+                  backgroundImage:
+                    "linear-gradient(#eef 1px, transparent 1px), linear-gradient(90deg, #eef 1px, transparent 1px)",
+                  backgroundSize: "20px 20px",
                 }}
               >
                 {labelEls.length === 0 && (
@@ -617,21 +802,25 @@ export default function LabelsPage() {
                       }}
                     >
                       {m.kind === "text" && (
-                        <div style={{
-                          color: "#000",
-                          fontSize: m.big ? 16 : m.small ? 9 : 11,
-                          fontWeight: m.bold || m.big ? 700 : 400,
-                          border: m.box ? "1px solid #000" : "none",
-                          padding: m.box ? "4px 8px" : 0,
-                          whiteSpace: "nowrap"
-                        }}>
+                        <div
+                          style={{
+                            color: "#000",
+                            fontSize: m.big ? 16 : m.small ? 9 : 11,
+                            fontWeight: m.bold || m.big ? 700 : 400,
+                            border: m.box ? "1px solid #000" : "none",
+                            padding: m.box ? "4px 8px" : 0,
+                            whiteSpace: "nowrap",
+                          }}
+                        >
                           {m.text}
                         </div>
                       )}
                       {m.kind === "barcode" && (
                         <div>
                           <div className="w-[160px] h-[40px] bg-[repeating-linear-gradient(90deg,#000_0_2px,#fff_2px_3px,#000_3px_6px,#fff_6px_8px,#000_8px_9px,#fff_9px_12px)]"></div>
-                          <div className="text-[9px] text-[#000] text-center mt-[2px]">{m.text}</div>
+                          <div className="text-[9px] text-[#000] text-center mt-[2px]">
+                            {m.text}
+                          </div>
                         </div>
                       )}
                       {m.kind === "qr" && (
@@ -643,11 +832,15 @@ export default function LabelsPage() {
                       {m.kind === "table" && (
                         <div className="w-[200px] border border-[#000] text-[9px] text-[#000]">
                           <div className="grid grid-cols-[1fr_34px] border-b border-[#000] font-[700]">
-                            <div className="p-[3px] border-r border-[#000]">Product</div>
+                            <div className="p-[3px] border-r border-[#000]">
+                              Product
+                            </div>
                             <div className="p-[3px]">Qty</div>
                           </div>
                           <div className="grid grid-cols-[1fr_34px]">
-                            <div className="p-[3px] border-r border-[#000]">Co-Ord Set (C-10)</div>
+                            <div className="p-[3px] border-r border-[#000]">
+                              Co-Ord Set (C-10)
+                            </div>
                             <div className="p-[3px] text-center">1</div>
                           </div>
                         </div>
@@ -669,23 +862,41 @@ export default function LabelsPage() {
 
           {/* Layout */}
           <div>
-            <div className="text-[13px] font-semibold mb-[10px] text-[#2F3A22]">Layout</div>
-            <div className="text-[12px] text-[#8A9270] leading-[1.6]">{labelEls.length} element(s) placed on the label.</div>
-            
-            <div onClick={() => { setLabelEls([]); setSelId(null); }} className="mt-[14px] bg-[#FFFFFF] border border-[#E2D4B8] rounded-[8px] py-[9px] px-[14px] text-[13px] cursor-pointer text-center text-[#2F3A22] font-medium hover:border-[#B4623F] hover:text-[#B4623F] transition-colors">
+            <div className="text-[13px] font-semibold mb-[10px] text-[#2F3A22]">
+              Layout
+            </div>
+            <div className="text-[12px] text-[#8A9270] leading-[1.6]">
+              {labelEls.length} element(s) placed on the label.
+            </div>
+
+            <div
+              onClick={() => {
+                setLabelEls([]);
+                setSelId(null);
+              }}
+              className="mt-[14px] bg-[#FFFFFF] border border-[#E2D4B8] rounded-[8px] py-[9px] px-[14px] text-[13px] cursor-pointer text-center text-[#2F3A22] font-medium hover:border-[#B4623F] hover:text-[#B4623F] transition-colors"
+            >
               ↺ Clear canvas
             </div>
-            <div onClick={() => alert("Layout saved!")} className="mt-[10px] bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-[8px] py-[9px] px-[14px] text-[13px] font-medium cursor-pointer text-center hover:bg-[#E0E7CE] transition-colors">
+            <div
+              onClick={() => alert("Layout saved!")}
+              className="mt-[10px] bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-[8px] py-[9px] px-[14px] text-[13px] font-medium cursor-pointer text-center hover:bg-[#E0E7CE] transition-colors"
+            >
               ⛁ Save Layout
             </div>
-            <div onClick={handlePrint} className="mt-[10px] bg-[#546B41] text-[#FFF8EC] rounded-[8px] py-[9px] px-[14px] text-[13px] font-semibold cursor-pointer text-center hover:bg-[#63794E] transition-colors">
+            <div
+              onClick={handlePrint}
+              className="mt-[10px] bg-[#546B41] text-[#FFF8EC] rounded-[8px] py-[9px] px-[14px] text-[13px] font-semibold cursor-pointer text-center hover:bg-[#63794E] transition-colors"
+            >
               ⎙ Print Label
             </div>
           </div>
         </div>
       )}
 
-      <div className="text-[14px] font-semibold mt-[24px] text-[#2F3A22]">Format</div>
+      <div className="text-[14px] font-semibold mt-[24px] text-[#2F3A22]">
+        Format
+      </div>
       <div className="inline-flex bg-[#FFFFFF] border border-[#E2D4B8] rounded-[24px] p-[4px] mt-[12px]">
         {SIZES.map((s) => (
           <div
@@ -707,7 +918,9 @@ export default function LabelsPage() {
       >
         <span
           className={`w-[18px] h-[18px] rounded-[4px] flex items-center justify-center border transition-colors ${
-            print4up ? "bg-[#546B41] border-[#546B41] text-white" : "bg-white border-[#E2D4B8] group-hover:border-[#CBD7B5]"
+            print4up
+              ? "bg-[#546B41] border-[#546B41] text-white"
+              : "bg-white border-[#E2D4B8] group-hover:border-[#CBD7B5]"
           }`}
         >
           {print4up && "✓"}
@@ -716,7 +929,9 @@ export default function LabelsPage() {
       </div>
 
       <div className="bg-[#FFFFFF] border border-[#E2D4B8] rounded-[14px] p-[24px] mt-[24px]">
-        <div className="text-[15px] font-semibold text-[#2F3A22]">Details to show on label</div>
+        <div className="text-[15px] font-semibold text-[#2F3A22]">
+          Details to show on label
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] mt-[18px]">
           {[
             {
@@ -764,10 +979,14 @@ export default function LabelsPage() {
                       : "bg-white border-[#E2D4B8] group-hover:border-[#CBD7B5]"
                   }`}
                 >
-                  {isActive && <span className="text-[14px] leading-none">✓</span>}
+                  {isActive && (
+                    <span className="text-[14px] leading-none">✓</span>
+                  )}
                 </span>
                 <div>
-                  <div className={`text-[13px] font-semibold transition-colors ${isActive ? "text-[#2F3A22]" : "text-[#8A9270]"}`}>
+                  <div
+                    className={`text-[13px] font-semibold transition-colors ${isActive ? "text-[#2F3A22]" : "text-[#8A9270]"}`}
+                  >
                     {o.label}
                   </div>
                   <div className="text-[11px] text-[#8A9270] mt-[5px] leading-[1.5]">
@@ -780,59 +999,78 @@ export default function LabelsPage() {
         </div>
 
         <div className="mt-[24px] pt-[24px] border-t border-[#E2D4B8]">
-          <div className="text-[14px] font-semibold text-[#2F3A22]">Brand & Address Details</div>
+          <div className="text-[14px] font-semibold text-[#2F3A22]">
+            Brand & Address Details
+          </div>
           <div className="text-[11px] text-[#8A9270] mt-[6px] leading-[1.5]">
-            Configure the specific text values to be printed on your labels if enabled above.
+            Configure the specific text values to be printed on your labels if
+            enabled above.
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] mt-[14px]">
-             <div>
-                <label className="block text-[12px] font-semibold text-[#6B7556] mb-[6px] uppercase tracking-wide">
-                  Brand Name
-                </label>
-                <input
-                  className="w-full bg-[#FFF8EC] border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] text-[#2F3A22] outline-none focus:border-[#546B41] transition-colors"
-                  value={settings?.brand_name || ""}
-                  onChange={(e) =>
-                    setSettings((p: any) => ({
-                      ...p,
-                      brand_name: e.target.value,
-                    }))
-                  }
-                />
-             </div>
-             <div>
-                <label className="block text-[12px] font-semibold text-[#6B7556] mb-[6px] uppercase tracking-wide">
-                  Return Address
-                </label>
-                <input
-                  className="w-full bg-[#FFF8EC] border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] text-[#2F3A22] outline-none focus:border-[#546B41] transition-colors"
-                  value={settings?.return_address || ""}
-                  onChange={(e) =>
-                    setSettings((p: any) => ({
-                      ...p,
-                      return_address: e.target.value,
-                    }))
-                  }
-                  placeholder="Plot 14, Surat 394230"
-                />
-             </div>
+            <div>
+              <label className="block text-[12px] font-semibold text-[#6B7556] mb-[6px] uppercase tracking-wide">
+                Brand Name
+              </label>
+              <input
+                className="w-full bg-[#FFF8EC] border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] text-[#2F3A22] outline-none focus:border-[#546B41] transition-colors"
+                value={settings?.brand_name || ""}
+                onChange={(e) =>
+                  setSettings((p: any) => ({
+                    ...p,
+                    brand_name: e.target.value,
+                  }))
+                }
+              />
+            </div>
+            <div>
+              <label className="block text-[12px] font-semibold text-[#6B7556] mb-[6px] uppercase tracking-wide">
+                Return Address
+              </label>
+              <input
+                className="w-full bg-[#FFF8EC] border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] text-[#2F3A22] outline-none focus:border-[#546B41] transition-colors"
+                value={settings?.return_address || ""}
+                onChange={(e) =>
+                  setSettings((p: any) => ({
+                    ...p,
+                    return_address: e.target.value,
+                  }))
+                }
+                placeholder="Plot 14, Surat 394230"
+              />
+            </div>
           </div>
         </div>
 
         <div className="mt-[24px] pt-[24px] border-t border-[#E2D4B8]">
-          <div className="text-[14px] font-semibold text-[#2F3A22]">Label Badges & Logo</div>
+          <div className="text-[14px] font-semibold text-[#2F3A22]">
+            Label Badges & Logo
+          </div>
           <div className="text-[11px] text-[#8A9270] mt-[6px] leading-[1.5]">
-            Add up to 4 certification badges or a custom logo to display on your shipping label (JPG, PNG, &lt;200KB).
+            Add up to 4 certification badges or a custom logo to display on your
+            shipping label (JPG, PNG, &lt;200KB).
           </div>
           <div className="flex gap-[12px] mt-[14px]">
             <label className="w-[80px] h-[80px] rounded-[10px] border border-dashed border-[#D8CBAE] bg-[#FFF8EC] flex flex-col items-center justify-center text-[#C2BC9E] cursor-pointer hover:border-[#546B41] hover:text-[#546B41] transition-colors relative overflow-hidden group">
-              <input type="file" accept="image/*" onChange={handleImageUpload} className="hidden" />
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleImageUpload}
+                className="hidden"
+              />
               {settings?.label_image_url ? (
-                 <img src={`${api.defaults.baseURL?.replace("/api/v1", "") || ""}${settings.label_image_url}`} className="w-full h-full object-cover" alt="Badge" />
+                <img
+                  src={`${api.defaults.baseURL?.replace("/api/v1", "") || ""}${settings.label_image_url}`}
+                  className="w-full h-full object-cover"
+                  alt="Badge"
+                />
               ) : (
                 <span className="text-[24px] leading-none mb-1">+</span>
               )}
-              {uploadingImage && <div className="absolute inset-0 bg-[#FFF8EC]/80 flex items-center justify-center text-[10px] font-bold text-[#546B41]">Up...</div>}
+              {uploadingImage && (
+                <div className="absolute inset-0 bg-[#FFF8EC]/80 flex items-center justify-center text-[10px] font-bold text-[#546B41]">
+                  Up...
+                </div>
+              )}
             </label>
             {[1, 2, 3].map((slot) => (
               <div
@@ -844,7 +1082,6 @@ export default function LabelsPage() {
             ))}
           </div>
         </div>
-
       </div>
     </div>
   );
