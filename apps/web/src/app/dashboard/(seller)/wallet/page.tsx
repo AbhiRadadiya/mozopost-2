@@ -118,7 +118,7 @@ export default function WalletPage() {
   }
 
   return (
-    <div className="animate-fade-up mx-auto max-w-7xl">
+    <div className="animate-fade-up mx-auto ">
       <Script
         src="https://checkout.razorpay.com/v1/checkout.js"
         strategy="lazyOnload"
@@ -219,7 +219,8 @@ export default function WalletPage() {
                 Used Credit
               </div>
               <div className="text-base font-bold text-[#B4623F] font-mono-nb">
-                ₹{(credit.wallet.creditOutstanding ?? 0).toLocaleString("en-IN")}
+                ₹
+                {(credit.wallet.creditOutstanding ?? 0).toLocaleString("en-IN")}
               </div>
             </div>
             <div className="bg-[#FFF8EC]/50 p-3.5 rounded-lg border border-[#E2D4B8]">
@@ -272,10 +273,13 @@ export default function WalletPage() {
       <div className="mb-4 flex items-center justify-between">
         <h2 className="text-lg font-bold text-[#2F3A22]">Transactions</h2>
         <div className="flex gap-2">
-          <button onClick={() => {
-            const evt = new CustomEvent('openWalletModal');
-            window.dispatchEvent(evt);
-          }} className="px-4 py-1.5 bg-[#F6EEDB] border border-[#EADFC8] text-[#546B41] text-[13px] font-bold rounded-lg hover:bg-[#E0E7CE] transition-colors flex items-center gap-1.5 shadow-sm">
+          <button
+            onClick={() => {
+              const evt = new CustomEvent("openWalletModal");
+              window.dispatchEvent(evt);
+            }}
+            className="px-4 py-1.5 bg-[#F6EEDB] border border-[#EADFC8] text-[#546B41] text-[13px] font-bold rounded-lg hover:bg-[#E0E7CE] transition-colors flex items-center gap-1.5 shadow-sm"
+          >
             <span className="text-[#A9842E]">⚡</span> Recharge
           </button>
           <button className="px-4 py-1.5 bg-white border border-[#EADFC8] text-[#6B7556] text-[13px] font-bold rounded-lg hover:bg-[#FFF8EC] transition-colors shadow-sm">
@@ -286,10 +290,14 @@ export default function WalletPage() {
           </button>
         </div>
       </div>
-      
+
       <div className="flex items-center gap-3 mb-4">
         <div className="relative">
-          <input type="text" placeholder="Filter by" className="bg-white border border-[#EADFC8] rounded-lg pl-8 pr-4 py-1.5 text-xs font-medium text-[#2F3A22] outline-none focus:border-[#546B41] shadow-sm w-40" />
+          <input
+            type="text"
+            placeholder="Filter by"
+            className="bg-white border border-[#EADFC8] rounded-lg pl-8 pr-4 py-1.5 text-xs font-medium text-[#2F3A22] outline-none focus:border-[#546B41] shadow-sm w-40"
+          />
           <div className="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#8A9270]" />
         </div>
         <select className="bg-white border border-[#EADFC8] rounded-lg px-4 py-1.5 text-xs text-[#6B7556] outline-none focus:border-[#546B41] font-medium shadow-sm">
@@ -299,7 +307,17 @@ export default function WalletPage() {
           <option>Select Month</option>
         </select>
         <button className="px-4 py-1.5 bg-white border border-[#EADFC8] text-[#6B7556] text-xs font-bold rounded-lg hover:bg-[#FFF8EC] transition-colors flex items-center gap-1.5 shadow-sm">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><polyline points="3 3 3 8 8 8"/></svg>
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2.5"
+          >
+            <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+            <polyline points="3 3 3 8 8 8" />
+          </svg>
           Reset Filter
         </button>
       </div>
@@ -320,52 +338,104 @@ export default function WalletPage() {
             <table className="w-full text-xs">
               <thead className="sticky top-0 bg-[#FFF8EC] border-b border-[#EADFC8] z-10">
                 <tr>
-                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">DATE</th>
-                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest">DESCRIPTION</th>
-                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest">STATUS</th>
-                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">CREDIT</th>
-                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">DEBIT</th>
-                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">COD COLLECTED</th>
-                  <th className="px-5 py-3 text-center text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">INVOICE</th>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">
+                    DATE
+                  </th>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest">
+                    DESCRIPTION
+                  </th>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest">
+                    STATUS
+                  </th>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">
+                    CREDIT
+                  </th>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">
+                    DEBIT
+                  </th>
+                  <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">
+                    COD COLLECTED
+                  </th>
+                  <th className="px-5 py-3 text-center text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">
+                    INVOICE
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-[#F6EEDB]">
                 {txns.map((t) => {
                   const isDebit = t.type === "debit";
                   const dt = new Date(t.created_at);
-                  const dateStr = dt.toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" });
-                  const timeStr = dt.toLocaleTimeString("en-IN", { hour: "numeric", minute: "2-digit" });
-                  
+                  const dateStr = dt.toLocaleDateString("en-IN", {
+                    month: "short",
+                    day: "numeric",
+                    year: "numeric",
+                  });
+                  const timeStr = dt.toLocaleTimeString("en-IN", {
+                    hour: "numeric",
+                    minute: "2-digit",
+                  });
+
                   return (
-                    <tr key={t.id} className="hover:bg-[#FFF8EC] transition-colors">
+                    <tr
+                      key={t.id}
+                      className="hover:bg-[#FFF8EC] transition-colors"
+                    >
                       <td className="px-5 py-4 whitespace-nowrap">
-                        <div className="font-bold text-[#2F3A22]">{dateStr}</div>
-                        <div className="text-[10px] font-medium text-[#8A9270]">{timeStr}</div>
+                        <div className="font-bold text-[#2F3A22]">
+                          {dateStr}
+                        </div>
+                        <div className="text-[10px] font-medium text-[#8A9270]">
+                          {timeStr}
+                        </div>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="font-bold text-[#2F3A22]">{t.description || (isDebit ? "Wallet Deduction" : "Wallet Recharge")}</span>
+                        <span className="font-bold text-[#2F3A22]">
+                          {t.description ||
+                            (isDebit ? "Wallet Deduction" : "Wallet Recharge")}
+                        </span>
                       </td>
                       <td className="px-5 py-4">
-                        <span className="px-2 py-0.5 rounded bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] text-[9px] font-bold uppercase tracking-wider shadow-sm">COMPLETED</span>
+                        <span className="px-2 py-0.5 rounded bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] text-[9px] font-bold uppercase tracking-wider shadow-sm">
+                          COMPLETED
+                        </span>
                       </td>
                       <td className="px-5 py-4">
                         <span className="font-mono-nb text-[13px] font-bold text-[#546B41]">
-                          {!isDebit ? `₹${Math.abs(parseFloat(t.amount)).toLocaleString("en-IN")}` : "—"}
+                          {!isDebit
+                            ? `₹${Math.abs(parseFloat(t.amount)).toLocaleString("en-IN")}`
+                            : "—"}
                         </span>
                       </td>
                       <td className="px-5 py-4">
                         <span className="font-mono-nb text-[13px] font-medium text-[#A84A3B]">
-                          {isDebit ? `₹${Math.abs(parseFloat(t.amount)).toLocaleString("en-IN")}` : "—"}
+                          {isDebit
+                            ? `₹${Math.abs(parseFloat(t.amount)).toLocaleString("en-IN")}`
+                            : "—"}
                         </span>
                       </td>
                       <td className="px-5 py-4">
                         <span className="font-mono-nb text-[13px] font-bold text-[#2F3A22]">
-                          {!isDebit ? `₹${Math.abs(parseFloat(t.amount)).toLocaleString("en-IN")}` : "—"}
+                          {!isDebit
+                            ? `₹${Math.abs(parseFloat(t.amount)).toLocaleString("en-IN")}`
+                            : "—"}
                         </span>
                       </td>
                       <td className="px-5 py-4 text-center text-[#8A9270]">
                         <button className="hover:text-[#546B41] transition-colors">
-                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                          <svg
+                            width="14"
+                            height="14"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2.5"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                            <polyline points="7 10 12 15 17 10" />
+                            <line x1="12" y1="15" x2="12" y2="3" />
+                          </svg>
                         </button>
                       </td>
                     </tr>

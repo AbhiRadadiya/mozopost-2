@@ -3,10 +3,25 @@
 import { useState, useEffect } from "react";
 import { api, apiErrorMessage } from "@/lib/api";
 
-const STATUS_COLOR: Record<string, { bg: string; text: string; border: string }> = {
-  settled: { bg: "bg-[#EDF0E4]", text: "text-[#546B41]", border: "border-[#CBD7B5]" },
-  pending: { bg: "bg-[#FFFBEB]", text: "text-[#D97706]", border: "border-[#FDE68A]" },
-  processing: { bg: "bg-[#FFFBEB]", text: "text-[#D97706]", border: "border-[#FDE68A]" },
+const STATUS_COLOR: Record<
+  string,
+  { bg: string; text: string; border: string }
+> = {
+  settled: {
+    bg: "bg-[#EDF0E4]",
+    text: "text-[#546B41]",
+    border: "border-[#CBD7B5]",
+  },
+  pending: {
+    bg: "bg-[#FFFBEB]",
+    text: "text-[#D97706]",
+    border: "border-[#FDE68A]",
+  },
+  processing: {
+    bg: "bg-[#FFFBEB]",
+    text: "text-[#D97706]",
+    border: "border-[#FDE68A]",
+  },
 };
 
 export default function CodReportsPage() {
@@ -46,7 +61,9 @@ export default function CodReportsPage() {
     {
       label: "Total Collected",
       sub: "All time COD volume",
-      value: loading ? "..." : `₹${(stats?.totalCollected || 0).toLocaleString("en-IN")}`,
+      value: loading
+        ? "..."
+        : `₹${(stats?.totalCollected || 0).toLocaleString("en-IN")}`,
       color: "#2F3A22",
       iconBg: "#F6EEDB",
       icon: "💰",
@@ -54,7 +71,9 @@ export default function CodReportsPage() {
     {
       label: "Pending Release",
       sub: "Awaiting settlement",
-      value: loading ? "..." : `₹${(stats?.pendingRelease || 0).toLocaleString("en-IN")}`,
+      value: loading
+        ? "..."
+        : `₹${(stats?.pendingRelease || 0).toLocaleString("en-IN")}`,
       color: "#D97706",
       iconBg: "#FFFBEB",
       icon: "⏳",
@@ -71,7 +90,9 @@ export default function CodReportsPage() {
     {
       label: "D+2 Cycle Pending",
       sub: "In process cycle",
-      value: loading ? "..." : `₹${(stats?.d2Cycle || 0).toLocaleString("en-IN")}`,
+      value: loading
+        ? "..."
+        : `₹${(stats?.d2Cycle || 0).toLocaleString("en-IN")}`,
       color: "#546B41",
       iconBg: "#EDF0E4",
       icon: "🔄",
@@ -79,7 +100,7 @@ export default function CodReportsPage() {
   ];
 
   return (
-    <div className="animate-fade-up mx-auto max-w-7xl pb-12">
+    <div className="animate-fade-up mx-auto  pb-12">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
@@ -203,7 +224,8 @@ export default function CodReportsPage() {
                 </tr>
               ) : (
                 remittances.map((r) => {
-                  const statusStyle = STATUS_COLOR[r.status] || STATUS_COLOR.pending;
+                  const statusStyle =
+                    STATUS_COLOR[r.status] || STATUS_COLOR.pending;
 
                   return (
                     <tr
