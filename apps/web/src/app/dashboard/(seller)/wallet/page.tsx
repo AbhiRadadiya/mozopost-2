@@ -34,27 +34,38 @@ export default function WalletPage() {
   const [balance, setBalance] = useState<number | null>(null);
   const [credit, setCredit] = useState<CreditInfo | null>(null);
   const [txns, setTxns] = useState<Txn[]>([]);
+  const [metrics, setMetrics] = useState<any>(null);
   const [amount, setAmount] = useState("1000");
   const [loading, setLoading] = useState(true);
   const [recharging, setRecharging] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const [search, setSearch] = useState("");
+  const [date, setDate] = useState("");
+  const [selectedTxns, setSelectedTxns] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     load();
-  }, []);
+  }, [search, date]);
 
   async function load() {
     setLoading(true);
     try {
-      const [walletRes, txnRes, creditRes] = await Promise.all([
+      const qs = new URLSearchParams();
+      if (search) qs.append("search", search);
+      if (date) qs.append("date", date);
+
+      const [walletRes, txnRes, creditRes, metricsRes] = await Promise.all([
         api.get("/wallet"),
-        api.get("/wallet/transactions"),
+        api.get(`/wallet/transactions?${qs.toString()}`),
         api.get("/credit").catch(() => ({ data: null })),
+        api.get("/wallet/metrics").catch(() => ({ data: { metrics: null } })),
       ]);
       setBalance(parseFloat(walletRes.data.wallet.balance));
       setTxns(txnRes.data.transactions);
       if (creditRes.data) setCredit(creditRes.data);
+      if (metricsRes.data?.metrics) setMetrics(metricsRes.data.metrics);
+      setSelectedTxns(new Set()); // Clear selection on reload
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -117,6 +128,50 @@ export default function WalletPage() {
     }
   }
 
+  function handleDownloadInvoices() {
+    if (selectedTxns.size === 0) return;
+    
+    const toDownload = txns.filter(t => selectedTxns.has(t.id));
+    const header = "Date,Description,Status,Type,Amount\n";
+    const rows = toDownload.map(t => {
+      const dt = new Date(t.created_at).toLocaleString("en-IN");
+      const desc = `"${(t.description || (t.type === 'debit' ? 'Wallet Deduction' : 'Wallet Recharge')).replace(/"/g, '""')}"`;
+      return `${dt},${desc},COMPLETED,${t.type.toUpperCase()},${t.amount}`;
+    }).join("\n");
+
+    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `invoices_bulk.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+
+    setSelectedTxns(new Set());
+  }
+
+  function handleDownloadSingleInvoice(id: string) {
+    const t = txns.find(x => x.id === id);
+    if (!t) return;
+
+    const header = "Date,Description,Status,Type,Amount\n";
+    const dt = new Date(t.created_at).toLocaleString("en-IN");
+    const desc = `"${(t.description || (t.type === 'debit' ? 'Wallet Deduction' : 'Wallet Recharge')).replace(/"/g, '""')}"`;
+    const row = `${dt},${desc},COMPLETED,${t.type.toUpperCase()},${t.amount}\n`;
+
+    const blob = new Blob([header + row], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `invoice_${id}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+
   return (
     <div className="animate-fade-up mx-auto ">
       <Script
@@ -152,7 +207,7 @@ export default function WalletPage() {
             Withdrawn Till Date
           </div>
           <div className="text-2xl font-bold text-[#2F3A22] font-mono-nb">
-            ₹0
+            {loading ? "..." : `₹${(metrics?.withdrawnTillDate || 0).toLocaleString("en-IN")}`}
           </div>
         </div>
         <div className="bg-white p-5 rounded-xl border-l-4 border-l-[#546B41] border border-[#EADFC8] shadow-sm">
@@ -160,7 +215,7 @@ export default function WalletPage() {
             7 Days Avg. Payments
           </div>
           <div className="text-2xl font-bold text-[#2F3A22] font-mono-nb">
-            ₹5,179
+            {loading ? "..." : `₹${(metrics?.sevenDaysAvgPayments || 0).toLocaleString("en-IN")}`}
           </div>
         </div>
         <div className="bg-white p-5 rounded-xl border-l-4 border-l-[#A9842E] border border-[#EADFC8] shadow-sm">
@@ -168,7 +223,7 @@ export default function WalletPage() {
             Outstanding
           </div>
           <div className="text-2xl font-bold text-[#2F3A22] font-mono-nb">
-            ₹40,222
+            {loading ? "..." : `₹${(metrics?.outstanding || 0).toLocaleString("en-IN")}`}
           </div>
         </div>
       </div>
@@ -282,11 +337,16 @@ export default function WalletPage() {
           >
             <span className="text-[#A9842E]">⚡</span> Recharge
           </button>
-          <button className="px-4 py-1.5 bg-white border border-[#EADFC8] text-[#6B7556] text-[13px] font-bold rounded-lg hover:bg-[#FFF8EC] transition-colors shadow-sm">
-            Withdraw
-          </button>
-          <button className="px-4 py-1.5 bg-white border border-[#EADFC8] text-[#6B7556] text-[13px] font-bold rounded-lg hover:bg-[#FFF8EC] transition-colors shadow-sm">
-            Invoices
+          <button 
+            disabled={selectedTxns.size === 0}
+            onClick={handleDownloadInvoices}
+            className={`px-4 py-1.5 border border-[#EADFC8] text-[13px] font-bold rounded-lg transition-colors shadow-sm ${
+              selectedTxns.size > 0 
+                ? 'bg-white text-[#6B7556] hover:bg-[#FFF8EC]' 
+                : 'bg-[#F4F6F0] text-[#A3A898] cursor-not-allowed opacity-70'
+            }`}
+          >
+            Invoices {selectedTxns.size > 0 && `(${selectedTxns.size})`}
           </button>
         </div>
       </div>
@@ -295,18 +355,26 @@ export default function WalletPage() {
         <div className="relative">
           <input
             type="text"
-            placeholder="Filter by"
-            className="bg-white border border-[#EADFC8] rounded-lg pl-8 pr-4 py-1.5 text-xs font-medium text-[#2F3A22] outline-none focus:border-[#546B41] shadow-sm w-40"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Filter by description"
+            className="bg-white border border-[#EADFC8] rounded-lg pl-8 pr-4 py-1.5 text-xs font-medium text-[#2F3A22] outline-none focus:border-[#546B41] shadow-sm w-48"
           />
           <div className="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#8A9270]" />
         </div>
-        <select className="bg-white border border-[#EADFC8] rounded-lg px-4 py-1.5 text-xs text-[#6B7556] outline-none focus:border-[#546B41] font-medium shadow-sm">
-          <option>Select Day</option>
-        </select>
-        <select className="bg-white border border-[#EADFC8] rounded-lg px-4 py-1.5 text-xs text-[#6B7556] outline-none focus:border-[#546B41] font-medium shadow-sm">
-          <option>Select Month</option>
-        </select>
-        <button className="px-4 py-1.5 bg-white border border-[#EADFC8] text-[#6B7556] text-xs font-bold rounded-lg hover:bg-[#FFF8EC] transition-colors flex items-center gap-1.5 shadow-sm">
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="bg-white border border-[#EADFC8] rounded-lg px-4 py-1.5 text-xs text-[#6B7556] outline-none focus:border-[#546B41] font-medium shadow-sm"
+        />
+        <button 
+          onClick={() => {
+            setSearch("");
+            setDate("");
+          }}
+          className="px-4 py-1.5 bg-white border border-[#EADFC8] text-[#6B7556] text-xs font-bold rounded-lg hover:bg-[#FFF8EC] transition-colors flex items-center gap-1.5 shadow-sm"
+        >
           <svg
             width="12"
             height="12"
@@ -338,6 +406,20 @@ export default function WalletPage() {
             <table className="w-full text-xs">
               <thead className="sticky top-0 bg-[#FFF8EC] border-b border-[#EADFC8] z-10">
                 <tr>
+                  <th className="px-5 py-3 w-10 text-left">
+                    <input 
+                      type="checkbox" 
+                      className="rounded border-[#CBD7B5] text-[#546B41] focus:ring-[#546B41] w-4 h-4"
+                      checked={txns.length > 0 && selectedTxns.size === txns.length}
+                      onChange={(e) => {
+                        if (e.target.checked) {
+                          setSelectedTxns(new Set(txns.map(t => t.id)));
+                        } else {
+                          setSelectedTxns(new Set());
+                        }
+                      }}
+                    />
+                  </th>
                   <th className="px-5 py-3 text-left text-[9px] font-bold text-[#8A9270] uppercase tracking-widest whitespace-nowrap">
                     DATE
                   </th>
@@ -380,6 +462,19 @@ export default function WalletPage() {
                       key={t.id}
                       className="hover:bg-[#FFF8EC] transition-colors"
                     >
+                      <td className="px-5 py-4 w-10">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-[#CBD7B5] text-[#546B41] focus:ring-[#546B41] w-4 h-4"
+                          checked={selectedTxns.has(t.id)}
+                          onChange={(e) => {
+                            const next = new Set(selectedTxns);
+                            if (e.target.checked) next.add(t.id);
+                            else next.delete(t.id);
+                            setSelectedTxns(next);
+                          }}
+                        />
+                      </td>
                       <td className="px-5 py-4 whitespace-nowrap">
                         <div className="font-bold text-[#2F3A22]">
                           {dateStr}
@@ -421,7 +516,11 @@ export default function WalletPage() {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-center text-[#8A9270]">
-                        <button className="hover:text-[#546B41] transition-colors">
+                        <button 
+                          onClick={() => handleDownloadSingleInvoice(t.id)}
+                          className="hover:text-[#546B41] transition-colors"
+                          title="Download Invoice"
+                        >
                           <svg
                             width="14"
                             height="14"

@@ -39,9 +39,11 @@ adminRouter.get(
   '/merchants',
   ah(async (req, res) => {
     const rows = await query(
-      `SELECT s.id, s.business_name, s.gstin, u.email, u.status, u.kyc_status,
+      `SELECT s.id, s.business_name, s.gstin, u.email, u.status, u.kyc_status, u.first_name, u.last_name, s.merchant_level, s.company_address,
               w.balance as wallet_balance,
-              (SELECT COUNT(*) FROM orders o WHERE o.seller_id = s.id) as order_count
+              (SELECT COUNT(*) FROM orders o WHERE o.seller_id = s.id) as order_count,
+              (SELECT COALESCE(SUM(declared_value), 0) FROM orders o WHERE o.seller_id = s.id AND o.status != 'cancelled') as gmv,
+              (SELECT COUNT(*) FROM orders o WHERE o.seller_id = s.id AND o.status IN ('rto_initiated', 'rto_in_transit', 'rto_delivered')) as rto_count
        FROM sellers s
        JOIN users u ON u.id = s.user_id
        LEFT JOIN wallets w ON w.seller_id = s.id
@@ -49,6 +51,66 @@ adminRouter.get(
     );
     res.json({ merchants: rows });
   }),
+);
+
+adminRouter.post(
+  '/merchants',
+  ah(async (req, res) => {
+    const { businessName, ownerName, email, phone, gstin, city, password } = req.body;
+    
+    await withTransaction(async (client) => {
+      // 1. Create User
+      const [firstName, ...lastNameParts] = (ownerName || '').split(' ');
+      const lastName = lastNameParts.join(' ');
+      const userRes = await client.query(
+        `INSERT INTO users (email, password_hash, role, first_name, last_name, status, kyc_status)
+         VALUES ($1, $2, 'seller', $3, $4, 'pending_kyc', 'pending') RETURNING id`,
+        [email, password || 'temp_hash', firstName || '', lastName || '']
+      );
+      const userId = userRes.rows[0].id;
+
+      // 2. Default Level
+      const level = 1;
+
+      // 3. Create Seller
+      const sellerRes = await client.query(
+        `INSERT INTO sellers (user_id, business_name, phone, gstin, company_address, merchant_level)
+         VALUES ($1, $2, $3, $4, $5, $6) RETURNING id`,
+        [userId, businessName, phone, gstin, city, level]
+      );
+      const sellerId = sellerRes.rows[0].id;
+
+      // 4. Create Wallet
+      await client.query(`INSERT INTO wallets (seller_id, balance) VALUES ($1, 0)`, [sellerId]);
+    });
+
+    res.status(201).json({ message: 'Seller onboarded successfully' });
+  })
+);
+
+adminRouter.get(
+  '/merchants/:sellerId/modal-stats',
+  ah(async (req, res) => {
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+
+    const stats = await queryOne(
+      `SELECT 
+        (SELECT COALESCE(SUM(declared_value), 0) FROM orders WHERE seller_id = $1 AND created_at >= $2 AND status != 'cancelled') as gmv_30d,
+        (SELECT COUNT(*) FROM orders WHERE seller_id = $1 AND created_at >= $2 AND status != 'cancelled') as orders_30d,
+        (SELECT COUNT(*) FROM orders WHERE seller_id = $1 AND created_at >= $2 AND status IN ('rto_initiated', 'rto_in_transit', 'rto_delivered')) as rto_30d,
+        (SELECT COUNT(*) FROM merchant_courier_access WHERE seller_id = $1) as active_couriers,
+        s.created_at as joined_at,
+        u.kyc_status,
+        s.bank_account_number
+       FROM sellers s
+       JOIN users u ON u.id = s.user_id
+       WHERE s.id = $1`,
+       [req.params.sellerId, thirtyDaysAgo]
+    );
+
+    res.json({ stats });
+  })
 );
 
 adminRouter.patch(
@@ -65,11 +127,15 @@ adminRouter.patch(
 adminRouter.patch(
   '/merchants/:sellerId/kyc',
   ah(async (req, res) => {
-    const { kycStatus } = req.body; // 'verified' | 'rejected'
-    const seller = await queryOne<{ user_id: string }>(`SELECT user_id FROM sellers WHERE id = $1`, [req.params.sellerId]);
-    if (!seller) throw new ApiError(404, 'Merchant not found');
+    const { kycStatus, reason } = req.body; // 'verified' | 'rejected'
+    const seller = await queryOne(`SELECT user_id FROM sellers WHERE id = $1`, [req.params.sellerId]);
+    if (!seller) return res.status(404).json({ error: 'Seller not found' });
     const newUserStatus = kycStatus === 'verified' ? 'active' : 'pending_kyc';
-    await query(`UPDATE users SET kyc_status = $1, status = $2 WHERE id = $3`, [kycStatus, newUserStatus, seller.user_id]);
+    if (kycStatus === 'rejected') {
+      await query(`UPDATE users SET kyc_status = $1, status = $2, kyc_rejection_reason = $3 WHERE id = $4`, [kycStatus, newUserStatus, reason || null, seller.user_id]);
+    } else {
+      await query(`UPDATE users SET kyc_status = $1, status = $2, kyc_rejection_reason = NULL WHERE id = $3`, [kycStatus, newUserStatus, seller.user_id]);
+    }
     res.json({ message: `KYC ${kycStatus}` });
   }),
 );
@@ -77,7 +143,7 @@ adminRouter.patch(
 adminRouter.post(
   '/wallets/:sellerId/adjust',
   ah(async (req: AuthedRequest, res) => {
-    const { amount, type, reason } = req.body; // type: 'credit' | 'debit'
+    const { amount, type } = req.body; // type: 'credit' | 'debit'
     if (!amount || amount <= 0) throw new ApiError(400, 'amount must be positive');
 
     await withTransaction(async (client) => {
@@ -89,7 +155,7 @@ adminRouter.post(
       await client.query(
         `INSERT INTO wallet_transactions (wallet_id, type, amount, balance_before, balance_after, description)
          VALUES ($1,'adjustment',$2,$3,$4,$5)`,
-        [w.rows[0].id, type === 'credit' ? amount : -amount, before, after, reason || `Manual ${type} by admin`],
+        [w.rows[0].id, type === 'credit' ? amount : -amount, before, after, `Manual ${type} by admin`],
       );
     });
 
@@ -124,6 +190,31 @@ adminRouter.post(
   }),
 );
 
+adminRouter.post(
+  '/rate-cards',
+  ah(async (req, res) => {
+    const { courierIds, sellerId, baseRate, additionalRatePerKg, codChargeFixed, codChargePct } = req.body;
+    
+    if (!Array.isArray(courierIds) || courierIds.length === 0) {
+      return res.status(400).json({ error: 'courierIds array is required' });
+    }
+
+    const insertedCards: any[] = [];
+    await withTransaction(async (client) => {
+      for (const cId of courierIds) {
+        const result = await client.query(
+          `INSERT INTO rate_cards (courier_id, min_weight_kg, max_weight_kg, base_rate, additional_rate_per_kg, cod_charge_fixed, cod_charge_pct, is_active, seller_id)
+           VALUES ($1, 0, 9999, $2, $3, $4, $5, true, $6) RETURNING *`,
+          [cId, baseRate, additionalRatePerKg, codChargeFixed, codChargePct, sellerId || null]
+        );
+        insertedCards.push(result.rows[0]);
+      }
+    });
+    
+    res.status(201).json({ rateCards: insertedCards });
+  }),
+);
+
 adminRouter.get(
   '/cod-settlements',
   ah(async (req, res) => {
@@ -147,6 +238,7 @@ adminRouter.patch(
 adminRouter.get(
   '/analytics/overview',
   ah(async (req, res) => {
+    // Basic KPIs
     const stats = await queryOne(
       `SELECT
         (SELECT COUNT(*) FROM sellers) as total_merchants,
@@ -154,9 +246,46 @@ adminRouter.get(
         (SELECT COALESCE(SUM(total_freight),0)::float FROM orders) as total_revenue,
         (SELECT COALESCE(SUM(margin_applied),0)::float FROM orders) as total_margin,
         (SELECT COUNT(*) FROM orders WHERE status = 'delivered') as total_delivered,
-        (SELECT COUNT(*) FROM orders WHERE status::text LIKE 'rto%') as total_rto`,
+        (SELECT COUNT(*) FROM orders WHERE status::text LIKE 'rto%') as total_rto`
     );
-    res.json(stats);
+
+    // Top Sellers
+    const topSellers = await query(
+      `SELECT s.id, s.business_name, 
+        COUNT(o.id) as order_count, 
+        COALESCE(SUM(o.total_freight), 0)::float as gmv,
+        (SELECT COUNT(*) FROM orders rto_o WHERE rto_o.seller_id = s.id AND rto_o.status::text LIKE 'rto%') as rto_count
+       FROM sellers s
+       LEFT JOIN orders o ON o.seller_id = s.id
+       GROUP BY s.id
+       ORDER BY gmv DESC
+       LIMIT 5`
+    );
+
+    // Attention Needs
+    const pendingKycCount = await queryOne<{count: string}>(`SELECT COUNT(*) FROM users WHERE kyc_status = 'submitted'`);
+    const openTicketsCount = await queryOne<{count: string}>(`SELECT COUNT(*) FROM tickets WHERE status = 'open'`);
+    const disputedShipmentsCount = await queryOne<{count: string}>(`SELECT COUNT(*) FROM weight_disputes WHERE status = 'open'`);
+
+    // Courier Split
+    const courierSplit = await query(
+      `SELECT c.name as courier_name, COUNT(o.id) as order_count
+       FROM orders o
+       JOIN couriers c ON c.id = o.courier_id
+       GROUP BY c.id, c.name
+       ORDER BY order_count DESC`
+    );
+
+    res.json({
+      kpis: stats,
+      topSellers,
+      attention: {
+        pendingKyc: parseInt(pendingKycCount?.count || '0', 10),
+        openTickets: parseInt(openTicketsCount?.count || '0', 10),
+        disputedShipments: parseInt(disputedShipmentsCount?.count || '0', 10),
+      },
+      courierSplit
+    });
   }),
 );
 
@@ -356,4 +485,102 @@ adminRouter.put(
     await query(`UPDATE sellers SET ${fields.join(', ')}, updated_at=NOW() WHERE id=$${params.length}`, params);
     res.json({ message: 'Merchant details updated' });
   }),
+);
+
+// NDR Insights
+adminRouter.get(
+  '/ndr/insights',
+  ah(async (req, res) => {
+    const openNdrsRes = await queryOne<{count: string}>(`SELECT COUNT(*) FROM ndr_records WHERE resolved_at IS NULL`);
+    const openNdrs = openNdrsRes?.count || "0";
+
+    const avgHoursRes = await queryOne<{avg_hours: number}>(`
+      SELECT EXTRACT(EPOCH FROM AVG(resolved_at - ndr_at))/3600 as avg_hours
+      FROM ndr_records WHERE resolved_at IS NOT NULL
+    `);
+    const avg_hours = avgHoursRes?.avg_hours || 0;
+
+    const resStats = await query(`
+      SELECT 
+        COUNT(*) as total_resolved,
+        COUNT(*) FILTER (WHERE o.status = 'delivered') as delivered,
+        COUNT(*) FILTER (WHERE o.status::text LIKE 'rto%') as rto
+      FROM ndr_records n
+      JOIN orders o ON o.id = n.order_id
+      WHERE n.resolved_at IS NOT NULL
+    `);
+    const totalRes = parseInt(resStats[0]?.total_resolved || '0', 10);
+    const delivered = parseInt(resStats[0]?.delivered || '0', 10);
+    const rto = parseInt(resStats[0]?.rto || '0', 10);
+    const pctDelivered = totalRes ? Math.round((delivered/totalRes)*100) : 0;
+    const pctRto = totalRes ? Math.round((rto/totalRes)*100) : 0;
+
+    const reasons = await query<{reason: string, count: string}>(`
+      SELECT ndr_reason as reason, COUNT(*) as count 
+      FROM ndr_records 
+      GROUP BY ndr_reason
+      ORDER BY count DESC
+    `);
+    const totalReasons = reasons.reduce((sum, r) => sum + parseInt(r.count, 10), 0);
+    const formattedReasons = reasons.map(r => ({
+      reason: r.reason,
+      percentage: totalReasons ? Math.round((parseInt(r.count, 10) / totalReasons) * 100) : 0
+    }));
+
+    const sellers = await query(`
+      SELECT 
+        s.business_name, 
+        COUNT(n.id) as total_ndrs,
+        COUNT(n.id) FILTER (WHERE n.resolved_at IS NOT NULL) as resolved_ndrs
+      FROM ndr_records n
+      JOIN orders o ON o.id = n.order_id
+      JOIN sellers s ON s.id = o.seller_id
+      GROUP BY s.id, s.business_name
+      ORDER BY total_ndrs DESC
+      LIMIT 10
+    `);
+    const formattedSellers = sellers.map(s => ({
+      seller: s.business_name,
+      ndrCount: parseInt(s.total_ndrs, 10),
+      resolvedPct: parseInt(s.total_ndrs, 10) ? Math.round((parseInt(s.resolved_ndrs, 10) / parseInt(s.total_ndrs, 10)) * 100) : 0
+    }));
+
+    res.json({
+      metrics: {
+        openNdrs: parseInt(openNdrs, 10),
+        avgResolutionHours: avg_hours ? parseFloat(avg_hours as any).toFixed(1) : "0.0",
+        pctDelivered,
+        pctRto
+      },
+      reasons: formattedReasons,
+      sellers: formattedSellers
+    });
+  })
+);
+
+// NDR List
+adminRouter.get(
+  '/ndr/list',
+  ah(async (req, res) => {
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 50;
+    const offset = (page - 1) * limit;
+
+    const rows = await query(`
+      SELECT 
+        n.id, n.ndr_reason, n.attempt_number, n.action_taken, n.ndr_at,
+        o.id as order_id, o.mozopost_order_id, o.awb_number, o.consignee_name, o.consignee_phone, o.payment_mode, o.cod_amount,
+        c.name as courier_name,
+        s.business_name
+      FROM ndr_records n
+      JOIN orders o ON o.id = n.order_id
+      JOIN couriers c ON c.id = o.courier_id
+      JOIN sellers s ON s.id = o.seller_id
+      WHERE n.resolved_at IS NULL
+      ORDER BY n.ndr_at DESC
+      LIMIT $1 OFFSET $2
+    `, [limit, offset]);
+    
+    res.json({ ndrs: rows });
+  })
 );

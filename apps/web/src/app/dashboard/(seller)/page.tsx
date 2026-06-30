@@ -192,21 +192,22 @@ export default function DashboardHome() {
 
   // Palette helper for dynamic payment modes
   const PAYMENT_COLORS: Record<string, string> = {
-    COD: "#546B41", // Olive Green
-    PREPAID: "#2563EB", // Vibrant Blue
-    UPI: "#7C3AED", // Royal Purple
-    CARD: "#D97706", // Warm Amber
-    NET_BANKING: "#059669", // Emerald
-    WALLET: "#E11D48", // Rose Red
+    COD: "#546B41",
+    PREPAID: "#6F7E50",
+    UPI: "#8A9270",
+    CARD: "#A9842E",
+    NET_BANKING: "#3C4E2D",
+    WALLET: "#D8CBAE",
   };
   const FALLBACK_PALETTE = [
     "#546B41",
-    "#2563EB",
-    "#7C3AED",
-    "#D97706",
-    "#059669",
-    "#E11D48",
-    "#0891B2",
+    "#6F7E50",
+    "#A9842E",
+    "#8A9270",
+    "#4A5F37",
+    "#D8CBAE",
+    "#7E8C5A",
+    "#B4623F",
   ];
 
   // Prepare dynamic donut data with distinct readable colors
@@ -230,15 +231,15 @@ export default function DashboardHome() {
       : [];
 
   const statusDonutColors: Record<string, string> = {
-    DELIVERED: "#16A34A", // Green
-    OUT_FOR_DELIVERY: "#2563EB", // Blue
-    SHIPPED: "#0891B2", // Cyan / Teal
-    BOOKED: "#7C3AED", // Purple
-    UNDELIVERED: "#D97706", // Amber
-    RTO_INITIATED: "#EA580C", // Orange
-    RTO: "#DC2626", // Red
-    CANCELLED: "#64748B", // Slate
-    FAILED: "#991B1B", // Dark Red
+    DELIVERED: "#546B41",
+    OUT_FOR_DELIVERY: "#6F7E50",
+    SHIPPED: "#4A5F37",
+    BOOKED: "#7E8C5A",
+    UNDELIVERED: "#D8CBAE",
+    RTO_INITIATED: "#8A9270",
+    RTO: "#A9842E",
+    CANCELLED: "#E2D4B8",
+    FAILED: "#B4623F",
   };
 
   const statusDonutItems = analytics?.byStatus?.length
@@ -266,23 +267,23 @@ export default function DashboardHome() {
       {/* Page header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#2F3A22] tracking-tight">
+          <h1 className="text-3xl font-bold text-[#2F3A22] tracking-tight">
             Analytics
           </h1>
-          <p className="text-sm text-[#8A9270] mt-1">
+          <p className="text-[15px] text-[#8A9270] mt-1">
             Get detailed insights about your stores.
           </p>
         </div>
         <div className="flex bg-white border border-[#E2D4B8] rounded-xl p-1 shadow-sm">
           <button
             onClick={() => setViewMode("shop")}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${viewMode === "shop" ? "bg-[#EDF0E4] text-[#546B41]" : "text-[#8A9270] hover:text-[#2F3A22]"}`}
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${viewMode === "shop" ? "bg-[#EDF0E4] text-[#546B41]" : "text-[#8A9270] hover:text-[#2F3A22]"}`}
           >
             Shop View
           </button>
           <button
             onClick={() => setViewMode("account")}
-            className={`px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors ${viewMode === "account" ? "bg-[#EDF0E4] text-[#546B41]" : "text-[#8A9270] hover:text-[#2F3A22]"}`}
+            className={`px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors ${viewMode === "account" ? "bg-[#EDF0E4] text-[#546B41]" : "text-[#8A9270] hover:text-[#2F3A22]"}`}
           >
             Account View
           </button>
@@ -292,13 +293,13 @@ export default function DashboardHome() {
       {/* Filters Bar */}
       <div className="flex gap-3.5 items-end flex-wrap">
         <div>
-          <div className="text-[11px] text-[#8A9270] mb-1.5 font-medium">
+          <div className="text-[13px] text-[#8A9270] mb-1.5 font-medium">
             Order Status
           </div>
           <select
             value={orderStatusFilter}
             onChange={(e) => setOrderStatusFilter(e.target.value)}
-            className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-semibold text-[#2F3A22] min-w-[150px] shadow-sm outline-none cursor-pointer"
+            className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-sm font-semibold text-[#2F3A22] min-w-[150px] shadow-sm outline-none cursor-pointer"
           >
             <option>Shipped Orders</option>
             <option>All Orders</option>
@@ -307,13 +308,13 @@ export default function DashboardHome() {
           </select>
         </div>
         <div>
-          <div className="text-[11px] text-[#8A9270] mb-1.5 font-medium">
+          <div className="text-[13px] text-[#8A9270] mb-1.5 font-medium">
             Payment Method
           </div>
           <select
             value={paymentMethodFilter}
             onChange={(e) => setPaymentMethodFilter(e.target.value)}
-            className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-semibold text-[#2F3A22] min-w-[140px] shadow-sm outline-none cursor-pointer"
+            className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-sm font-semibold text-[#2F3A22] min-w-[140px] shadow-sm outline-none cursor-pointer"
           >
             <option>All Method</option>
             <option>COD</option>
@@ -321,13 +322,13 @@ export default function DashboardHome() {
           </select>
         </div>
         <div>
-          <div className="text-[11px] text-[#8A9270] mb-1.5 font-medium">
+          <div className="text-[13px] text-[#8A9270] mb-1.5 font-medium">
             TPL Partner
           </div>
           <select
             value={tplPartnerFilter}
             onChange={(e) => setTplPartnerFilter(e.target.value)}
-            className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-semibold text-[#2F3A22] min-w-[140px] shadow-sm outline-none cursor-pointer"
+            className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-sm font-semibold text-[#2F3A22] min-w-[140px] shadow-sm outline-none cursor-pointer"
           >
             <option>All Partners</option>
             <option>Delhivery</option>
@@ -338,7 +339,7 @@ export default function DashboardHome() {
         </div>
         <div className="ml-auto flex gap-3 items-end">
           <div>
-            <div className="text-[11px] text-[#8A9270] mb-1.5 font-medium">
+            <div className="text-[13px] text-[#8A9270] mb-1.5 font-medium">
               Date Range ({days}d)
             </div>
             <div className="flex bg-white border border-[#E2D4B8] rounded-lg overflow-hidden shadow-sm">
@@ -346,7 +347,7 @@ export default function DashboardHome() {
                 <button
                   key={d}
                   onClick={() => setDays(d)}
-                  className={`px-3 py-1.5 text-xs font-mono-nb transition-colors ${days === d ? "bg-[#546B41] text-[#FFF8EC]" : "text-[#8A9270] hover:bg-[#FFF8EC]"}`}
+                  className={`px-3 py-1.5 text-sm font-mono-nb transition-colors ${days === d ? "bg-[#546B41] text-[#FFF8EC]" : "text-[#8A9270] hover:bg-[#FFF8EC]"}`}
                 >
                   {d}d
                 </button>
@@ -355,7 +356,7 @@ export default function DashboardHome() {
           </div>
           <button
             onClick={() => alert("Exporting report for current filters...")}
-            className="bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-lg px-4 py-2 text-xs font-semibold hover:bg-[#E0E7CE] transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
+            className="bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#E0E7CE] transition-colors shadow-sm flex items-center gap-1.5 cursor-pointer"
           >
             <span>↧</span> Export Report
           </button>
@@ -429,10 +430,10 @@ export default function DashboardHome() {
             padding: "20px",
           }}
         >
-          <div style={{ fontSize: "15px", fontWeight: 600, color: "#2F3A22" }}>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#2F3A22" }}>
             Orders &amp; GMV
           </div>
-          <div style={{ fontSize: "12px", color: "#8A9270", marginTop: "2px" }}>
+          <div style={{ fontSize: "14px", color: "#8A9270", marginTop: "2px" }}>
             Growth and Revenue Analysis (Last {days} days)
           </div>
           <div className="h-72 mt-3">
@@ -451,7 +452,7 @@ export default function DashboardHome() {
                   axisLine={false}
                   tickLine={false}
                   tick={{
-                    fontSize: 11,
+                    fontSize: 13,
                     fill: "#8A9270",
                     fontFamily: "IBM Plex Mono",
                   }}
@@ -461,7 +462,7 @@ export default function DashboardHome() {
                   axisLine={false}
                   tickLine={false}
                   tick={{
-                    fontSize: 11,
+                    fontSize: 13,
                     fill: "#8A9270",
                     fontFamily: "IBM Plex Mono",
                   }}
@@ -497,7 +498,7 @@ export default function DashboardHome() {
               display: "flex",
               gap: "18px",
               marginTop: "8px",
-              fontSize: "12px",
+              fontSize: "14px",
               color: "#8A9270",
             }}
           >
@@ -543,7 +544,7 @@ export default function DashboardHome() {
             }}
           >
             <div
-              style={{ fontSize: "15px", fontWeight: 600, color: "#2F3A22" }}
+              style={{ fontSize: "18px", fontWeight: 600, color: "#2F3A22" }}
             >
               Delivery by State
             </div>
@@ -554,7 +555,7 @@ export default function DashboardHome() {
                 border: "1px solid #E2D4B8",
                 borderRadius: "7px",
                 padding: "3px",
-                fontSize: "12px",
+                fontSize: "14px",
               }}
             >
               <span
@@ -585,7 +586,7 @@ export default function DashboardHome() {
               gridTemplateColumns: "24px 1fr 80px 80px 80px",
               gap: "6px",
               marginTop: "16px",
-              fontSize: "10px",
+              fontSize: "12px",
               color: "#8A9270",
               textTransform: "uppercase",
               letterSpacing: ".5px",
@@ -609,7 +610,7 @@ export default function DashboardHome() {
                 alignItems: "center",
                 padding: "9px 4px",
                 borderBottom: "1px solid #F6EEDB",
-                fontSize: "13px",
+                fontSize: "14px",
               }}
             >
               <div
@@ -670,7 +671,7 @@ export default function DashboardHome() {
             padding: "20px",
           }}
         >
-          <div style={{ fontSize: "15px", fontWeight: 600, color: "#2F3A22" }}>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#2F3A22" }}>
             Orders by Payment Mode
           </div>
           <div
@@ -712,7 +713,7 @@ export default function DashboardHome() {
                       background: "#FFF8EC",
                       borderRadius: "8px",
                       border: "1px solid #EADFC8",
-                      fontSize: "12px",
+                      fontSize: "14px",
                       fontWeight: 600,
                       color: "#2F3A22",
                     }}
@@ -729,7 +730,7 @@ export default function DashboardHome() {
               }}
             >
               {paymentDonutItems.length === 0 ? (
-                <div style={{ fontSize: "12px", color: "#8A9270" }}>
+                <div style={{ fontSize: "14px", color: "#8A9270" }}>
                   No payment data found
                 </div>
               ) : (
@@ -740,7 +741,7 @@ export default function DashboardHome() {
                       display: "flex",
                       alignItems: "center",
                       gap: "8px",
-                      fontSize: "12px",
+                      fontSize: "14px",
                       color: "#6B7556",
                     }}
                   >
@@ -780,7 +781,7 @@ export default function DashboardHome() {
             padding: "20px",
           }}
         >
-          <div style={{ fontSize: "15px", fontWeight: 600, color: "#2F3A22" }}>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#2F3A22" }}>
             Orders by Confirmation Status
           </div>
           <div
@@ -822,7 +823,7 @@ export default function DashboardHome() {
                       background: "#FFF8EC",
                       borderRadius: "8px",
                       border: "1px solid #EADFC8",
-                      fontSize: "12px",
+                      fontSize: "14px",
                       fontWeight: 600,
                       color: "#2F3A22",
                     }}
@@ -839,7 +840,7 @@ export default function DashboardHome() {
               }}
             >
               {confirmationDonutItems.length === 0 ? (
-                <div style={{ fontSize: "12px", color: "#8A9270" }}>
+                <div style={{ fontSize: "14px", color: "#8A9270" }}>
                   No confirmation data found
                 </div>
               ) : (
@@ -850,7 +851,7 @@ export default function DashboardHome() {
                       display: "flex",
                       alignItems: "center",
                       gap: "8px",
-                      fontSize: "12px",
+                      fontSize: "14px",
                       color: "#6B7556",
                     }}
                   >
@@ -890,7 +891,7 @@ export default function DashboardHome() {
             padding: "20px",
           }}
         >
-          <div style={{ fontSize: "15px", fontWeight: 600, color: "#2F3A22" }}>
+          <div style={{ fontSize: "18px", fontWeight: 600, color: "#2F3A22" }}>
             Confirmed Orders by Order Status
           </div>
           <div
@@ -932,7 +933,7 @@ export default function DashboardHome() {
                       background: "#FFF8EC",
                       borderRadius: "8px",
                       border: "1px solid #EADFC8",
-                      fontSize: "12px",
+                      fontSize: "14px",
                       fontWeight: 600,
                       color: "#2F3A22",
                     }}
@@ -949,7 +950,7 @@ export default function DashboardHome() {
               }}
             >
               {statusDonutItems.length === 0 ? (
-                <div style={{ fontSize: "12px", color: "#8A9270" }}>
+                <div style={{ fontSize: "14px", color: "#8A9270" }}>
                   No status data found
                 </div>
               ) : (
@@ -960,7 +961,7 @@ export default function DashboardHome() {
                       display: "flex",
                       alignItems: "center",
                       gap: "8px",
-                      fontSize: "11px",
+                      fontSize: "14px",
                       color: "#6B7556",
                     }}
                   >

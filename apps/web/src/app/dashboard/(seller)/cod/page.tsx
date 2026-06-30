@@ -29,18 +29,26 @@ export default function CodReportsPage() {
   const [remittances, setRemittances] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [search, setSearch] = useState("");
+  const [date, setDate] = useState("");
+  const [selectedTxns, setSelectedTxns] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     load();
-  }, []);
+  }, [search, date]);
 
   async function load() {
     setLoading(true);
     setError("");
     try {
-      const { data } = await api.get("/cod");
+      const qs = new URLSearchParams();
+      if (search) qs.append("search", search);
+      if (date) qs.append("date", date);
+      
+      const { data } = await api.get(`/cod?${qs.toString()}`);
       setStats(data.stats);
       setRemittances(data.remittances);
+      setSelectedTxns(new Set());
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -99,6 +107,29 @@ export default function CodReportsPage() {
     },
   ];
 
+  function handleExport() {
+    if (selectedTxns.size === 0) return;
+    const toDownload = remittances.filter((r: any) => selectedTxns.has(r.id));
+    
+    const header = "Created Date,Due Date,Orders,Amount,Cycle,Status\n";
+    const rows = toDownload.map((r: any) => {
+      const cDate = formatDateShort(r.created_at).replace(/,/g, '');
+      const dDate = formatDateShort(r.due_date).replace(/,/g, '');
+      return `${cDate},${dDate},${r.total_orders},${r.net_amount},${r.payment_cycle},${r.status}`;
+    }).join("\n");
+
+    const blob = new Blob([header + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `cod_remittances.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setSelectedTxns(new Set());
+  }
+
   return (
     <div className="animate-fade-up mx-auto  pb-12">
       {/* Header */}
@@ -150,28 +181,72 @@ export default function CodReportsPage() {
 
       {/* Table */}
       <div className="bg-white border border-[#EADFC8] rounded-xl shadow-sm overflow-hidden">
-        <div className="px-5 py-4 border-b border-[#EADFC8] bg-white flex items-center justify-between">
+        <div className="px-5 py-4 border-b border-[#EADFC8] bg-white flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2 text-[15px] font-bold text-[#2F3A22]">
             ▤ Remittance History
           </div>
-          <button className="px-4 py-2 bg-white border border-[#EADFC8] text-[#6B7556] text-xs font-bold rounded-lg hover:bg-[#F8F9F7] hover:text-[#2F3A22] transition-colors flex items-center gap-2 shadow-sm">
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
+          
+          <div className="flex items-center gap-3 w-full sm:w-auto">
+            <div className="relative">
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search cycle/ID..."
+                className="bg-white border border-[#EADFC8] rounded-lg pl-8 pr-4 py-1.5 text-xs font-medium text-[#2F3A22] outline-none focus:border-[#546B41] shadow-sm w-40"
+              />
+              <div className="absolute left-3 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-[#8A9270]" />
+            </div>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="bg-white border border-[#EADFC8] rounded-lg px-4 py-1.5 text-xs text-[#6B7556] outline-none focus:border-[#546B41] font-medium shadow-sm"
+            />
+            <button 
+              onClick={() => {
+                setSearch("");
+                setDate("");
+              }}
+              className="px-4 py-1.5 bg-white border border-[#EADFC8] text-[#6B7556] text-xs font-bold rounded-lg hover:bg-[#FFF8EC] transition-colors flex items-center gap-1.5 shadow-sm"
             >
-              <path d="M12 5v14M5 12l7 7 7-7" />
-            </svg>
-            Export
-          </button>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+                <polyline points="3 3 3 8 8 8" />
+              </svg>
+              Reset
+            </button>
+            <button 
+              onClick={handleExport}
+              disabled={selectedTxns.size === 0}
+              className={`px-4 py-1.5 border border-[#EADFC8] text-xs font-bold rounded-lg transition-colors flex items-center gap-2 shadow-sm ${
+                selectedTxns.size > 0 
+                  ? 'bg-white text-[#6B7556] hover:bg-[#F8F9F7] hover:text-[#2F3A22]'
+                  : 'bg-[#F4F6F0] text-[#A3A898] cursor-not-allowed opacity-70'
+              }`}
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <path d="M12 5v14M5 12l7 7 7-7" />
+              </svg>
+              Export {selectedTxns.size > 0 && `(${selectedTxns.size})`}
+            </button>
+          </div>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-[#F8F9F7] border-b border-[#EADFC8]">
               <tr>
+                <th className="px-5 py-3.5 w-10 text-left">
+                  <input 
+                    type="checkbox" 
+                    className="rounded border-[#CBD7B5] text-[#546B41] focus:ring-[#546B41] w-4 h-4"
+                    checked={remittances.length > 0 && selectedTxns.size === remittances.length}
+                    onChange={(e) => {
+                      if (e.target.checked) setSelectedTxns(new Set(remittances.map(r => r.id)));
+                      else setSelectedTxns(new Set());
+                    }}
+                  />
+                </th>
                 <th className="px-5 py-3.5 text-left text-[11px] font-bold text-[#8A9270] uppercase tracking-wider">
                   Created Date
                 </th>
@@ -196,7 +271,7 @@ export default function CodReportsPage() {
               {loading ? (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={7}
                     className="px-5 py-12 text-center text-[#8A9270] text-sm font-medium"
                   >
                     Loading remittances...
@@ -204,7 +279,7 @@ export default function CodReportsPage() {
                 </tr>
               ) : remittances.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="px-5 py-12 text-center">
+                  <td colSpan={7} className="px-5 py-12 text-center">
                     <div className="w-12 h-12 rounded-full bg-[#EDF0E4] flex items-center justify-center mx-auto mb-3 border border-[#CBD7B5]">
                       <svg
                         width="20"
@@ -232,6 +307,19 @@ export default function CodReportsPage() {
                       key={r.id}
                       className="hover:bg-[#F8F9F7] transition-colors"
                     >
+                      <td className="px-5 py-4 w-10">
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-[#CBD7B5] text-[#546B41] focus:ring-[#546B41] w-4 h-4"
+                          checked={selectedTxns.has(r.id)}
+                          onChange={(e) => {
+                            const next = new Set(selectedTxns);
+                            if (e.target.checked) next.add(r.id);
+                            else next.delete(r.id);
+                            setSelectedTxns(next);
+                          }}
+                        />
+                      </td>
                       <td className="px-5 py-4 text-[#6B7556] font-medium text-xs">
                         {formatDateShort(r.created_at)}
                       </td>

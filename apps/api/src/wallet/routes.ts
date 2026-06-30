@@ -22,16 +22,65 @@ walletRouter.get(
 );
 
 walletRouter.get(
+  '/metrics',
+  ah(async (req: AuthedRequest, res) => {
+    const sellerId = sellerIdOf(req);
+    const wallet = await queryOne<{ id: string; credit_outstanding: string }>(`SELECT id, credit_outstanding FROM wallets WHERE seller_id = $1`, [sellerId]);
+    if (!wallet) throw new ApiError(404, 'Wallet not found');
+
+    // 1. Withdrawn Till Date (sum of all debit/withdrawal transactions)
+    const withdrawnRes = await queryOne<{ total: string }>(
+      `SELECT SUM(amount) as total FROM wallet_transactions WHERE wallet_id = $1 AND type = 'debit'`,
+      [wallet.id]
+    );
+    const withdrawn = parseFloat(withdrawnRes?.total || '0');
+
+    // 2. 7 Days Avg Payments (average daily credit over the last 7 days)
+    const sevenDaysRes = await queryOne<{ avg: string }>(
+      `SELECT SUM(amount) / 7.0 as avg 
+       FROM wallet_transactions 
+       WHERE wallet_id = $1 
+         AND type = 'credit' 
+         AND created_at >= NOW() - INTERVAL '7 days'`,
+      [wallet.id]
+    );
+    const sevenDaysAvg = parseFloat(sevenDaysRes?.avg || '0');
+
+    res.json({
+      metrics: {
+        withdrawnTillDate: withdrawn,
+        sevenDaysAvgPayments: sevenDaysAvg,
+        outstanding: parseFloat(wallet.credit_outstanding || '0'),
+      },
+    });
+  }),
+);
+
+walletRouter.get(
   '/transactions',
   ah(async (req: AuthedRequest, res) => {
     const sellerId = sellerIdOf(req);
     const wallet = await queryOne<{ id: string }>(`SELECT id FROM wallets WHERE seller_id = $1`, [sellerId]);
     if (!wallet) throw new ApiError(404, 'Wallet not found');
+
+    const { search, date } = req.query;
+    let queryStr = `SELECT * FROM wallet_transactions WHERE wallet_id = $1`;
+    const params: any[] = [wallet.id];
+
+    if (search) {
+      params.push(`%${search}%`);
+      queryStr += ` AND (description ILIKE $${params.length} OR payment_gateway_txn_id ILIKE $${params.length})`;
+    }
+    if (date) {
+      params.push(date as string);
+      queryStr += ` AND DATE(created_at) = $${params.length}`;
+    }
+
     const limit = Math.min(parseInt((req.query.limit as string) || '50', 10), 200);
-    const txns = await query(
-      `SELECT * FROM wallet_transactions WHERE wallet_id = $1 ORDER BY created_at DESC LIMIT $2`,
-      [wallet.id, limit],
-    );
+    params.push(limit);
+    queryStr += ` ORDER BY created_at DESC LIMIT $${params.length}`;
+
+    const txns = await query(queryStr, params);
     res.json({ transactions: txns });
   }),
 );

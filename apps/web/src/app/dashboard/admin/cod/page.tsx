@@ -14,19 +14,33 @@ interface Settlement {
   payment_mode: string | null;
 }
 
+interface Merchant {
+  id: string;
+  business_name: string;
+  wallet_balance: string;
+}
+
 const STATUS_STYLE: Record<string, string> = {
-  pending: "bg-[#FEF9C3] text-[#854D0E]",
-  processing: "bg-[#DBEAFE] text-[#1E40AF]",
+  pending: "bg-[#FAF4E6] text-[#854D0E]",
+  processing: "bg-[#EADFC8] text-[#546B41]",
   settled: "bg-[#D1FAE5] text-[#065F46]",
-  on_hold: "bg-[#FEE2E2] text-[#991B1B]",
-  disputed: "bg-[#FEE2E2] text-[#991B1B]",
+  on_hold: "bg-[#FAF4E6] text-[#6B7556]",
+  disputed: "bg-[#FAF4E6] text-[#991B1B]",
 };
 
 export default function CodSettlementsPage() {
-  const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [activeTab, setActiveTab] = useState<"cod" | "wallet">("cod");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  // COD State
+  const [settlements, setSettlements] = useState<Settlement[]>([]);
+  const [search, setSearch] = useState("");
+  const [date, setDate] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [selectedTxns, setSelectedTxns] = useState<Set<string>>(new Set());
+
   const [utrModal, setUtrModal] = useState<Settlement | null>(null);
   const [utrForm, setUtrForm] = useState({
     utrNumber: "",
@@ -35,19 +49,41 @@ export default function CodSettlementsPage() {
   });
   const [releasing, setReleasing] = useState(false);
 
+  // Wallet State
+  const [merchants, setMerchants] = useState<Merchant[]>([]);
+  const [walletModal, setWalletModal] = useState(false);
+  const [walletSellerId, setWalletSellerId] = useState("");
+  const [walletAmount, setWalletAmount] = useState("");
+  const [walletType, setWalletType] = useState<"credit" | "debit">("credit");
+  const [walletError, setWalletError] = useState("");
+  const [walletMessage, setWalletMessage] = useState("");
+  const [walletSubmitting, setWalletSubmitting] = useState(false);
+
   useEffect(() => {
     load();
-  }, []);
+    const intervalId = setInterval(() => load(true), 15000);
+    return () => clearInterval(intervalId);
+  }, [search, date, statusFilter]);
 
-  async function load() {
-    setLoading(true);
+  async function load(isPolling = false) {
+    if (!isPolling) setLoading(true);
     try {
-      const { data } = await api.get("/admin/cod");
-      setSettlements(data.remittances || data.settlements || []);
+      const qs = new URLSearchParams();
+      if (search) qs.append("search", search);
+      if (date) qs.append("date", date);
+      if (statusFilter) qs.append("status", statusFilter);
+
+      const [codRes, merchRes] = await Promise.all([
+        api.get(`/admin/cod?${qs.toString()}`),
+        api.get("/admin/merchants"),
+      ]);
+
+      setSettlements(codRes.data.remittances || codRes.data.settlements || []);
+      setMerchants(merchRes.data.merchants || []);
     } catch (err) {
-      setError(apiErrorMessage(err));
+      if (!isPolling) setError(apiErrorMessage(err));
     } finally {
-      setLoading(false);
+      if (!isPolling) setLoading(false);
     }
   }
 
@@ -77,6 +113,31 @@ export default function CodSettlementsPage() {
     }
   }
 
+  async function handleWalletSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setWalletError("");
+    setWalletMessage("");
+    if (!walletSellerId || !walletAmount) return;
+    setWalletSubmitting(true);
+    try {
+      await api.post(`/admin/wallets/${walletSellerId}/adjust`, {
+        amount: Number(walletAmount),
+        type: walletType,
+      });
+      setWalletMessage(`Wallet ${walletType}ed by ₹${walletAmount} successfully`);
+      setWalletAmount("");
+      await load(true);
+      setTimeout(() => {
+        setWalletModal(false);
+        setWalletMessage("");
+      }, 1500);
+    } catch (err) {
+      setWalletError(apiErrorMessage(err));
+    } finally {
+      setWalletSubmitting(false);
+    }
+  }
+
   const pending = settlements.filter((s) => s.status === "pending");
   const total = settlements.reduce(
     (sum, s) => sum + parseFloat(s.net_amount || "0"),
@@ -87,206 +148,451 @@ export default function CodSettlementsPage() {
     0,
   );
 
-  const inp =
-    "w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10";
+  function handleExport() {
+    if (selectedTxns.size === 0) return;
+    const toDownload = settlements.filter((s) => selectedTxns.has(s.id));
+
+    const header =
+      "Merchant,Orders,Net Amount,UTR,Payment Mode,Due Date,Status\n";
+    const rows = toDownload
+      .map((s) => {
+        const dDate = s.due_date
+          ? new Date(s.due_date).toLocaleDateString("en-IN").replace(/,/g, "")
+          : "—";
+        return `"${s.business_name}",${s.total_orders},${s.net_amount},${s.utr_number || ""},${s.payment_mode || ""},${dDate},${s.status}`;
+      })
+      .join("\n");
+
+    const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `admin_cod_settlements.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setSelectedTxns(new Set());
+  }
 
   return (
-    <div className="animate-fade-up  mx-auto space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">COD Settlements</h1>
-          <p className="text-sm text-[#64748B] mt-1">
-            Process cash-on-delivery remittances. <strong>UTR required</strong>{" "}
-            before releasing any settlement.
-          </p>
+    <>
+      <div className="animate-fade-up mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-[#2F3A22]">
+              Financial Dashboard
+            </h1>
+            <p className="text-sm text-[#8A9270] mt-1">
+              Master Admin control for COD remittances and seller wallet balances.
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              setWalletError("");
+              setWalletMessage("");
+              setWalletModal(true);
+            }}
+            className="bg-[#546B41] hover:bg-[#3F5131] text-white px-5 py-2.5 rounded-xl text-sm font-semibold transition-colors shadow-sm"
+          >
+            + Adjust Wallet
+          </button>
         </div>
-      </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-[#E5E8EF] shadow-sm">
-          <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-2">
-            Total Settlements
-          </div>
-          <div className="text-2xl font-bold text-[#0F172A] font-mono">
-            {settlements.length}
-          </div>
+        {/* Unified Tabs */}
+        <div className="flex border-b border-[#E2D4B8] mb-4">
+          <button
+            onClick={() => setActiveTab("cod")}
+            className={`py-3 px-6 text-sm font-bold border-b-2 transition-colors ${
+              activeTab === "cod"
+                ? "border-[#546B41] text-[#546B41]"
+                : "border-transparent text-[#8A9270] hover:text-[#2F3A22]"
+            }`}
+          >
+            COD Settlements
+          </button>
+          <button
+            onClick={() => setActiveTab("wallet")}
+            className={`py-3 px-6 text-sm font-bold border-b-2 transition-colors ${
+              activeTab === "wallet"
+                ? "border-[#546B41] text-[#546B41]"
+                : "border-transparent text-[#8A9270] hover:text-[#2F3A22]"
+            }`}
+          >
+            Wallet Balances
+          </button>
         </div>
-        <div className="bg-[#FFFBEB] p-5 rounded-2xl border border-[#FEF08A] shadow-sm">
-          <div className="text-[10px] font-bold text-[#854D0E] uppercase tracking-widest mb-2">
-            Pending Release
-          </div>
-          <div className="text-2xl font-bold text-[#CA8A04] font-mono">
-            {pending.length}
-          </div>
-          <div className="text-xs text-[#CA8A04] mt-1 font-medium">
-            ₹
-            {pendingTotal.toLocaleString("en-IN", { maximumFractionDigits: 0 })}{" "}
-            due
-          </div>
-        </div>
-        <div className="bg-white p-5 rounded-2xl border border-[#E5E8EF] shadow-sm">
-          <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-2">
-            Total Payable
-          </div>
-          <div className="text-2xl font-bold text-[#16A34A] font-mono">
-            ₹{total.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
-          </div>
-        </div>
-      </div>
 
-      {/* UTR Required Banner */}
-      <div className="p-4 rounded-xl bg-[#EEF2FF] border border-[#C7D2FE] text-sm font-semibold text-[#4F46E5] flex items-center gap-2">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-        >
-          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-        </svg>
-        UTR number is mandatory before releasing any COD settlement. This
-        ensures full payment audit trail.
-      </div>
+        {/* COD Settlements Tab */}
+        {activeTab === "cod" && (
+          <div className="space-y-6 animate-fade-in">
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-white p-5 rounded-2xl border border-[#E2D4B8] shadow-sm">
+                <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2">
+                  Total Settlements
+                </div>
+                <div className="text-2xl font-bold text-[#2F3A22] font-mono">
+                  {settlements.length}
+                </div>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-[#E2D4B8] shadow-sm">
+                <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2">
+                  Pending Release
+                </div>
+                <div className="text-2xl font-bold text-[#CA8A04] font-mono">
+                  {pending.length}
+                </div>
+                <div className="text-xs text-[#CA8A04] mt-1 font-medium">
+                  ₹
+                  {pendingTotal.toLocaleString("en-IN", {
+                    maximumFractionDigits: 0,
+                  })}{" "}
+                  due
+                </div>
+              </div>
+              <div className="bg-white p-5 rounded-2xl border border-[#E2D4B8] shadow-sm">
+                <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2">
+                  Total Payable
+                </div>
+                <div className="text-2xl font-bold text-[#16A34A] font-mono">
+                  ₹{total.toLocaleString("en-IN", { maximumFractionDigits: 0 })}
+                </div>
+              </div>
+            </div>
 
-      {error && (
-        <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm text-[#991B1B]">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="p-4 rounded-xl bg-[#F0FDF4] border border-[#A7F3D0] text-sm text-[#065F46]">
-          ✓ {success}
-        </div>
-      )}
+            {/* UTR Required Banner */}
+            <div className="p-4 rounded-xl bg-[#FAF4E6] border border-[#E2D4B8] text-sm font-semibold text-[#546B41] flex items-center gap-2">
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.5"
+              >
+                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+              </svg>
+              UTR number is mandatory before releasing any COD settlement. This
+              ensures full payment audit trail.
+            </div>
+
+            {error && (
+              <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm text-[#991B1B]">
+                {error}
+              </div>
+            )}
+            {success && (
+              <div className="p-4 rounded-xl bg-[#F0FDF4] border border-[#A7F3D0] text-sm text-[#065F46]">
+                ✓ {success}
+              </div>
+            )}
+
+            <div className="bg-white rounded-2xl border border-[#E2D4B8] shadow-sm overflow-hidden">
+              {/* Header / Filters */}
+              <div className="p-4 border-b border-[#E2D4B8] bg-[#FAF4E6] flex flex-wrap gap-4 items-center justify-between">
+                <div className="flex items-center gap-3 flex-1 min-w-[300px]">
+                  <div className="relative flex-1 max-w-sm">
+                    <svg
+                      className="absolute left-3 top-1/2 -translate-y-1/2 text-[#8A9270] w-4 h-4"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                      />
+                    </svg>
+                    <input
+                      type="text"
+                      placeholder="Search Merchant..."
+                      value={search}
+                      onChange={(e) => setSearch(e.target.value)}
+                      className="w-full pl-9 pr-3 py-2 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
+                    />
+                  </div>
+                  <input
+                    type="date"
+                    value={date}
+                    onChange={(e) => setDate(e.target.value)}
+                    className="px-3 py-2 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41]"
+                  />
+                  <select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    className="px-3 py-2 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41]"
+                  >
+                    <option value="">All Statuses</option>
+                    <option value="pending">Pending</option>
+                    <option value="processing">Processing</option>
+                    <option value="settled">Settled</option>
+                    <option value="on_hold">On Hold</option>
+                  </select>
+                </div>
+                {selectedTxns.size > 0 && (
+                  <button
+                    onClick={handleExport}
+                    className="bg-[#546B41] text-white px-4 py-2 rounded-xl text-sm font-semibold hover:bg-[#3F5131] transition-colors"
+                  >
+                    Export {selectedTxns.size} Selected
+                  </button>
+                )}
+              </div>
+
+              {/* Table */}
+              <div className="overflow-x-auto">
+                {loading ? (
+                  <div className="py-20 text-center text-[#8A9270] animate-pulse">
+                    Loading settlements...
+                  </div>
+                ) : settlements.length === 0 ? (
+                  <div className="py-20 text-center text-[#8A9270]">
+                    No settlements found.
+                  </div>
+                ) : (
+                  <table className="w-full">
+                    <thead>
+                      <tr className="border-b border-[#E2D4B8] bg-[#FAF4E6]">
+                        <th className="px-4 py-3 text-left">
+                          <input
+                            type="checkbox"
+                            className="rounded border-[#E2D4B8] text-[#546B41] focus:ring-[#546B41]"
+                            checked={
+                              selectedTxns.size === settlements.length &&
+                              settlements.length > 0
+                            }
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setSelectedTxns(
+                                  new Set(settlements.map((s) => s.id)),
+                                );
+                              } else {
+                                setSelectedTxns(new Set());
+                              }
+                            }}
+                          />
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#8A9270] uppercase tracking-wider">
+                          Merchant
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#8A9270] uppercase tracking-wider">
+                          Orders
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#8A9270] uppercase tracking-wider">
+                          Net Payable
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#8A9270] uppercase tracking-wider">
+                          Date / UTR
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#8A9270] uppercase tracking-wider">
+                          Status
+                        </th>
+                        <th className="px-4 py-3 text-left text-[11px] font-semibold text-[#8A9270] uppercase tracking-wider">
+                          Action
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-[#FAF4E6]">
+                      {settlements.map((s) => (
+                        <tr
+                          key={s.id}
+                          className={`hover:bg-[#FAF4E6] transition-colors ${selectedTxns.has(s.id) ? "bg-[#FAF4E6]/50" : ""}`}
+                        >
+                          <td className="px-4 py-3">
+                            <input
+                              type="checkbox"
+                              className="rounded border-[#E2D4B8] text-[#546B41] focus:ring-[#546B41]"
+                              checked={selectedTxns.has(s.id)}
+                              onChange={(e) => {
+                                const next = new Set(selectedTxns);
+                                if (e.target.checked) next.add(s.id);
+                                else next.delete(s.id);
+                                setSelectedTxns(next);
+                              }}
+                            />
+                          </td>
+                          <td className="px-4 py-3 text-sm font-semibold text-[#2F3A22]">
+                            {s.business_name}
+                          </td>
+                          <td className="px-4 py-3 text-sm text-[#8A9270]">
+                            {s.total_orders}
+                          </td>
+                          <td className="px-4 py-3 text-sm font-bold font-mono text-[#2F3A22]">
+                            ₹{parseFloat(s.net_amount).toFixed(2)}
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="text-sm text-[#2F3A22]">
+                              {s.due_date
+                                ? new Date(s.due_date).toLocaleDateString(
+                                    "en-IN",
+                                  )
+                                : "—"}
+                            </div>
+                            {s.utr_number && (
+                              <div className="text-xs font-mono text-[#8A9270] mt-0.5">
+                                UTR: {s.utr_number}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3">
+                            <span
+                              className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold uppercase tracking-wide ${
+                                STATUS_STYLE[s.status] ||
+                                "bg-[#FAF4E6] text-[#6B7556]"
+                              }`}
+                            >
+                              {s.status.replace("_", " ")}
+                            </span>
+                          </td>
+                          <td className="px-4 py-3">
+                            {s.status === "pending" && (
+                              <button
+                                onClick={() => {
+                                  setUtrModal(s);
+                                  setUtrForm({
+                                    ...utrForm,
+                                    utrNumber: s.utr_number || "",
+                                  });
+                                }}
+                                className="px-3 py-1.5 text-xs font-semibold bg-[#546B41] text-white rounded-lg hover:bg-[#3F5131] transition-colors shadow-sm"
+                              >
+                                Enter UTR
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Wallet Balances Tab */}
+        {activeTab === "wallet" && (
+          <div className="space-y-6 animate-fade-in">
+            <div className="bg-white rounded-2xl border border-[#E2D4B8] shadow-sm overflow-hidden">
+              <div className="px-6 py-4 border-b border-[#E2D4B8] bg-[#FAF4E6]">
+                <h2 className="text-sm font-bold text-[#2F3A22]">
+                  All Merchant Wallets
+                </h2>
+              </div>
+              <div className="max-h-[600px] overflow-y-auto divide-y divide-[#FAF4E6]">
+                {merchants.length === 0 ? (
+                  <div className="py-20 text-center text-[#8A9270]">
+                    No merchants found.
+                  </div>
+                ) : (
+                  merchants.map((m) => (
+                    <div
+                      key={m.id}
+                      className="flex items-center justify-between px-6 py-4 hover:bg-[#FAF4E6] transition-colors"
+                    >
+                      <div className="text-sm font-medium text-[#2F3A22]">
+                        {m.business_name}
+                      </div>
+                      <div
+                        className={`text-sm font-bold font-mono ${
+                          parseFloat(m.wallet_balance || "0") >= 0
+                            ? "text-[#16A34A]"
+                            : "text-[#DC2626]"
+                        }`}
+                      >
+                        ₹{parseFloat(m.wallet_balance || "0").toFixed(2)}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* UTR Modal */}
       {utrModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md border border-[#E5E8EF]">
-            <div className="flex items-start justify-between mb-5">
-              <div>
-                <h3 className="text-base font-bold text-[#0F172A]">
-                  Release Settlement
-                </h3>
-                <p className="text-xs text-[#64748B] mt-0.5">
-                  Enter UTR to confirm payment to seller
-                </p>
-              </div>
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => setUtrModal(null)}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md border border-[#E2D4B8]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-1">
+              <h3 className="text-base font-bold text-[#2F3A22]">
+                Release Settlement
+              </h3>
               <button
-                onClick={() => {
-                  setUtrModal(null);
-                  setError("");
-                }}
-                className="w-7 h-7 rounded-lg bg-[#F4F6F9] flex items-center justify-center text-[#94A3B8] hover:text-[#0F172A] transition-colors"
+                onClick={() => setUtrModal(null)}
+                className="w-7 h-7 rounded-lg bg-[#FAF4E6] flex items-center justify-center text-[#8A9270] hover:text-[#2F3A22] hover:bg-[#E2D4B8] transition-colors"
               >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2.5"
-                >
-                  <path d="M18 6L6 18M6 6l12 12" />
-                </svg>
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
               </button>
             </div>
-
-            {/* Seller summary */}
-            <div className="p-4 rounded-xl bg-[#F8F9FB] border border-[#E5E8EF] mb-5">
-              <div className="font-semibold text-sm text-[#0F172A]">
-                {utrModal.business_name}
-              </div>
-              <div className="flex items-center gap-4 mt-2 text-xs text-[#64748B]">
-                <span>
-                  Orders:{" "}
-                  <strong className="text-[#0F172A]">
-                    {utrModal.total_orders}
-                  </strong>
-                </span>
-                <span>
-                  Amount:{" "}
-                  <strong className="text-[#16A34A] font-mono">
-                    ₹{parseFloat(utrModal.net_amount).toFixed(2)}
-                  </strong>
-                </span>
-                {utrModal.due_date && (
-                  <span>
-                    Due:{" "}
-                    {new Date(utrModal.due_date).toLocaleDateString("en-IN")}
-                  </span>
-                )}
-              </div>
-            </div>
+            <p className="text-sm text-[#8A9270] mb-5">
+              Releasing ₹{parseFloat(utrModal.net_amount).toFixed(2)} to{" "}
+              {utrModal.business_name}
+            </p>
 
             <form onSubmit={releaseWithUtr} className="space-y-4">
               <div>
-                <label className="block text-xs font-semibold text-[#991B1B] mb-1.5 uppercase tracking-wide">
-                  UTR Number <span className="text-[#DC2626]">*</span>
-                </label>
-                <input
-                  required
-                  value={utrForm.utrNumber}
-                  onChange={(e) =>
-                    setUtrForm((p) => ({ ...p, utrNumber: e.target.value }))
-                  }
-                  placeholder="e.g. HDFC000123456789"
-                  className={`${inp} ${!utrForm.utrNumber.trim() ? "border-[#FCA5A5]" : "border-[#E5E8EF]"}`}
-                />
-                {!utrForm.utrNumber.trim() && (
-                  <p className="text-xs text-[#DC2626] mt-1">
-                    UTR number is required to release.
-                  </p>
-                )}
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
+                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
                   Payment Mode
                 </label>
                 <select
                   value={utrForm.paymentMode}
                   onChange={(e) =>
-                    setUtrForm((p) => ({ ...p, paymentMode: e.target.value }))
+                    setUtrForm({ ...utrForm, paymentMode: e.target.value })
                   }
-                  className={inp}
+                  className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
                 >
                   <option value="neft">NEFT</option>
                   <option value="rtgs">RTGS</option>
                   <option value="imps">IMPS</option>
                   <option value="upi">UPI</option>
-                  <option value="cheque">Cheque</option>
                 </select>
               </div>
               <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
+                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+                  UTR Number <span className="text-[#DC2626]">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={utrForm.utrNumber}
+                  onChange={(e) =>
+                    setUtrForm({ ...utrForm, utrNumber: e.target.value })
+                  }
+                  placeholder="Enter 12-22 digit UTR"
+                  className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 placeholder:text-[#8A9270]"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
                   Bank Reference (Optional)
                 </label>
                 <input
+                  type="text"
                   value={utrForm.bankReference}
                   onChange={(e) =>
-                    setUtrForm((p) => ({ ...p, bankReference: e.target.value }))
+                    setUtrForm({ ...utrForm, bankReference: e.target.value })
                   }
-                  className={inp}
+                  className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 placeholder:text-[#8A9270]"
                 />
               </div>
-              <div className="flex gap-3 pt-2 border-t border-[#F1F5F9]">
+
+              <div className="flex gap-3 pt-2">
                 <button
                   type="submit"
                   disabled={releasing || !utrForm.utrNumber.trim()}
-                  className="flex-1 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors disabled:opacity-50"
+                  className="flex-1 py-2.5 bg-[#546B41] text-white text-sm font-semibold rounded-xl hover:bg-[#3F5131] transition-colors disabled:opacity-50 shadow-sm"
                 >
-                  {releasing ? "Releasing..." : "✓ Confirm & Release"}
+                  {releasing ? "Releasing..." : "Confirm Release"}
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    setUtrModal(null);
-                    setError("");
-                  }}
-                  className="px-4 py-2.5 bg-white border border-[#E5E8EF] text-[#475569] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] transition-colors"
+                  onClick={() => setUtrModal(null)}
+                  className="px-4 py-2.5 bg-white border border-[#E2D4B8] text-[#6B7556] text-sm font-semibold rounded-xl hover:bg-[#FAF4E6] transition-colors"
                 >
                   Cancel
                 </button>
@@ -296,131 +602,135 @@ export default function CodSettlementsPage() {
         </div>
       )}
 
-      {/* Settlements Table */}
-      <div className="bg-white rounded-2xl border border-[#E5E8EF] shadow-sm overflow-hidden">
-        {loading ? (
-          <div className="py-16 text-center text-sm text-[#94A3B8] animate-pulse">
-            Loading settlements...
-          </div>
-        ) : settlements.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="text-3xl mb-3">💵</div>
-            <div className="text-sm font-semibold text-[#0F172A]">
-              No COD settlements yet
+      {/* Adjust Wallet Modal */}
+      {walletModal && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => {
+          setWalletModal(false);
+          setWalletError("");
+          setWalletMessage("");
+        }}>
+          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md border border-[#E2D4B8]" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between mb-1">
+              <h3 className="text-base font-bold text-[#2F3A22]">
+                Adjust Wallet Balance
+              </h3>
+              <button
+                onClick={() => {
+                  setWalletModal(false);
+                  setWalletError("");
+                  setWalletMessage("");
+                }}
+                className="w-7 h-7 rounded-lg bg-[#FAF4E6] flex items-center justify-center text-[#8A9270] hover:text-[#2F3A22] hover:bg-[#E2D4B8] transition-colors"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+              </button>
             </div>
-            <div className="text-xs text-[#94A3B8] mt-1">
-              Settlements are created automatically as COD orders are delivered.
-            </div>
-          </div>
-        ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b border-[#E5E8EF] bg-[#F8F9FB]">
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
-                    Merchant
-                  </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
-                    Orders
-                  </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
-                    Net Amount
-                  </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
-                    UTR
-                  </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
-                    Due Date
-                  </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-5 py-3.5 text-left text-[11px] font-semibold text-[#64748B] uppercase tracking-wider">
-                    Action
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-[#F1F5F9]">
-                {settlements.map((s) => (
-                  <tr
-                    key={s.id}
-                    className="hover:bg-[#F8F9FB] transition-colors"
+            <p className="text-sm text-[#8A9270] mb-5">
+              Add or deduct funds directly from a merchant's wallet.
+            </p>
+
+            <form onSubmit={handleWalletSubmit} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+                  Select Merchant
+                </label>
+                <select
+                  required
+                  value={walletSellerId}
+                  onChange={(e) => setWalletSellerId(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
+                >
+                  <option value="">-- Choose Merchant --</option>
+                  {merchants.map((m) => (
+                    <option key={m.id} value={m.id}>
+                      {m.business_name} (Bal: ₹
+                      {parseFloat(m.wallet_balance || "0").toFixed(0)})
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Type Toggle */}
+              <div>
+                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+                  Action Type
+                </label>
+                <div className="flex rounded-xl border border-[#E2D4B8] overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={() => setWalletType("credit")}
+                    className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
+                      walletType === "credit"
+                        ? "bg-[#D1FAE5] text-[#065F46]"
+                        : "bg-white text-[#8A9270] hover:bg-[#FAF4E6]"
+                    }`}
                   >
-                    <td className="px-5 py-3.5 font-semibold text-sm text-[#0F172A]">
-                      {s.business_name}
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-[#0F172A] font-mono">
-                      {s.total_orders}
-                    </td>
-                    <td className="px-5 py-3.5 text-sm font-bold text-[#16A34A] font-mono">
-                      ₹{parseFloat(s.net_amount).toFixed(2)}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      {s.utr_number ? (
-                        <div>
-                          <div className="text-xs font-mono font-semibold text-[#4F46E5]">
-                            {s.utr_number}
-                          </div>
-                          {s.payment_mode && (
-                            <div className="text-[10px] text-[#94A3B8] uppercase">
-                              {s.payment_mode}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <span className="text-xs text-[#FCA5A5] font-semibold">
-                          No UTR yet
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-5 py-3.5 text-sm text-[#64748B]">
-                      {s.due_date
-                        ? new Date(s.due_date).toLocaleDateString("en-IN")
-                        : "—"}
-                    </td>
-                    <td className="px-5 py-3.5">
-                      <span
-                        className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${STATUS_STYLE[s.status] || "bg-[#F1F5F9] text-[#475569]"}`}
-                      >
-                        {s.status.replace("_", " ")}
-                      </span>
-                    </td>
-                    <td className="px-5 py-3.5">
-                      {s.status !== "settled" && (
-                        <button
-                          onClick={() => {
-                            setUtrModal(s);
-                            setUtrForm({
-                              utrNumber: "",
-                              paymentMode: "neft",
-                              bankReference: "",
-                            });
-                            setError("");
-                            setSuccess("");
-                          }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-[#4F46E5] text-white rounded-lg hover:bg-[#4338CA] transition-colors"
-                        >
-                          <svg
-                            width="12"
-                            height="12"
-                            viewBox="0 0 24 24"
-                            fill="none"
-                            stroke="currentColor"
-                            strokeWidth="2.5"
-                          >
-                            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-                          </svg>
-                          Release with UTR
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+                    + Credit (Add)
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setWalletType("debit")}
+                    className={`flex-1 py-2.5 text-sm font-semibold transition-colors border-l border-[#E2D4B8] ${
+                      walletType === "debit"
+                        ? "bg-[#FEE2E2] text-[#991B1B]"
+                        : "bg-white text-[#8A9270] hover:bg-[#FAF4E6]"
+                    }`}
+                  >
+                    − Debit (Remove)
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+                  Amount (₹)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={walletAmount}
+                  onChange={(e) => setWalletAmount(e.target.value)}
+                  className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
+                />
+              </div>
+
+              {walletError && (
+                <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm text-[#991B1B]">
+                  {walletError}
+                </div>
+              )}
+              {walletMessage && (
+                <div className="p-3 rounded-xl bg-[#F0FDF4] border border-[#A7F3D0] text-sm text-[#065F46]">
+                  ✓ {walletMessage}
+                </div>
+              )}
+
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="submit"
+                  disabled={walletSubmitting || !walletSellerId || !walletAmount}
+                  className="flex-1 py-2.5 bg-[#546B41] text-white text-sm font-semibold rounded-xl hover:bg-[#3F5131] transition-colors disabled:opacity-50 shadow-sm"
+                >
+                  {walletSubmitting
+                    ? "Processing..."
+                    : `${walletType === "credit" ? "+ Credit" : "− Debit"} Wallet`}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setWalletModal(false);
+                    setWalletError("");
+                    setWalletMessage("");
+                  }}
+                  className="px-4 py-2.5 bg-white border border-[#E2D4B8] text-[#6B7556] text-sm font-semibold rounded-xl hover:bg-[#FAF4E6] transition-colors"
+                >
+                  Close
+                </button>
+              </div>
+            </form>
           </div>
-        )}
-      </div>
-    </div>
+        </div>
+      )}
+    </>
   );
 }

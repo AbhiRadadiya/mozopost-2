@@ -3,18 +3,11 @@
 import { useEffect, useState } from "react";
 import { api, apiErrorMessage } from "@/lib/api";
 
-const REASON_STYLE: Record<string, string> = {
-  customer_not_available: "bg-[#FEF9C3] text-[#854D0E]",
-  wrong_address: "bg-[#FEF9C3] text-[#854D0E]",
-  refused_delivery: "bg-[#FEE2E2] text-[#991B1B]",
-  premises_closed: "bg-[#FEF9C3] text-[#854D0E]",
-  fake_attempt: "bg-[#FEE2E2] text-[#991B1B]",
-};
-
 export default function NdrMgmtPage() {
-  const [ndrs, setNdrs] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [insights, setInsights] = useState<any>(null);
+  const [ndrs, setNdrs] = useState<any[]>([]);
 
   useEffect(() => {
     load();
@@ -23,41 +16,12 @@ export default function NdrMgmtPage() {
   async function load() {
     setLoading(true);
     try {
-      setNdrs([
-        {
-          id: "1",
-          mozopost_order_id: "MP2606000003",
-          consignee_name: "Ravi Kumar",
-          consignee_phone: "9876503456",
-          courier_name: "DTDC",
-          attempt_number: 1,
-          ndr_reason: "customer_not_available",
-          business_name: "Arjun Textiles",
-          cod_amount: 850,
-        },
-        {
-          id: "2",
-          mozopost_order_id: "MP2606000099",
-          consignee_name: "Meena Pillai",
-          consignee_phone: "9123456789",
-          courier_name: "Delhivery",
-          attempt_number: 2,
-          ndr_reason: "wrong_address",
-          business_name: "Riya Fashion",
-          cod_amount: 0,
-        },
-        {
-          id: "3",
-          mozopost_order_id: "MP2606000101",
-          consignee_name: "Suresh Nair",
-          consignee_phone: "9988776655",
-          courier_name: "Ekart",
-          attempt_number: 3,
-          ndr_reason: "refused_delivery",
-          business_name: "FastMart",
-          cod_amount: 500,
-        },
+      const [{ data: insightsData }, { data: listData }] = await Promise.all([
+        api.get("/admin/ndr/insights"),
+        api.get("/admin/ndr/list?limit=50"),
       ]);
+      setInsights(insightsData);
+      setNdrs(listData.ndrs);
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -65,128 +29,214 @@ export default function NdrMgmtPage() {
     }
   }
 
+  async function handleBulkAction(action: string, orderId: string) {
+    if (!confirm(`Are you sure you want to mark this NDR as ${action}?`)) return;
+    try {
+      await api.post("/admin/ndr/bulk-action", {
+        orderIds: [orderId],
+        action,
+      });
+      load(); // Reload to refresh list and insights
+    } catch (err) {
+      alert(apiErrorMessage(err));
+    }
+  }
+
+  // Helper for progress bar colors
+  const getProgressColor = (index: number) => {
+    const colors = ["bg-[#546B41]", "bg-[#8A9270]", "bg-[#E2D4B8]", "bg-[#8A9270]", "bg-[#991B1B]"];
+    return colors[index % colors.length];
+  };
+
   return (
-    <div className="animate-fade-up  mx-auto space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="animate-fade-up pb-12">
+      {/* ── Header ── */}
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <div className="flex items-center gap-3 mb-1">
-            <h1 className="text-2xl font-bold text-[#0F172A]">
-              NDR Management
+          <div className="flex items-center gap-3">
+            <h1 className="text-[24px] font-bold tracking-tight text-[#2F3A22]">
+              NDR Oversight
             </h1>
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-gradient-to-r from-[#7C3AED] to-[#4F46E5] text-white shadow-sm">
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-              >
-                <path d="M12 2a10 10 0 100 20A10 10 0 0012 2zm1 14.93V17a1 1 0 01-2 0v-.07A8.001 8.001 0 014.07 11H4a1 1 0 010-2h.07A8.001 8.001 0 0111 4.07V4a1 1 0 012 0v.07A8.001 8.001 0 0119.93 11H20a1 1 0 010 2h-.07A8.001 8.001 0 0113 16.93zM12 9a3 3 0 100 6 3 3 0 000-6z" />
-              </svg>
-              Servam AI Calling
+            <span className="text-[14px] font-mono text-[#8A9270] bg-[#FAF4E6] px-2 py-0.5 rounded-md">
+              platform-wide
             </span>
           </div>
-          <p className="text-sm text-[#64748B]">
-            Automated AI reminders call customers for unresolved NDRs.
+          <p className="text-[13px] text-[#8A9270] mt-1">
+            Non-delivery reports across the network — spot patterns by reason, courier and seller.
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <select className="px-4 py-2 text-sm border border-[#E5E8EF] rounded-xl bg-white outline-none focus:border-[#4F46E5]">
-            <option>All Couriers</option>
-            <option>Delhivery</option>
-            <option>DTDC</option>
-            <option>Ekart</option>
-          </select>
-        </div>
-      </div>
-
-      {/* Warning Banner */}
-      <div className="p-4 rounded-xl bg-[#FEF9C3] border border-[#FEF08A] text-sm font-semibold text-[#854D0E] flex items-center gap-2">
-        <svg
-          width="16"
-          height="16"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2.5"
-        >
-          <path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"></path>
-          <line x1="12" y1="9" x2="12" y2="13"></line>
-          <line x1="12" y1="17" x2="12.01" y2="17"></line>
-        </svg>
-        Unresolved NDRs auto-convert to RTO after 3 days. Act now to protect COD
-        revenue.
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm text-[#991B1B]">
+        <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm text-[#991B1B] mb-6">
           {error}
         </div>
       )}
 
-      {loading ? (
-        <div className="py-16 text-center text-sm text-[#94A3B8] animate-pulse">
-          Loading NDRs...
+      {loading && !insights ? (
+        <div className="py-16 text-center text-sm text-[#8A9270] animate-pulse">
+          Loading insights...
         </div>
       ) : (
-        <div className="space-y-4">
-          {ndrs.map((n) => (
-            <div
-              key={n.id}
-              className={`bg-white rounded-2xl border shadow-sm p-5 ${n.attempt_number >= 3 ? "border-[#FCA5A5]" : "border-[#E5E8EF]"}`}
-            >
-              <div className="flex items-start justify-between mb-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-bold text-[#0F172A] font-mono">
-                      {n.mozopost_order_id}
-                    </span>
-                    <span
-                      className={`px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${REASON_STYLE[n.ndr_reason] || "bg-[#F1F5F9] text-[#475569]"}`}
-                    >
-                      {n.ndr_reason.replace(/_/g, " ")}
-                    </span>
-                    {n.attempt_number >= 3 && (
-                      <span className="px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEE2E2] text-[#991B1B]">
-                        Max Attempts Reached
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-xs text-[#64748B]">
-                    {n.courier_name} · {n.business_name} · Attempt{" "}
-                    {n.attempt_number}/3
-                    {n.cod_amount > 0 && (
-                      <span className="ml-2 font-semibold text-[#CA8A04]">
-                        COD ₹{n.cod_amount}
-                      </span>
-                    )}
-                  </div>
-                  <div className="text-sm font-semibold text-[#0F172A] mt-2">
-                    {n.consignee_name} · {n.consignee_phone}
-                  </div>
+        insights && (
+          <div className="space-y-6">
+            {/* ── KPI Cards ── */}
+            <div className="grid grid-cols-4 gap-4">
+              <div className="bg-white border border-[#E2D4B8] rounded-[12px] p-5 shadow-sm">
+                <div className="text-[12px] text-[#8A9270] mb-2 font-medium">Open NDRs</div>
+                <div className="text-[28px] font-bold text-[#2F3A22] leading-none mb-2">
+                  {insights.metrics.openNdrs.toLocaleString()}
                 </div>
+                <div className="text-[11px] text-[#8A9270]">platform-wide</div>
               </div>
-              <div className="flex items-center gap-2 pt-4 border-t border-[#F1F5F9] flex-wrap">
-                {n.attempt_number < 3 && (
-                  <button className="px-3 py-1.5 text-xs font-semibold bg-[#D1FAE5] text-[#065F46] rounded-lg hover:bg-[#A7F3D0] transition-colors">
-                    🔄 Re-attempt
-                  </button>
-                )}
-                <button className="px-3 py-1.5 text-xs font-semibold bg-[#EEF2FF] text-[#4F46E5] rounded-lg hover:bg-[#E0E7FF] transition-colors">
-                  💬 Customer Confirm
-                </button>
-                <button className="px-3 py-1.5 text-xs font-semibold bg-[#F4F6F9] text-[#475569] rounded-lg hover:bg-[#E5E8EF] transition-colors">
-                  ✏ Update Address
-                </button>
-                <button className="px-3 py-1.5 text-xs font-semibold bg-[#F4F6F9] text-[#475569] rounded-lg hover:bg-[#E5E8EF] transition-colors">
-                  ⏸ Hold
-                </button>
-                <button className="px-3 py-1.5 text-xs font-semibold bg-[#FEE2E2] text-[#991B1B] rounded-lg hover:bg-[#FECACA] transition-colors ml-auto">
-                  ↩ Mark RTO
-                </button>
+              <div className="bg-white border border-[#E2D4B8] rounded-[12px] p-5 shadow-sm">
+                <div className="text-[12px] text-[#8A9270] mb-2 font-medium">Avg resolution</div>
+                <div className="text-[28px] font-bold text-[#546B41] leading-none mb-2">
+                  {insights.metrics.avgResolutionHours}h
+                </div>
+                <div className="text-[11px] text-[#6B7556]">platform-wide</div>
+              </div>
+              <div className="bg-white border border-[#E2D4B8] rounded-[12px] p-5 shadow-sm">
+                <div className="text-[12px] text-[#8A9270] mb-2 font-medium">NDR → Delivered</div>
+                <div className="text-[28px] font-bold text-[#546B41] leading-none mb-2">
+                  {insights.metrics.pctDelivered}%
+                </div>
+                <div className="text-[11px] text-[#8A9270]">after re-attempt</div>
+              </div>
+              <div className="bg-white border border-[#E2D4B8] rounded-[12px] p-5 shadow-sm">
+                <div className="text-[12px] text-[#8A9270] mb-2 font-medium">NDR → RTO</div>
+                <div className="text-[28px] font-bold text-[#991B1B] leading-none mb-2">
+                  {insights.metrics.pctRto}%
+                </div>
+                <div className="text-[11px] text-[#8A9270]">escalated to return</div>
               </div>
             </div>
-          ))}
-        </div>
+
+            {/* ── Insights Grid ── */}
+            <div className="grid grid-cols-2 gap-6">
+              {/* NDR by reason */}
+              <div className="bg-white border border-[#E2D4B8] rounded-[12px] p-6 shadow-sm">
+                <h3 className="text-[15px] font-bold text-[#2F3A22] mb-6">NDR by reason</h3>
+                <div className="space-y-5">
+                  {insights.reasons.length === 0 && <div className="text-[13px] text-[#8A9270]">No data available.</div>}
+                  {insights.reasons.map((r: any, idx: number) => (
+                    <div key={r.reason}>
+                      <div className="flex justify-between items-end mb-1.5">
+                        <span className="text-[13px] font-medium text-[#2F3A22] capitalize">
+                          {r.reason.replace(/_/g, " ")}
+                        </span>
+                        <span className="text-[12px] text-[#8A9270] font-mono">{r.percentage}%</span>
+                      </div>
+                      <div className="w-full bg-[#FAF4E6] h-[6px] rounded-full overflow-hidden">
+                        <div 
+                          className={`h-full ${getProgressColor(idx)} rounded-full`}
+                          style={{ width: `${r.percentage}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Sellers with highest NDR */}
+              <div className="bg-white border border-[#E2D4B8] rounded-[12px] p-6 shadow-sm">
+                <h3 className="text-[15px] font-bold text-[#2F3A22] mb-4">Sellers with highest NDR</h3>
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr className="border-b border-[#E2D4B8]">
+                      <th className="pb-3 text-[11px] font-bold text-[#8A9270] uppercase tracking-wider">Seller</th>
+                      <th className="pb-3 text-[11px] font-bold text-[#8A9270] uppercase tracking-wider text-right">NDR</th>
+                      <th className="pb-3 text-[11px] font-bold text-[#8A9270] uppercase tracking-wider text-right">Resolved</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {insights.sellers.length === 0 && (
+                      <tr><td colSpan={3} className="py-4 text-[13px] text-[#8A9270] text-center">No sellers found.</td></tr>
+                    )}
+                    {insights.sellers.map((s: any, idx: number) => (
+                      <tr key={idx} className="border-b border-[#FAF4E6] last:border-0">
+                        <td className="py-3 text-[13px] font-medium text-[#2F3A22]">{s.seller}</td>
+                        <td className="py-3 text-[13px] font-bold text-[#991B1B] text-right">{s.ndrCount}</td>
+                        <td className="py-3 text-[13px] text-[#6B7556] text-right">{s.resolvedPct}%</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* ── Data List ── */}
+            <div className="mt-8">
+              <h3 className="text-[16px] font-bold text-[#2F3A22] mb-4">Live NDR Queue</h3>
+              <div className="bg-white border border-[#E2D4B8] rounded-[12px] shadow-sm overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="bg-[#FAF4E6] border-b border-[#E2D4B8]">
+                        <th className="py-3 px-4 text-[11px] font-bold text-[#8A9270] uppercase tracking-wider whitespace-nowrap">Order ID / AWB</th>
+                        <th className="py-3 px-4 text-[11px] font-bold text-[#8A9270] uppercase tracking-wider whitespace-nowrap">Seller</th>
+                        <th className="py-3 px-4 text-[11px] font-bold text-[#8A9270] uppercase tracking-wider">Courier</th>
+                        <th className="py-3 px-4 text-[11px] font-bold text-[#8A9270] uppercase tracking-wider">Consignee</th>
+                        <th className="py-3 px-4 text-[11px] font-bold text-[#8A9270] uppercase tracking-wider">Reason</th>
+                        <th className="py-3 px-4 text-[11px] font-bold text-[#8A9270] uppercase tracking-wider">Attempt</th>
+                        <th className="py-3 px-4 text-[11px] font-bold text-[#8A9270] uppercase tracking-wider text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {ndrs.length === 0 && (
+                        <tr><td colSpan={7} className="py-8 text-center text-[#8A9270] text-[13px]">No open NDRs.</td></tr>
+                      )}
+                      {ndrs.map((n) => (
+                        <tr key={n.id} className="border-b border-[#E2D4B8] last:border-0 hover:bg-[#FAF4E6]/50 transition-colors">
+                          <td className="py-3 px-4">
+                            <div className="text-[13px] font-bold text-[#2F3A22] font-mono">{n.mozopost_order_id}</div>
+                            <div className="text-[11px] text-[#8A9270] font-mono">{n.awb_number}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-[13px] font-medium text-[#2F3A22] whitespace-nowrap">{n.business_name}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-[13px] text-[#6B7556]">{n.courier_name}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <div className="text-[13px] font-medium text-[#2F3A22]">{n.consignee_name}</div>
+                            <div className="text-[11px] text-[#8A9270]">{n.consignee_phone}</div>
+                          </td>
+                          <td className="py-3 px-4">
+                            <span className="inline-block px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[#FEF9C3] text-[#854D0E] whitespace-nowrap">
+                              {n.ndr_reason.replace(/_/g, " ")}
+                            </span>
+                          </td>
+                          <td className="py-3 px-4 text-[13px] font-mono text-[#6B7556]">
+                            {n.attempt_number}/3
+                          </td>
+                          <td className="py-3 px-4 text-right whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-2">
+                              {n.attempt_number < 3 && (
+                                <button 
+                                  onClick={() => handleBulkAction("reattempt", n.order_id)}
+                                  className="px-2.5 py-1 text-[11px] font-semibold bg-[#FAF4E6] border border-[#E2D4B8] text-[#546B41] rounded-[6px] hover:bg-[#EADFC8] transition-colors"
+                                >
+                                  Re-attempt
+                                </button>
+                              )}
+                              <button 
+                                onClick={() => handleBulkAction("rto", n.order_id)}
+                                className="px-2.5 py-1 text-[11px] font-semibold bg-[#FEF2F2] border border-[#FECACA] text-[#991B1B] rounded-[6px] hover:bg-[#FEE2E2] transition-colors"
+                              >
+                                RTO
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
       )}
     </div>
   );

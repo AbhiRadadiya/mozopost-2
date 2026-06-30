@@ -207,14 +207,7 @@ export default function DashboardLayout({
         >
           {!collapsed && (
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center text-[#546B41] font-bold text-sm shrink-0 bg-[#FFF8EC] shadow-sm">
-                MP
-              </div>
-              <div className="min-w-0">
-                <div className="font-bold text-white text-base leading-tight tracking-tight">
-                  MozoPost
-                </div>
-              </div>
+              <img src="/logo-cream.png" alt="MozoPost Logo" className="h-[28.8px] w-auto object-contain drop-shadow-sm" />
             </div>
           )}
 
@@ -261,7 +254,7 @@ export default function DashboardLayout({
                     href={item.href}
                     title={collapsed ? item.label : undefined}
                     className={`
-                      flex items-center gap-3 px-3 py-2 rounded-[9px] transition-all duration-150 group text-[13px]
+                      flex items-center gap-3 px-3 py-2 rounded-[9px] transition-all duration-150 group text-[15px]
                       ${collapsed ? "justify-center" : ""}
                       ${
                         active
@@ -277,7 +270,7 @@ export default function DashboardLayout({
                     </span>
                     {!collapsed && (
                       <span
-                        className={`leading-none truncate ${active ? "font-bold text-white" : ""}`}
+                        className={`leading-none text-[13.5px] truncate ${active ? "font-bold text-white" : ""}`}
                       >
                         {item.label}
                       </span>

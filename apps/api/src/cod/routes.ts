@@ -28,12 +28,22 @@ codRouter.get(
     );
 
     // Get remittances history
-    const historyRows = await query(
-      `SELECT * FROM cod_remittances
-       WHERE seller_id = $1
-       ORDER BY created_at DESC LIMIT 50`,
-      [sellerId]
-    );
+    const { search, date } = req.query;
+    let queryStr = `SELECT * FROM cod_remittances WHERE seller_id = $1`;
+    const params: any[] = [sellerId];
+
+    if (search) {
+      // In COD remittances, there isn't a direct description field. We can search by ID or payment cycle
+      params.push(`%${search}%`);
+      queryStr += ` AND (id::text ILIKE $${params.length} OR payment_cycle ILIKE $${params.length})`;
+    }
+    if (date) {
+      params.push(date as string);
+      queryStr += ` AND DATE(created_at) = $${params.length}`;
+    }
+
+    queryStr += ` ORDER BY created_at DESC LIMIT 50`;
+    const historyRows = await query(queryStr, params);
 
     res.json({
       stats: {
@@ -53,13 +63,30 @@ adminCodRouter.use(requireAuth, requireRole('master_admin', 'super_admin'));
 adminCodRouter.get(
   '/',
   ah(async (req, res) => {
-    const rows = await query(
-      `SELECT cr.*, s.business_name
-       FROM cod_remittances cr
-       JOIN sellers s ON s.id = cr.seller_id
-       ORDER BY cr.created_at DESC
-       LIMIT 100`
-    );
+    const { search, date, status } = req.query;
+    let queryStr = `
+      SELECT cr.*, s.business_name
+      FROM cod_remittances cr
+      JOIN sellers s ON s.id = cr.seller_id
+      WHERE 1=1
+    `;
+    const params: any[] = [];
+
+    if (search) {
+      params.push(`%${search}%`);
+      queryStr += ` AND s.business_name ILIKE $${params.length}`;
+    }
+    if (date) {
+      params.push(date as string);
+      queryStr += ` AND DATE(cr.due_date) = $${params.length}`;
+    }
+    if (status) {
+      params.push(status as string);
+      queryStr += ` AND cr.status = $${params.length}`;
+    }
+
+    queryStr += ` ORDER BY cr.created_at DESC LIMIT 100`;
+    const rows = await query(queryStr, params);
     res.json({ remittances: rows });
   })
 );

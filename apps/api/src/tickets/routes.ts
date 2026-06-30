@@ -83,12 +83,24 @@ adminTicketsRouter.use(requireAuth, requireRole('master_admin', 'super_admin'));
 adminTicketsRouter.get(
   '/',
   ah(async (req, res) => {
+    const { search } = req.query as Record<string, string>;
+    const params: any[] = [];
+    const filters: string[] = [];
+
+    if (search) {
+      params.push(`%${search}%`);
+      filters.push(`s.business_name ILIKE $${params.length}`);
+    }
+
+    const where = filters.length > 0 ? `WHERE ${filters.join(' AND ')}` : '';
+
     const rows = await query(
       `SELECT t.*, s.business_name
        FROM tickets t
        JOIN sellers s ON s.id = t.seller_id
-       ORDER BY CASE WHEN t.status = 'open' THEN 1 WHEN t.status = 'escalated' THEN 2 ELSE 3 END, t.created_at DESC
-       LIMIT 100`
+       ${where}
+       ORDER BY t.created_at DESC`,
+      params
     );
     res.json({ tickets: rows });
   })

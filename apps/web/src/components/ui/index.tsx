@@ -98,7 +98,7 @@ export function Label({
 }) {
   return (
     <label
-      className="mb-1 block text-xs font-semibold text-[#8A9270] tracking-wide uppercase"
+      className="mb-1 block text-[13px] font-semibold text-[#8A9270] tracking-wide uppercase"
       style={{ letterSpacing: "0.05em" }}
     >
       {children}
@@ -126,7 +126,7 @@ export function Field({
       <Label required={required}>{label}</Label>
       {children}
       {error && (
-        <div className="mt-1.5 flex items-center gap-1.5 text-xs font-medium text-[#B4623F]">
+        <div className="mt-1.5 flex items-center gap-1.5 text-[13px] font-medium text-[#B4623F]">
           <svg width="12" height="12" viewBox="0 0 20 20" fill="currentColor">
             <path
               fillRule="evenodd"
@@ -174,7 +174,7 @@ export function Badge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-medium font-mono-nb ${colorClass} ${className}`}
+      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[13px] font-medium font-mono-nb ${colorClass} ${className}`}
     >
       {children}
     </span>
@@ -220,7 +220,7 @@ export function StatCard({
           alignItems: "center",
           gap: "8px",
           color: accent,
-          fontSize: "13px",
+          fontSize: "15px",
           fontWeight: 600,
         }}
       >
@@ -229,7 +229,7 @@ export function StatCard({
       </div>
       <div
         style={{
-          fontSize: "26px",
+          fontSize: "32px",
           fontWeight: 700,
           fontFamily: "'IBM Plex Mono', monospace",
           marginTop: "14px",
@@ -248,12 +248,12 @@ export function StatCard({
             padding: "8px 11px",
           }}
         >
-          <div style={{ fontSize: "10px", color: "#8A9270" }}>
+          <div style={{ fontSize: "12px", color: "#8A9270" }}>
             {finalSubLabel}
           </div>
           <div
             style={{
-              fontSize: "14px",
+              fontSize: "15px",
               fontFamily: "'IBM Plex Mono', monospace",
               color: accent,
               marginTop: "2px",

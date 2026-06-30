@@ -26,14 +26,15 @@ export async function calculateRate(input: RateInput): Promise<RateResult | null
   if (!courier) return null;
 
   const rateCard = await queryOne<{
-    base_rate: string; additional_rate_per_kg: string; cod_charge_fixed: string; cod_charge_pct: string;
+    base_rate: string; additional_rate_per_kg: string; cod_charge_fixed: string; cod_charge_pct: string; seller_id?: string;
   }>(
-    `SELECT base_rate, additional_rate_per_kg, cod_charge_fixed, cod_charge_pct
+    `SELECT base_rate, additional_rate_per_kg, cod_charge_fixed, cod_charge_pct, seller_id
      FROM rate_cards
      WHERE courier_id = $1 AND is_active = true
        AND min_weight_kg <= $2 AND max_weight_kg >= $2
-     ORDER BY base_rate ASC LIMIT 1`,
-    [input.courierId, input.weightKg],
+       AND (seller_id = $3 OR seller_id IS NULL)
+     ORDER BY seller_id NULLS LAST, base_rate ASC LIMIT 1`,
+    [input.courierId, input.weightKg, input.sellerId],
   );
   if (!rateCard) return null;
 
@@ -48,7 +49,8 @@ export async function calculateRate(input: RateInput): Promise<RateResult | null
     : 0;
 
   const margin = await getMargin(input.sellerId, input.courierId);
-  const marginApplied = margin.type === 'fixed' ? margin.value : baseFreight * (margin.value / 100);
+  const isCustomRate = rateCard.seller_id != null;
+  const marginApplied = isCustomRate ? 0 : (margin.type === 'fixed' ? margin.value : baseFreight * (margin.value / 100));
 
   const totalFreight = Math.round((baseFreight + codCharge + marginApplied) * 100) / 100;
 

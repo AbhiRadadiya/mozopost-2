@@ -862,10 +862,10 @@ export default function LabelsPage() {
 
           {/* Layout */}
           <div>
-            <div className="text-[13px] font-semibold mb-[10px] text-[#2F3A22]">
+            <div className="text-[15px] font-semibold mb-[10px] text-[#2F3A22]">
               Layout
             </div>
-            <div className="text-[12px] text-[#8A9270] leading-[1.6]">
+            <div className="text-[14px] text-[#8A9270] leading-[1.6]">
               {labelEls.length} element(s) placed on the label.
             </div>
 
@@ -874,19 +874,19 @@ export default function LabelsPage() {
                 setLabelEls([]);
                 setSelId(null);
               }}
-              className="mt-[14px] bg-[#FFFFFF] border border-[#E2D4B8] rounded-[8px] py-[9px] px-[14px] text-[13px] cursor-pointer text-center text-[#2F3A22] font-medium hover:border-[#B4623F] hover:text-[#B4623F] transition-colors"
+              className="mt-[14px] bg-[#FFFFFF] border border-[#E2D4B8] rounded-[8px] py-[9px] px-[14px] text-[14px] cursor-pointer text-center text-[#2F3A22] font-medium hover:border-[#B4623F] hover:text-[#B4623F] transition-colors"
             >
               ↺ Clear canvas
             </div>
             <div
               onClick={() => alert("Layout saved!")}
-              className="mt-[10px] bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-[8px] py-[9px] px-[14px] text-[13px] font-medium cursor-pointer text-center hover:bg-[#E0E7CE] transition-colors"
+              className="mt-[10px] bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-[8px] py-[9px] px-[14px] text-[14px] font-medium cursor-pointer text-center hover:bg-[#E0E7CE] transition-colors"
             >
               ⛁ Save Layout
             </div>
             <div
               onClick={handlePrint}
-              className="mt-[10px] bg-[#546B41] text-[#FFF8EC] rounded-[8px] py-[9px] px-[14px] text-[13px] font-semibold cursor-pointer text-center hover:bg-[#63794E] transition-colors"
+              className="mt-[10px] bg-[#546B41] text-[#FFF8EC] rounded-[8px] py-[9px] px-[14px] text-[14px] font-semibold cursor-pointer text-center hover:bg-[#63794E] transition-colors"
             >
               ⎙ Print Label
             </div>
@@ -894,7 +894,7 @@ export default function LabelsPage() {
         </div>
       )}
 
-      <div className="text-[14px] font-semibold mt-[24px] text-[#2F3A22]">
+      <div className="text-[16px] font-semibold mt-[24px] text-[#2F3A22]">
         Format
       </div>
       <div className="inline-flex bg-[#FFFFFF] border border-[#E2D4B8] rounded-[24px] p-[4px] mt-[12px]">
@@ -902,7 +902,7 @@ export default function LabelsPage() {
           <div
             key={s}
             onClick={() => setSettings((p: any) => ({ ...p, label_size: s }))}
-            className={`px-[16px] py-[6px] text-[13px] font-bold rounded-[20px] cursor-pointer transition-colors ${
+            className={`px-[16px] py-[6px] text-[14px] font-bold rounded-[20px] cursor-pointer transition-colors ${
               settings?.label_size === s
                 ? "bg-[#546B41] text-[#FFF8EC]"
                 : "text-[#8A9270] hover:text-[#546B41]"
@@ -914,7 +914,7 @@ export default function LabelsPage() {
       </div>
       <div
         onClick={() => setPrint4up(!print4up)}
-        className="flex items-center gap-[10px] mt-[16px] text-[13px] text-[#6B7556] cursor-pointer select-none group w-fit"
+        className="flex items-center gap-[10px] mt-[16px] text-[14px] text-[#6B7556] cursor-pointer select-none group w-fit"
       >
         <span
           className={`w-[18px] h-[18px] rounded-[4px] flex items-center justify-center border transition-colors ${
@@ -929,7 +929,7 @@ export default function LabelsPage() {
       </div>
 
       <div className="bg-[#FFFFFF] border border-[#E2D4B8] rounded-[14px] p-[24px] mt-[24px]">
-        <div className="text-[15px] font-semibold text-[#2F3A22]">
+        <div className="text-[16px] font-semibold text-[#2F3A22]">
           Details to show on label
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] mt-[18px]">
@@ -985,11 +985,11 @@ export default function LabelsPage() {
                 </span>
                 <div>
                   <div
-                    className={`text-[13px] font-semibold transition-colors ${isActive ? "text-[#2F3A22]" : "text-[#8A9270]"}`}
+                    className={`text-[14px] font-semibold transition-colors ${isActive ? "text-[#2F3A22]" : "text-[#8A9270]"}`}
                   >
                     {o.label}
                   </div>
-                  <div className="text-[11px] text-[#8A9270] mt-[5px] leading-[1.5]">
+                  <div className="text-[13px] text-[#8A9270] mt-[5px] leading-[1.5]">
                     {o.hint}
                   </div>
                 </div>
@@ -999,20 +999,20 @@ export default function LabelsPage() {
         </div>
 
         <div className="mt-[24px] pt-[24px] border-t border-[#E2D4B8]">
-          <div className="text-[14px] font-semibold text-[#2F3A22]">
+          <div className="text-[16px] font-semibold text-[#2F3A22]">
             Brand & Address Details
           </div>
-          <div className="text-[11px] text-[#8A9270] mt-[6px] leading-[1.5]">
+          <div className="text-[13px] text-[#8A9270] mt-[6px] leading-[1.5]">
             Configure the specific text values to be printed on your labels if
             enabled above.
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-[24px] mt-[14px]">
             <div>
-              <label className="block text-[12px] font-semibold text-[#6B7556] mb-[6px] uppercase tracking-wide">
+              <label className="block text-[13px] font-semibold text-[#6B7556] mb-[6px] uppercase tracking-wide">
                 Brand Name
               </label>
               <input
-                className="w-full bg-[#FFF8EC] border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] text-[#2F3A22] outline-none focus:border-[#546B41] transition-colors"
+                className="w-full bg-[#FFF8EC] border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[14px] text-[#2F3A22] outline-none focus:border-[#546B41] transition-colors"
                 value={settings?.brand_name || ""}
                 onChange={(e) =>
                   setSettings((p: any) => ({
@@ -1023,11 +1023,11 @@ export default function LabelsPage() {
               />
             </div>
             <div>
-              <label className="block text-[12px] font-semibold text-[#6B7556] mb-[6px] uppercase tracking-wide">
+              <label className="block text-[13px] font-semibold text-[#6B7556] mb-[6px] uppercase tracking-wide">
                 Return Address
               </label>
               <input
-                className="w-full bg-[#FFF8EC] border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] text-[#2F3A22] outline-none focus:border-[#546B41] transition-colors"
+                className="w-full bg-[#FFF8EC] border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[14px] text-[#2F3A22] outline-none focus:border-[#546B41] transition-colors"
                 value={settings?.return_address || ""}
                 onChange={(e) =>
                   setSettings((p: any) => ({
@@ -1042,10 +1042,10 @@ export default function LabelsPage() {
         </div>
 
         <div className="mt-[24px] pt-[24px] border-t border-[#E2D4B8]">
-          <div className="text-[14px] font-semibold text-[#2F3A22]">
+          <div className="text-[16px] font-semibold text-[#2F3A22]">
             Label Badges & Logo
           </div>
-          <div className="text-[11px] text-[#8A9270] mt-[6px] leading-[1.5]">
+          <div className="text-[13px] text-[#8A9270] mt-[6px] leading-[1.5]">
             Add up to 4 certification badges or a custom logo to display on your
             shipping label (JPG, PNG, &lt;200KB).
           </div>

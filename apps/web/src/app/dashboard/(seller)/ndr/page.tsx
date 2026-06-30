@@ -63,10 +63,10 @@ export default function NdrPage() {
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-[#2F3A22] tracking-tight">
-            Manage Self Ship NDR
+          <h1 className="text-3xl font-bold text-[#2F3A22] tracking-tight">
+            Manage NDR
           </h1>
-          <p className="text-sm text-[#8A9270] mt-1">
+          <p className="text-[15px] text-[#8A9270] mt-1">
             All orders with at least one failed delivery attempt will be shown
             here.
           </p>
@@ -81,7 +81,7 @@ export default function NdrPage() {
             <button
               key={t}
               onClick={() => setActiveTab(t)}
-              className={`pb-2.5 text-xs font-medium whitespace-nowrap transition-colors border-b-2 -mb-px cursor-pointer ${
+              className={`pb-2.5 text-[14px] font-medium whitespace-nowrap transition-colors border-b-2 -mb-px cursor-pointer ${
                 isActive
                   ? "border-[#546B41] text-[#546B41] font-semibold"
                   : "border-transparent text-[#8A9270] hover:text-[#2F3A22]"
@@ -95,10 +95,10 @@ export default function NdrPage() {
 
       {/* Filter Controls */}
       <div className="flex items-center gap-3 flex-wrap">
-        <div className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-mono-nb text-[#6B7556] shadow-sm">
+        <div className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-sm font-mono-nb text-[#6B7556] shadow-sm">
           21 Jun – 27 Jun
         </div>
-        <select className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-semibold text-[#2F3A22] shadow-sm outline-none cursor-pointer">
+        <select className="bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-sm font-semibold text-[#2F3A22] shadow-sm outline-none cursor-pointer">
           <option>All Failure Reasons</option>
           <option>Customer not contactable</option>
           <option>Customer not available</option>
@@ -107,12 +107,12 @@ export default function NdrPage() {
         <div className="flex-1 max-w-xs">
           <input
             placeholder="⌕ Search AWB, Order ID..."
-            className="w-full bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs text-[#2F3A22] placeholder-[#B3B596] outline-none shadow-sm focus:border-[#546B41]"
+            className="w-full bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-sm text-[#2F3A22] placeholder-[#B3B596] outline-none shadow-sm focus:border-[#546B41]"
           />
         </div>
         <button
           onClick={() => setOnlyPending(!onlyPending)}
-          className="flex items-center gap-2 bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-xs font-medium text-[#6B7556] cursor-pointer shadow-sm"
+          className="flex items-center gap-2 bg-white border border-[#E2D4B8] rounded-lg px-3.5 py-2 text-sm font-medium text-[#6B7556] cursor-pointer shadow-sm"
         >
           <span>Only pending action</span>
           <span
@@ -125,7 +125,7 @@ export default function NdrPage() {
         </button>
         <button
           onClick={load}
-          className="ml-auto bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-lg px-4 py-2 text-xs font-semibold hover:bg-[#E0E7CE] transition-colors shadow-sm cursor-pointer"
+          className="ml-auto bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] rounded-lg px-4 py-2 text-sm font-semibold hover:bg-[#E0E7CE] transition-colors shadow-sm cursor-pointer"
         >
           Apply
         </button>
@@ -134,26 +134,26 @@ export default function NdrPage() {
       {/* Multi-Selection Bulk Toolbar */}
       {selected.length > 0 && (
         <div className="flex items-center gap-4 bg-[#EDF0E4] border border-[#CBD7B5] rounded-xl p-3 px-4 shadow-sm animate-fade-up">
-          <span className="text-xs font-semibold text-[#546B41] font-mono-nb">
+          <span className="text-[13px] font-semibold text-[#546B41] font-mono-nb">
             {selected.length} selected
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => alert("Initiating re-attempt for selected...")}
-              className="bg-white border border-[#E2D4B8] hover:border-[#546B41] text-[#546B41] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+              className="bg-white border border-[#E2D4B8] hover:border-[#546B41] text-[#546B41] rounded-lg px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer"
             >
               ↻ Re-attempt
             </button>
             <button
               onClick={() => alert("Marking RTO for selected...")}
-              className="bg-white border border-[#E2D4B8] hover:border-[#B4623F] text-[#B4623F] rounded-lg px-3 py-1.5 text-xs font-medium transition-colors cursor-pointer"
+              className="bg-white border border-[#E2D4B8] hover:border-[#B4623F] text-[#B4623F] rounded-lg px-3 py-1.5 text-sm font-medium transition-colors cursor-pointer"
             >
               ↺ Mark RTO
             </button>
           </div>
           <button
             onClick={() => setSelected([])}
-            className="ml-auto text-xs text-[#8A9270] hover:text-[#B4623F] transition-colors cursor-pointer"
+            className="ml-auto text-sm text-[#8A9270] hover:text-[#B4623F] transition-colors cursor-pointer"
           >
             Clear selection
           </button>
@@ -170,14 +170,14 @@ export default function NdrPage() {
       {/* Action Notice */}
       {records.length > 0 && (
         <div className="p-4 rounded-xl bg-[#FFF8EC] border border-[#E2D4B8] flex items-start gap-3 shadow-sm">
-          <div className="w-6 h-6 rounded-full bg-[#EDF0E4] text-[#546B41] flex items-center justify-center shrink-0 font-bold text-xs mt-0.5">
+          <div className="w-6 h-6 rounded-full bg-[#EDF0E4] text-[#546B41] flex items-center justify-center shrink-0 font-bold text-[13px] mt-0.5">
             !
           </div>
           <div>
-            <h4 className="text-xs font-bold text-[#2F3A22] uppercase tracking-wider">
+            <h4 className="text-[13px] font-bold text-[#2F3A22] uppercase tracking-wider">
               Action Required
             </h4>
-            <p className="text-xs text-[#6B7556] mt-0.5">
+            <p className="text-[13px] text-[#6B7556] mt-0.5">
               Unresolved NDRs auto-convert to RTO after 3 days. Act now to
               protect your COD revenue.
             </p>
@@ -187,7 +187,7 @@ export default function NdrPage() {
 
       {/* Records Grid */}
       {loading ? (
-        <div className="text-xs text-[#8A9270] text-center py-12 font-mono-nb">
+        <div className="text-[13px] text-[#8A9270] text-center py-12 font-mono-nb">
           Loading NDR records...
         </div>
       ) : records.length === 0 ? (
@@ -195,17 +195,17 @@ export default function NdrPage() {
           <div className="w-12 h-12 rounded-full bg-[#EDF0E4] text-[#546B41] flex items-center justify-center mx-auto mb-3 text-lg font-bold">
             ✓
           </div>
-          <h3 className="text-base font-bold text-[#2F3A22] mb-1">
+          <h3 className="text-[17px] font-bold text-[#2F3A22] mb-1">
             No pending NDRs
           </h3>
-          <p className="text-xs text-[#8A9270]">
+          <p className="text-[13px] text-[#8A9270]">
             All your deliveries are on track. Great job!
           </p>
         </div>
       ) : (
         <div className="bg-white border border-[#EADFC8] rounded-xl overflow-hidden shadow-sm mt-4">
           {/* Grid Table Header */}
-          <div className="grid grid-cols-[34px_1.2fr_1.6fr_0.9fr_1.5fr_1.4fr_1.3fr_1fr] gap-3 px-4 py-3 bg-[#F6EEDB] text-[11px] font-semibold text-[#8A9270] uppercase tracking-wider items-center border-b border-[#EADFC8]">
+          <div className="grid grid-cols-[34px_1.2fr_1.6fr_0.9fr_1.5fr_1.4fr_1.3fr_1fr] gap-3 px-4 py-3 bg-[#F6EEDB] text-[12px] font-semibold text-[#8A9270] uppercase tracking-wider items-center border-b border-[#EADFC8]">
             <div>
               <input
                 type="checkbox"
@@ -237,7 +237,7 @@ export default function NdrPage() {
               return (
                 <div
                   key={n.id}
-                  className={`grid grid-cols-[34px_1.2fr_1.6fr_0.9fr_1.5fr_1.4fr_1.3fr_1fr] gap-3 px-4 py-4 text-xs items-start transition-colors ${
+                  className={`grid grid-cols-[34px_1.2fr_1.6fr_0.9fr_1.5fr_1.4fr_1.3fr_1fr] gap-3 px-4 py-4 text-[13px] items-start transition-colors ${
                     isSelected ? "bg-[#FFF8EC]" : "hover:bg-[#FFF8EC]/50"
                   }`}
                 >
@@ -250,10 +250,10 @@ export default function NdrPage() {
                     />
                   </div>
                   <div>
-                    <div className="font-mono-nb font-semibold text-[#2F3A22] text-xs">
+                    <div className="font-mono-nb font-semibold text-[#2F3A22] text-sm">
                       #{n.mozopost_order_id}
                     </div>
-                    <div className="text-[11px] text-[#8A9270] mt-1 font-mono-nb">
+                    <div className="text-[13px] text-[#8A9270] mt-1 font-mono-nb">
                       {new Date(n.created_at).toLocaleDateString("en-IN", {
                         month: "short",
                         day: "numeric",
@@ -269,7 +269,7 @@ export default function NdrPage() {
                           "repeating-linear-gradient(45deg, #EADFC8 0 4px, transparent 4px 8px)",
                       }}
                     ></div>
-                    <div className="text-[11px] text-[#2F3A22] leading-snug">
+                    <div className="text-[13px] text-[#2F3A22] leading-snug">
                       {n.consignee_name}&apos;s Item
                     </div>
                   </div>
@@ -280,25 +280,25 @@ export default function NdrPage() {
                         0,
                       )}
                     </div>
-                    <span className="inline-block mt-1 text-[10px] font-semibold px-2 py-0.5 rounded border bg-[#F3ECD8] text-[#A9842E] border-[#DEC98F]">
+                    <span className="inline-block mt-1 text-[12px] font-semibold px-2 py-0.5 rounded border bg-[#F3ECD8] text-[#A9842E] border-[#DEC98F]">
                       {n.payment_mode?.toUpperCase() || "COD"}
                     </span>
                   </div>
-                  <div className="text-[11px] text-[#6B7556] leading-snug">
+                  <div className="text-[13px] text-[#6B7556] leading-snug">
                     {REASON_LABELS[n.ndr_reason] ||
                       n.ndr_reason ||
                       "Customer not contactable"}
                   </div>
                   <div>
                     <span
-                      className={`inline-block text-[10px] font-semibold font-mono-nb px-2 py-0.5 rounded-full border ${isCritical ? "bg-[#F1E2D8] text-[#B4623F] border-[#DDBBA8]" : "bg-[#EDF0E4] text-[#546B41] border-[#CBD7B5]"}`}
+                      className={`inline-block text-[12px] font-semibold font-mono-nb px-2 py-0.5 rounded-full border ${isCritical ? "bg-[#F1E2D8] text-[#B4623F] border-[#DDBBA8]" : "bg-[#EDF0E4] text-[#546B41] border-[#CBD7B5]"}`}
                     >
                       {n.status || "NDR"}
                     </span>
-                    <div className="text-[11px] text-[#8A9270] font-mono-nb mt-1.5">
+                    <div className="text-[13px] text-[#8A9270] font-mono-nb mt-1.5">
                       {n.courier_name || "DELHIVERY"}
                     </div>
-                    <div className="text-[11px] text-[#546B41] font-mono-nb mt-0.5 font-medium">
+                    <div className="text-[13px] text-[#546B41] font-mono-nb mt-0.5 font-medium">
                       {n.awb_number || "DL5566120934"}
                     </div>
                   </div>
@@ -306,12 +306,12 @@ export default function NdrPage() {
                     <div className="font-semibold text-[#2F3A22]">
                       {n.consignee_name}
                     </div>
-                    <div className="text-[11px] text-[#8A9270] font-mono-nb mt-0.5">
+                    <div className="text-[13px] text-[#8A9270] font-mono-nb mt-0.5">
                       {n.consignee_phone}
                     </div>
                   </div>
                   <div>
-                    <div className="text-[11px] text-[#8A9270]">
+                    <div className="text-[13px] text-[#8A9270]">
                       Attempts:{" "}
                       <span className="text-[#2F3A22] font-mono-nb font-medium">
                         {n.attempt_number}
@@ -322,7 +322,7 @@ export default function NdrPage() {
                         <button
                           disabled={actionId === n.order_id}
                           onClick={() => takeAction(n.order_id, "reattempt")}
-                          className="w-full text-[10px] text-[#A9842E] bg-[#F3ECD8] border border-[#DEC98F] rounded py-1 font-semibold hover:bg-[#E8DFC6] transition-colors disabled:opacity-50 cursor-pointer text-center"
+                          className="w-full text-[12px] text-[#A9842E] bg-[#F3ECD8] border border-[#DEC98F] rounded py-1 font-semibold hover:bg-[#E8DFC6] transition-colors disabled:opacity-50 cursor-pointer text-center"
                         >
                           Re-attempt
                         </button>
@@ -330,7 +330,7 @@ export default function NdrPage() {
                       <button
                         disabled={actionId === n.order_id}
                         onClick={() => takeAction(n.order_id, "rto")}
-                        className="w-full text-[10px] text-[#B4623F] bg-[#F1E2D8] border border-[#DDBBA8] rounded py-1 font-semibold hover:bg-[#E8D4C7] transition-colors disabled:opacity-50 cursor-pointer text-center"
+                        className="w-full text-[12px] text-[#B4623F] bg-[#F1E2D8] border border-[#DDBBA8] rounded py-1 font-semibold hover:bg-[#E8D4C7] transition-colors disabled:opacity-50 cursor-pointer text-center"
                       >
                         Mark RTO
                       </button>
