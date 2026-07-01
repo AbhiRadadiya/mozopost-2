@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Modal } from "@/components/ui/Modal";
 
 const SAMPLE_ROWS = [
   {
@@ -61,46 +62,39 @@ export function BulkUploadModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div
-        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-        onClick={onClose}
-      />
-
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full  max-h-[90vh] overflow-hidden flex flex-col animate-fade-up">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#EADFC8] shrink-0">
-          <div>
-            <h2 className="text-xl font-bold text-[#2F3A22] flex items-center gap-3">
-              Bulk Upload
-              <span className="px-2.5 py-1 bg-[#EDF0E4] text-[#546B41] text-[10px] font-bold uppercase tracking-widest rounded-full">
-                CSV / EXCEL
-              </span>
-            </h2>
-            <p className="text-sm text-[#8A9270] mt-1">
-              Upload multiple orders at once using our template.
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8A9270] hover:bg-[#FFF8EC] transition-colors"
-          >
-            <svg
-              width="20"
-              height="20"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
-            >
-              <path d="M18 6 6 18M6 6l12 12" />
-            </svg>
-          </button>
+    <Modal
+      isOpen={open}
+      onClose={onClose}
+      width="100%"
+      title={
+        <div className="flex items-center gap-3">
+          Bulk Upload
+          <span className="px-2.5 py-1 bg-[#EDF0E4] text-[#546B41] text-[10px] font-bold uppercase tracking-widest rounded-full">
+            CSV / EXCEL
+          </span>
         </div>
-
-        {/* Scrollable Body */}
-        <div className="overflow-y-auto p-6 flex-1 bg-[#FFF8EC]">
-          <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6">
+      }
+      subtitle="Upload multiple orders at once using our template."
+      bodyClassName="bg-[#FFF8EC]"
+      footer={
+        <div className="flex justify-end gap-3 w-full">
+          <button
+            type="button"
+            onClick={onClose}
+            className="px-5 py-2.5 rounded-lg border border-[#E2D4B8] bg-white text-sm font-semibold text-[#6B7556] hover:bg-[#FFF8EC] transition-colors"
+          >
+            Close
+          </button>
+          {validated && (
+            <button className="px-5 py-2.5 bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] text-sm font-semibold rounded-lg hover:bg-[#E0E7CE] transition-colors shadow-sm">
+              Process {SAMPLE_ROWS.filter((r) => r.status === "valid").length}{" "}
+              valid orders
+            </button>
+          )}
+        </div>
+      }
+    >
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_350px] gap-6">
             {/* Left Column: Upload & Validation */}
             <div className="space-y-6">
               <div className="bg-white rounded-2xl shadow-sm border border-[#EADFC8] overflow-hidden">
@@ -352,27 +346,8 @@ export function BulkUploadModal({
                   </table>
                 </div>
               </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-[#EADFC8] bg-white flex justify-end gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={onClose}
-            className="px-5 py-2.5 rounded-lg border border-[#E2D4B8] bg-white text-sm font-semibold text-[#6B7556] hover:bg-[#FFF8EC] transition-colors"
-          >
-            Close
-          </button>
-          {validated && (
-            <button className="px-5 py-2.5 bg-[#EDF0E4] border border-[#CBD7B5] text-[#546B41] text-sm font-semibold rounded-lg hover:bg-[#E0E7CE] transition-colors shadow-sm">
-              Process {SAMPLE_ROWS.filter((r) => r.status === "valid").length}{" "}
-              valid orders
-            </button>
-          )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

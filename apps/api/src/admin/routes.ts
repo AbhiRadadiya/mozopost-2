@@ -127,7 +127,7 @@ adminRouter.patch(
 adminRouter.patch(
   '/merchants/:sellerId/kyc',
   ah(async (req, res) => {
-    const { kycStatus, reason } = req.body; // 'verified' | 'rejected'
+    const { kycStatus, reason, paymentCycle, creditLimit, autoRecoverCod, accountManagerId, salesManagerId } = req.body; // 'verified' | 'rejected' | 'hold'
     const seller = await queryOne(`SELECT user_id FROM sellers WHERE id = $1`, [req.params.sellerId]);
     if (!seller) return res.status(404).json({ error: 'Seller not found' });
     const newUserStatus = kycStatus === 'verified' ? 'active' : 'pending_kyc';
@@ -136,6 +136,21 @@ adminRouter.patch(
     } else {
       await query(`UPDATE users SET kyc_status = $1, status = $2, kyc_rejection_reason = NULL WHERE id = $3`, [kycStatus, newUserStatus, seller.user_id]);
     }
+
+    // Update seller config
+    if (paymentCycle !== undefined) {
+      await query(
+        `UPDATE sellers SET 
+          payment_cycle = COALESCE($1, payment_cycle),
+          credit_limit = COALESCE($2, credit_limit),
+          auto_recover_cod = COALESCE($3, auto_recover_cod),
+          account_manager_id = $4,
+          sales_manager_id = $5
+         WHERE id = $6`,
+        [paymentCycle, creditLimit, autoRecoverCod, accountManagerId || null, salesManagerId || null, req.params.sellerId]
+      );
+    }
+    
     res.json({ message: `KYC ${kycStatus}` });
   }),
 );
@@ -193,7 +208,7 @@ adminRouter.post(
 adminRouter.post(
   '/rate-cards',
   ah(async (req, res) => {
-    const { courierIds, sellerId, baseRate, additionalRatePerKg, codChargeFixed, codChargePct } = req.body;
+    const { courierIds, sellerId, baseRate, additionalRatePerKg, codChargeFixed, codChargePct, zoneTo } = req.body;
     
     if (!Array.isArray(courierIds) || courierIds.length === 0) {
       return res.status(400).json({ error: 'courierIds array is required' });
@@ -203,15 +218,39 @@ adminRouter.post(
     await withTransaction(async (client) => {
       for (const cId of courierIds) {
         const result = await client.query(
-          `INSERT INTO rate_cards (courier_id, min_weight_kg, max_weight_kg, base_rate, additional_rate_per_kg, cod_charge_fixed, cod_charge_pct, is_active, seller_id)
-           VALUES ($1, 0, 9999, $2, $3, $4, $5, true, $6) RETURNING *`,
-          [cId, baseRate, additionalRatePerKg, codChargeFixed, codChargePct, sellerId || null]
+          `INSERT INTO rate_cards (courier_id, min_weight_kg, max_weight_kg, base_rate, additional_rate_per_kg, cod_charge_fixed, cod_charge_pct, is_active, seller_id, zone_to)
+           VALUES ($1, 0, 9999, $2, $3, $4, $5, true, $6, $7) RETURNING *`,
+          [cId, baseRate, additionalRatePerKg, codChargeFixed, codChargePct, sellerId || null, zoneTo || 'ALL']
         );
         insertedCards.push(result.rows[0]);
       }
     });
     
     res.status(201).json({ rateCards: insertedCards });
+  }),
+);
+
+adminRouter.get(
+  '/rate-cards',
+  ah(async (req, res) => {
+    const rows = await query(
+      `SELECT rc.*, c.name as courier_name, c.code as courier_code
+       FROM rate_cards rc JOIN couriers c ON c.id = rc.courier_id
+       ORDER BY c.priority DESC`,
+    );
+    res.json({ rateCards: rows });
+  }),
+);
+
+adminRouter.put(
+  '/rate-cards/:id',
+  ah(async (req, res) => {
+    const { baseRate, additionalRatePerKg, codChargeFixed, codChargePct, zoneTo } = req.body;
+    await query(
+      `UPDATE rate_cards SET base_rate=$1, additional_rate_per_kg=$2, cod_charge_fixed=$3, cod_charge_pct=$4, zone_to=$5 WHERE id=$6`,
+      [baseRate, additionalRatePerKg, codChargeFixed, codChargePct, zoneTo || 'ALL', req.params.id],
+    );
+    res.json({ message: 'Rate card updated' });
   }),
 );
 
@@ -330,10 +369,10 @@ superAdminRouter.get(
 superAdminRouter.put(
   '/rate-cards/:id',
   ah(async (req, res) => {
-    const { baseRate, additionalRatePerKg, codChargeFixed, codChargePct } = req.body;
+    const { baseRate, additionalRatePerKg, codChargeFixed, codChargePct, zoneTo } = req.body;
     await query(
-      `UPDATE rate_cards SET base_rate=$1, additional_rate_per_kg=$2, cod_charge_fixed=$3, cod_charge_pct=$4 WHERE id=$5`,
-      [baseRate, additionalRatePerKg, codChargeFixed, codChargePct, req.params.id],
+      `UPDATE rate_cards SET base_rate=$1, additional_rate_per_kg=$2, cod_charge_fixed=$3, cod_charge_pct=$4, zone_to=$5 WHERE id=$6`,
+      [baseRate, additionalRatePerKg, codChargeFixed, codChargePct, zoneTo || 'ALL', req.params.id],
     );
     res.json({ message: 'Rate card updated' });
   }),

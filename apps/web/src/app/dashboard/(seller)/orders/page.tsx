@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { api, apiErrorMessage } from '@/lib/api';
 import { Field, Input } from '@/components/ui';
+import { Modal } from '@/components/ui/Modal';
 import { BulkUploadModal } from './BulkUploadModal';
 
 /* ─────────────────────────────────────────────────────────
@@ -131,22 +132,26 @@ function ShipModal({
   if (!open) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 animate-fade-up border border-[#EADFC8]">
-        {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-[#EADFC8]">
-          <div>
-            <h2 className="text-base font-bold text-[#2F3A22]">Schedule Pickup</h2>
-            <p className="text-xs text-[#8A9270] mt-0.5">
-              {orderIds.length} order{orderIds.length > 1 ? 's' : ''} will be included
-            </p>
+      <Modal
+        title="Schedule Pickup"
+        isOpen={open}
+        onClose={onClose}
+        width="450px"
+        customHeader={
+          <div className="flex items-center justify-between px-6 py-4 border-b border-[#EADFC8]">
+            <div>
+              <h2 className="text-base font-bold text-[#2F3A22]">Schedule Pickup</h2>
+              <p className="text-xs text-[#8A9270] mt-0.5">
+                {orderIds.length} order{orderIds.length > 1 ? 's' : ''} will be included
+              </p>
+            </div>
+            <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8A9270] hover:bg-[#FFF8EC] hover:text-[#546B41] transition-colors">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12" /></svg>
+            </button>
           </div>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center text-[#8A9270] hover:bg-[#FFF8EC] hover:text-[#546B41] transition-colors">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6 6 18M6 6l12 12" /></svg>
-          </button>
-        </div>
-
+        }
+        bodyClassName="p-0"
+      >
         {/* Body */}
         <div className="p-6 space-y-4">
           {/* Package summary */}
@@ -195,7 +200,7 @@ function ShipModal({
         </div>
 
         {/* Footer */}
-        <div className="flex gap-3 px-6 py-4 border-t border-[#EADFC8] bg-[#FFF8EC] rounded-b-2xl">
+        <div className="flex gap-3 px-6 py-4 border-t border-[#EADFC8] bg-[#FFF8EC] rounded-b-[16px]">
           <button onClick={onClose} className="flex-1 py-2.5 rounded-xl border border-[#E2D4B8] bg-white text-sm font-semibold text-[#6B7556] hover:bg-[#F9FAFC] transition-colors">
             Cancel
           </button>
@@ -212,8 +217,7 @@ function ShipModal({
             Schedule Pickup
           </button>
         </div>
-      </div>
-    </div>
+      </Modal>
   );
 }
 

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { api, apiErrorMessage } from "@/lib/api";
+import { Modal } from "@/components/ui/Modal";
 
 interface Settlement {
   id: string;
@@ -515,222 +516,195 @@ export default function CodSettlementsPage() {
       </div>
 
       {/* UTR Modal */}
-      {utrModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => setUtrModal(null)}>
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md border border-[#E2D4B8]" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between mb-1">
-              <h3 className="text-base font-bold text-[#2F3A22]">
-                Release Settlement
-              </h3>
-              <button
-                onClick={() => setUtrModal(null)}
-                className="w-7 h-7 rounded-lg bg-[#FAF4E6] flex items-center justify-center text-[#8A9270] hover:text-[#2F3A22] hover:bg-[#E2D4B8] transition-colors"
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
-              </button>
-            </div>
-            <p className="text-sm text-[#8A9270] mb-5">
-              Releasing ₹{parseFloat(utrModal.net_amount).toFixed(2)} to{" "}
-              {utrModal.business_name}
-            </p>
-
-            <form onSubmit={releaseWithUtr} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
-                  Payment Mode
-                </label>
-                <select
-                  value={utrForm.paymentMode}
-                  onChange={(e) =>
-                    setUtrForm({ ...utrForm, paymentMode: e.target.value })
-                  }
-                  className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
-                >
-                  <option value="neft">NEFT</option>
-                  <option value="rtgs">RTGS</option>
-                  <option value="imps">IMPS</option>
-                  <option value="upi">UPI</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
-                  UTR Number <span className="text-[#DC2626]">*</span>
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={utrForm.utrNumber}
-                  onChange={(e) =>
-                    setUtrForm({ ...utrForm, utrNumber: e.target.value })
-                  }
-                  placeholder="Enter 12-22 digit UTR"
-                  className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 placeholder:text-[#8A9270]"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
-                  Bank Reference (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={utrForm.bankReference}
-                  onChange={(e) =>
-                    setUtrForm({ ...utrForm, bankReference: e.target.value })
-                  }
-                  className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 placeholder:text-[#8A9270]"
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={releasing || !utrForm.utrNumber.trim()}
-                  className="flex-1 py-2.5 bg-[#546B41] text-white text-sm font-semibold rounded-xl hover:bg-[#3F5131] transition-colors disabled:opacity-50 shadow-sm"
-                >
-                  {releasing ? "Releasing..." : "Confirm Release"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setUtrModal(null)}
-                  className="px-4 py-2.5 bg-white border border-[#E2D4B8] text-[#6B7556] text-sm font-semibold rounded-xl hover:bg-[#FAF4E6] transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={!!utrModal}
+        onClose={() => setUtrModal(null)}
+        width="460px"
+        title="Release Settlement"
+        subtitle={`Releasing ₹${parseFloat(utrModal?.net_amount || "0").toFixed(2)} to ${utrModal?.business_name}`}
+        footer={
+          <div className="flex gap-3 w-full">
+            <button
+              type="submit"
+              form="utr-form"
+              disabled={releasing || !utrForm.utrNumber.trim()}
+              className="flex-1 py-2.5 bg-[#546B41] text-white text-sm font-semibold rounded-xl hover:bg-[#3F5131] transition-colors disabled:opacity-50 shadow-sm"
+            >
+              {releasing ? "Releasing..." : "Confirm Release"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setUtrModal(null)}
+              className="px-4 py-2.5 bg-white border border-[#E2D4B8] text-[#6B7556] text-sm font-semibold rounded-xl hover:bg-[#FAF4E6] transition-colors"
+            >
+              Cancel
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <form id="utr-form" onSubmit={releaseWithUtr} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+              Payment Mode
+            </label>
+            <select
+              value={utrForm.paymentMode}
+              onChange={(e) =>
+                setUtrForm({ ...utrForm, paymentMode: e.target.value })
+              }
+              className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
+            >
+              <option value="neft">NEFT</option>
+              <option value="rtgs">RTGS</option>
+              <option value="imps">IMPS</option>
+              <option value="upi">UPI</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+              UTR Number <span className="text-[#DC2626]">*</span>
+            </label>
+            <input
+              type="text"
+              required
+              value={utrForm.utrNumber}
+              onChange={(e) =>
+                setUtrForm({ ...utrForm, utrNumber: e.target.value })
+              }
+              placeholder="Enter 12-22 digit UTR"
+              className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 placeholder:text-[#8A9270]"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+              Bank Reference (Optional)
+            </label>
+            <input
+              type="text"
+              value={utrForm.bankReference}
+              onChange={(e) =>
+                setUtrForm({ ...utrForm, bankReference: e.target.value })
+              }
+              className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 placeholder:text-[#8A9270]"
+            />
+          </div>
+        </form>
+      </Modal>
 
       {/* Adjust Wallet Modal */}
-      {walletModal && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4" onClick={() => {
+      <Modal
+        isOpen={walletModal}
+        onClose={() => {
           setWalletModal(false);
           setWalletError("");
           setWalletMessage("");
-        }}>
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md border border-[#E2D4B8]" onClick={(e) => e.stopPropagation()}>
-            <div className="flex items-start justify-between mb-1">
-              <h3 className="text-base font-bold text-[#2F3A22]">
-                Adjust Wallet Balance
-              </h3>
+        }}
+        width="460px"
+        title="Adjust Wallet Balance"
+        subtitle="Add or deduct funds directly from a merchant's wallet."
+        footer={
+          <div className="flex gap-3 w-full">
+            <button
+              type="submit"
+              form="wallet-form"
+              disabled={walletSubmitting || !walletSellerId || !walletAmount}
+              className="flex-1 py-2.5 bg-[#546B41] text-white text-sm font-semibold rounded-xl hover:bg-[#3F5131] transition-colors disabled:opacity-50 shadow-sm"
+            >
+              {walletSubmitting
+                ? "Processing..."
+                : `${walletType === "credit" ? "+ Credit" : "− Debit"} Wallet`}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setWalletModal(false);
+                setWalletError("");
+                setWalletMessage("");
+              }}
+              className="px-4 py-2.5 bg-white border border-[#E2D4B8] text-[#6B7556] text-sm font-semibold rounded-xl hover:bg-[#FAF4E6] transition-colors"
+            >
+              Close
+            </button>
+          </div>
+        }
+      >
+        <form id="wallet-form" onSubmit={handleWalletSubmit} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+              Select Merchant
+            </label>
+            <select
+              required
+              value={walletSellerId}
+              onChange={(e) => setWalletSellerId(e.target.value)}
+              className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
+            >
+              <option value="">-- Choose Merchant --</option>
+              {merchants.map((m) => (
+                <option key={m.id} value={m.id}>
+                  {m.business_name} (Bal: ₹
+                  {parseFloat(m.wallet_balance || "0").toFixed(0)})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Type Toggle */}
+          <div>
+            <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+              Action Type
+            </label>
+            <div className="flex rounded-xl border border-[#E2D4B8] overflow-hidden">
               <button
-                onClick={() => {
-                  setWalletModal(false);
-                  setWalletError("");
-                  setWalletMessage("");
-                }}
-                className="w-7 h-7 rounded-lg bg-[#FAF4E6] flex items-center justify-center text-[#8A9270] hover:text-[#2F3A22] hover:bg-[#E2D4B8] transition-colors"
+                type="button"
+                onClick={() => setWalletType("credit")}
+                className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
+                  walletType === "credit"
+                    ? "bg-[#D1FAE5] text-[#065F46]"
+                    : "bg-white text-[#8A9270] hover:bg-[#FAF4E6]"
+                }`}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M18 6L6 18M6 6l12 12" /></svg>
+                + Credit (Add)
+              </button>
+              <button
+                type="button"
+                onClick={() => setWalletType("debit")}
+                className={`flex-1 py-2.5 text-sm font-semibold transition-colors border-l border-[#E2D4B8] ${
+                  walletType === "debit"
+                    ? "bg-[#FEE2E2] text-[#991B1B]"
+                    : "bg-white text-[#8A9270] hover:bg-[#FAF4E6]"
+                }`}
+              >
+                − Debit (Remove)
               </button>
             </div>
-            <p className="text-sm text-[#8A9270] mb-5">
-              Add or deduct funds directly from a merchant's wallet.
-            </p>
-
-            <form onSubmit={handleWalletSubmit} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
-                  Select Merchant
-                </label>
-                <select
-                  required
-                  value={walletSellerId}
-                  onChange={(e) => setWalletSellerId(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
-                >
-                  <option value="">-- Choose Merchant --</option>
-                  {merchants.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.business_name} (Bal: ₹
-                      {parseFloat(m.wallet_balance || "0").toFixed(0)})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              {/* Type Toggle */}
-              <div>
-                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
-                  Action Type
-                </label>
-                <div className="flex rounded-xl border border-[#E2D4B8] overflow-hidden">
-                  <button
-                    type="button"
-                    onClick={() => setWalletType("credit")}
-                    className={`flex-1 py-2.5 text-sm font-semibold transition-colors ${
-                      walletType === "credit"
-                        ? "bg-[#D1FAE5] text-[#065F46]"
-                        : "bg-white text-[#8A9270] hover:bg-[#FAF4E6]"
-                    }`}
-                  >
-                    + Credit (Add)
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setWalletType("debit")}
-                    className={`flex-1 py-2.5 text-sm font-semibold transition-colors border-l border-[#E2D4B8] ${
-                      walletType === "debit"
-                        ? "bg-[#FEE2E2] text-[#991B1B]"
-                        : "bg-white text-[#8A9270] hover:bg-[#FAF4E6]"
-                    }`}
-                  >
-                    − Debit (Remove)
-                  </button>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
-                  Amount (₹)
-                </label>
-                <input
-                  type="number"
-                  required
-                  value={walletAmount}
-                  onChange={(e) => setWalletAmount(e.target.value)}
-                  className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
-                />
-              </div>
-
-              {walletError && (
-                <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm text-[#991B1B]">
-                  {walletError}
-                </div>
-              )}
-              {walletMessage && (
-                <div className="p-3 rounded-xl bg-[#F0FDF4] border border-[#A7F3D0] text-sm text-[#065F46]">
-                  ✓ {walletMessage}
-                </div>
-              )}
-
-              <div className="flex gap-3 pt-2">
-                <button
-                  type="submit"
-                  disabled={walletSubmitting || !walletSellerId || !walletAmount}
-                  className="flex-1 py-2.5 bg-[#546B41] text-white text-sm font-semibold rounded-xl hover:bg-[#3F5131] transition-colors disabled:opacity-50 shadow-sm"
-                >
-                  {walletSubmitting
-                    ? "Processing..."
-                    : `${walletType === "credit" ? "+ Credit" : "− Debit"} Wallet`}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setWalletModal(false);
-                    setWalletError("");
-                    setWalletMessage("");
-                  }}
-                  className="px-4 py-2.5 bg-white border border-[#E2D4B8] text-[#6B7556] text-sm font-semibold rounded-xl hover:bg-[#FAF4E6] transition-colors"
-                >
-                  Close
-                </button>
-              </div>
-            </form>
           </div>
-        </div>
-      )}
+
+          <div>
+            <label className="block text-xs font-semibold text-[#6B7556] mb-1.5 uppercase tracking-wide">
+              Amount (₹)
+            </label>
+            <input
+              type="number"
+              required
+              value={walletAmount}
+              onChange={(e) => setWalletAmount(e.target.value)}
+              className="w-full px-3 py-2.5 text-sm border border-[#E2D4B8] rounded-xl bg-white text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10"
+            />
+          </div>
+
+          {walletError && (
+            <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm text-[#991B1B]">
+              {walletError}
+            </div>
+          )}
+          {walletMessage && (
+            <div className="p-3 rounded-xl bg-[#F0FDF4] border border-[#A7F3D0] text-sm text-[#065F46]">
+              ✓ {walletMessage}
+            </div>
+          )}
+        </form>
+      </Modal>
     </>
   );
 }

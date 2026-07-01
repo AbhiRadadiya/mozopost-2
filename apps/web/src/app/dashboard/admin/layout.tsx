@@ -56,9 +56,9 @@ const NAV_GROUPS = [
     label: "Finance & Pricing",
     items: [
       {
-        href: "/dashboard/admin/margins",
-        label: "Margins",
-        icon: "M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z",
+        href: "/dashboard/admin/rate-cards",
+        label: "Rate Cards",
+        icon: "M4 5a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H5a1 1 0 01-1-1V5zm5-1v16m6-16v16M4 9h16M4 15h16",
       },
       {
         href: "/dashboard/admin/credit",

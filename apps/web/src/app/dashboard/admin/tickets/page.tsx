@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useMemo } from "react";
 import { api, apiErrorMessage } from "@/lib/api";
+import { Modal } from "@/components/ui/Modal";
 
 const STATUS_STYLE: Record<string, string> = {
   open: "bg-[#FEF2F2] text-[#991B1B]",
@@ -159,67 +160,55 @@ export default function AdminTicketsPage() {
       )}
 
       {/* Status Update Modal */}
-      {activeTicket && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl p-6 w-full max-w-md border border-[#E5E8EF]">
-            <div className="flex items-start justify-between mb-5">
-              <div>
-                <h3 className="text-base font-bold text-[#0F172A]">
-                  Update Ticket Status
-                </h3>
-                <p className="text-xs text-[#64748B] mt-0.5">
-                  Ticket #{activeTicket.ticket_number} - {activeTicket.business_name}
-                </p>
-              </div>
-              <button
-                onClick={() => {
-                  setActiveTicket(null);
-                  setError("");
-                }}
-                className="w-7 h-7 rounded-lg bg-[#F4F6F9] flex items-center justify-center text-[#94A3B8] hover:text-[#0F172A] transition-colors"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={updateStatus} className="space-y-4">
-              <div>
-                <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
-                  New Status
-                </label>
-                <select
-                  required
-                  value={statusUpdateForm.status}
-                  onChange={(e) => setStatusUpdateForm({ status: e.target.value })}
-                  className="w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
-                >
-                  <option value="" disabled>Select a status...</option>
-                  <option value="open">Open</option>
-                  <option value="in_progress">In Progress</option>
-                  <option value="escalated">Escalated</option>
-                  <option value="closed">Closed</option>
-                </select>
-              </div>
-              <div className="flex gap-3 pt-2 border-t border-[#F1F5F9]">
-                <button
-                  type="submit"
-                  disabled={updating || !statusUpdateForm.status}
-                  className="flex-1 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors disabled:opacity-50"
-                >
-                  {updating ? "Updating..." : "Update Status"}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveTicket(null)}
-                  className="px-4 py-2.5 bg-white border border-[#E5E8EF] text-[#475569] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </form>
+      <Modal
+        isOpen={!!activeTicket}
+        onClose={() => {
+          setActiveTicket(null);
+          setError("");
+        }}
+        width="460px"
+        title="Update Ticket Status"
+        subtitle={activeTicket ? `Ticket #${activeTicket.ticket_number} - ${activeTicket.business_name}` : ""}
+        footer={
+          <div className="flex gap-3 w-full">
+            <button
+              type="submit"
+              form="status-update-form"
+              disabled={updating || !statusUpdateForm.status}
+              className="flex-1 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors disabled:opacity-50"
+            >
+              {updating ? "Updating..." : "Update Status"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTicket(null)}
+              className="px-4 py-2.5 bg-white border border-[#E5E8EF] text-[#475569] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] transition-colors"
+            >
+              Cancel
+            </button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <form id="status-update-form" onSubmit={updateStatus} className="space-y-4">
+          <div>
+            <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
+              New Status
+            </label>
+            <select
+              required
+              value={statusUpdateForm.status}
+              onChange={(e) => setStatusUpdateForm({ status: e.target.value })}
+              className="w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
+            >
+              <option value="" disabled>Select a status...</option>
+              <option value="open">Open</option>
+              <option value="in_progress">In Progress</option>
+              <option value="escalated">Escalated</option>
+              <option value="closed">Closed</option>
+            </select>
+          </div>
+        </form>
+      </Modal>
 
       {/* Accordion List */}
       <div className="bg-white rounded-2xl border border-[#E5E8EF] shadow-sm overflow-hidden flex flex-col divide-y divide-[#E5E8EF]">

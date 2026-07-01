@@ -251,7 +251,7 @@ export default function AdminDashboard() {
                     ₹{(s.gmv / 100000).toFixed(1)}L
                   </span>
                   <span className="text-right font-mono-nb text-[#6B7556]">
-                    {s.order_count.toLocaleString("en-IN")}
+                    {orderCount.toLocaleString("en-IN")}
                   </span>
                   <span className={`text-right font-mono-nb font-semibold ${rtoColor}`}>
                     {rtoPct}%

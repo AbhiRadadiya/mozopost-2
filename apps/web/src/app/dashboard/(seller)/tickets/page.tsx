@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { api, apiErrorMessage } from "@/lib/api";
+import { Modal } from "@/components/ui/Modal";
 
 const STATUS_COLOR: Record<string, { bg: string; text: string }> = {
   open: { bg: "bg-[#FEF2F2]", text: "text-[#A84A3B]" }, // Olive error red
@@ -285,107 +286,104 @@ export default function TicketsPage() {
       </div>
 
       {/* Raise Ticket Modal */}
-      {isModalOpen &&
-        mounted &&
-        createPortal(
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => {
-                setIsModalOpen(false);
-                setSubmitted(false);
-              }}
-            />
-
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-up border border-[#EADFC8] flex flex-col max-h-[90vh] overflow-hidden">
-              {/* Header (Fixed at top) */}
-              <div className="p-6 pb-4 shrink-0 bg-white z-10">
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-3 items-center">
-                    <div className="w-10 h-10 rounded-xl bg-[#546B41] flex items-center justify-center text-white shrink-0 shadow-sm">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z"></path>
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className="text-base font-bold text-[#2F3A22]">
-                        Create New Ticket
-                      </h2>
-                      <p className="text-xs text-[#8A9270] mt-0.5">
-                        We're here to help resolve any issues.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => {
-                      setIsModalOpen(false);
-                      setSubmitted(false);
-                    }}
-                    className="text-[#8A9270] hover:bg-[#FFF8EC] hover:text-[#546B41] w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0"
+      <Modal
+        title=""
+        isOpen={isModalOpen && mounted}
+        onClose={() => {
+          setIsModalOpen(false);
+          setSubmitted(false);
+        }}
+        width="450px"
+        customHeader={
+          <div className="p-6 pb-4 shrink-0 bg-white z-10 border-b border-[#EADFC8]">
+            <div className="flex items-start justify-between">
+              <div className="flex gap-3 items-center">
+                <div className="w-10 h-10 rounded-xl bg-[#546B41] flex items-center justify-center text-white shrink-0 shadow-sm">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
                   >
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
-                      <path d="M18 6 6 18M6 6l12 12" />
-                    </svg>
-                  </button>
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z"></path>
+                  </svg>
+                </div>
+                <div>
+                  <h2 className="text-base font-bold text-[#2F3A22]">
+                    Create New Ticket
+                  </h2>
+                  <p className="text-xs text-[#8A9270] mt-0.5">
+                    We're here to help resolve any issues.
+                  </p>
                 </div>
               </div>
-
-              {submitted ? (
-                <div className="p-10 text-center overflow-y-auto">
-                  <div className="w-16 h-16 bg-[#EDF0E4] rounded-full flex items-center justify-center mx-auto mb-5 border border-[#CBD7B5]">
-                    <svg
-                      width="32"
-                      height="32"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="#546B41"
-                      strokeWidth="2.5"
-                    >
-                      <polyline points="20 6 9 17 4 12"></polyline>
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-bold text-[#2F3A22] mb-1">
-                    Ticket Submitted
-                  </h3>
-                  <p className="text-[13px] text-[#8A9270] mb-8 max-w-[250px] mx-auto leading-relaxed">
-                    Our support team has received your request and will respond
-                    within 24 hours.
-                  </p>
-                  <button
-                    onClick={() => {
-                      setSubmitted(false);
-                      setForm({
-                        type: "weight_dispute",
-                        subject: "",
-                        description: "",
-                        attachmentUrl: "",
-                      });
-                      setIsModalOpen(false);
-                    }}
-                    className="px-8 py-3 bg-[#546B41] text-[#FFF8EC] text-[13px] font-bold rounded-xl hover:bg-[#435534] transition-colors shadow-sm"
-                  >
-                    Done
-                  </button>
-                </div>
-              ) : (
-                <form
-                  className="overflow-y-auto flex-1 min-h-0"
-                  onSubmit={handleSubmit}
+              <button
+                onClick={() => {
+                  setIsModalOpen(false);
+                  setSubmitted(false);
+                }}
+                className="text-[#8A9270] hover:bg-[#FFF8EC] hover:text-[#546B41] w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0"
+              >
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
                 >
+                  <path d="M18 6 6 18M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+        }
+        bodyClassName="p-0"
+      >
+        {submitted ? (
+          <div className="p-10 text-center overflow-y-auto">
+            <div className="w-16 h-16 bg-[#EDF0E4] rounded-full flex items-center justify-center mx-auto mb-5 border border-[#CBD7B5]">
+              <svg
+                width="32"
+                height="32"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#546B41"
+                strokeWidth="2.5"
+              >
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-[#2F3A22] mb-1">
+              Ticket Submitted
+            </h3>
+            <p className="text-[13px] text-[#8A9270] mb-8 max-w-[250px] mx-auto leading-relaxed">
+              Our support team has received your request and will respond
+              within 24 hours.
+            </p>
+            <button
+              onClick={() => {
+                setSubmitted(false);
+                setForm({
+                  type: "weight_dispute",
+                  subject: "",
+                  description: "",
+                  attachmentUrl: "",
+                });
+                setIsModalOpen(false);
+              }}
+              className="px-8 py-3 bg-[#546B41] text-[#FFF8EC] text-[13px] font-bold rounded-xl hover:bg-[#435534] transition-colors shadow-sm"
+            >
+              Done
+            </button>
+          </div>
+        ) : (
+          <form
+            className="flex-1 min-h-0"
+            onSubmit={handleSubmit}
+          >
                   {/* Body (Scrollable) */}
                   <div className="px-6 pb-6 space-y-5">
                     <div>
@@ -564,11 +562,8 @@ export default function TicketsPage() {
                     </button>
                   </div>
                 </form>
-              )}
-            </div>
-          </div>,
-          document.body,
         )}
+      </Modal>
     </div>
   );
 }

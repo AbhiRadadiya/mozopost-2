@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { createPortal } from "react-dom";
 import { api, apiErrorMessage } from "@/lib/api";
+import { Modal } from "@/components/ui/Modal";
 
 const STATUS_BADGE: Record<
   string,
@@ -351,183 +351,144 @@ export default function PickupsPage() {
       </div>
 
       {/* Schedule Pickup Modal */}
-      {isModalOpen &&
-        mounted &&
-        createPortal(
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-            <div
-              className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-              onClick={() => setIsModalOpen(false)}
-            />
-
-            <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md animate-fade-up border border-[#EADFC8] flex flex-col max-h-[90vh] overflow-hidden">
-              {/* Header */}
-              <div className="p-6 pb-4 shrink-0 bg-white z-10">
-                <div className="flex items-start justify-between">
-                  <div className="flex gap-3 items-center">
-                    <div className="w-10 h-10 rounded-xl bg-[#546B41] flex items-center justify-center text-white shrink-0 shadow-sm">
-                      <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                      </svg>
-                    </div>
-                    <div>
-                      <h2 className="text-base font-bold text-[#2F3A22]">
-                        Schedule Pickup
-                      </h2>
-                      <p className="text-xs text-[#8A9270] mt-0.5">
-                        Request courier dispatch for your packages.
-                      </p>
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setIsModalOpen(false)}
-                    className="text-[#8A9270] hover:bg-[#FFF8EC] hover:text-[#546B41] w-8 h-8 rounded-lg flex items-center justify-center transition-colors shrink-0"
-                  >
-                    <svg
-                      width="18"
-                      height="18"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2.5"
-                    >
-                      <path d="M18 6 6 18M6 6l12 12" />
-                    </svg>
-                  </button>
-                </div>
-              </div>
-
-              <form
-                className="overflow-y-auto flex-1 min-h-0"
-                onSubmit={handleCreate}
-              >
-                <div className="px-6 pb-6 space-y-5">
-                  <div>
-                    <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
-                      Pickup Date
-                    </div>
-                    <input
-                      type="date"
-                      required
-                      value={form.pickupDate || tomorrowStr}
-                      onChange={(e) =>
-                        setForm((p) => ({ ...p, pickupDate: e.target.value }))
-                      }
-                      className="w-full bg-[#FFF8EC] border border-[#EADFC8] rounded-xl px-4 py-3 text-[#2F3A22] font-semibold text-[13px] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 transition-all cursor-pointer"
-                    />
-                  </div>
-
-                  <div>
-                    <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
-                      Time Slot
-                    </div>
-                    <div className="relative">
-                      <select
-                        value={form.timeSlot}
-                        onChange={(e) =>
-                          setForm((p) => ({ ...p, timeSlot: e.target.value }))
-                        }
-                        className="w-full bg-[#FFF8EC] border border-[#EADFC8] rounded-xl pl-4 pr-10 py-3 text-[#2F3A22] font-semibold text-[13px] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 transition-all appearance-none cursor-pointer"
-                      >
-                        <option>10:00 AM – 12:00 PM</option>
-                        <option>12:00 PM – 2:00 PM</option>
-                        <option>2:00 PM – 4:00 PM</option>
-                        <option>4:00 PM – 6:00 PM</option>
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#546B41]">
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                        >
-                          <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
-                      Courier Partner
-                    </div>
-                    <div className="relative">
-                      <select
-                        value={form.courierId}
-                        onChange={(e) =>
-                          setForm((p) => ({ ...p, courierId: e.target.value }))
-                        }
-                        className="w-full bg-[#FFF8EC] border border-[#EADFC8] rounded-xl pl-4 pr-10 py-3 text-[#2F3A22] font-semibold text-[13px] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 transition-all appearance-none cursor-pointer"
-                      >
-                        <option value="">Auto (Assign dynamically)</option>
-                        {couriers.map((c: any) => (
-                          <option key={c.id} value={c.id}>
-                            {c.name}
-                          </option>
-                        ))}
-                      </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#546B41]">
-                        <svg
-                          width="14"
-                          height="14"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="2.5"
-                        >
-                          <polyline points="6 9 12 15 18 9" />
-                        </svg>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
-                      Expected Package Count
-                    </div>
-                    <input
-                      type="number"
-                      min="1"
-                      required
-                      value={form.expectedPackageCount}
-                      onChange={(e) =>
-                        setForm((p) => ({
-                          ...p,
-                          expectedPackageCount: e.target.value,
-                        }))
-                      }
-                      className="w-full bg-[#FFF8EC] border border-[#EADFC8] rounded-xl px-4 py-3 text-[#2F3A22] font-semibold text-[13px] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 transition-all"
-                    />
-                  </div>
-
-                  {error && (
-                    <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-bold text-[#A84A3B]">
-                      {error}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    disabled={submitting}
-                    className="w-full py-3.5 rounded-xl bg-[#546B41] text-white font-semibold text-sm hover:bg-[#3C4E2D] transition-colors shadow-sm flex items-center justify-center gap-2 mt-2 shrink-0 disabled:opacity-50"
-                  >
-                    {submitting ? "Scheduling..." : "Confirm Pickup Request"}
-                  </button>
-                </div>
-              </form>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        width="460px"
+        title={
+          <div className="flex gap-3 items-center">
+            <div className="w-10 h-10 rounded-xl bg-[#546B41] flex items-center justify-center text-white shrink-0 shadow-sm">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
             </div>
-          </div>,
-          document.body,
-        )}
+            <div>Schedule Pickup</div>
+          </div>
+        }
+        subtitle="Request courier dispatch for your packages."
+        footer={
+          <button
+            type="submit"
+            form="pickup-form"
+            disabled={submitting}
+            className="w-full py-3.5 rounded-xl bg-[#546B41] text-white font-semibold text-sm hover:bg-[#3C4E2D] transition-colors shadow-sm flex items-center justify-center gap-2 shrink-0 disabled:opacity-50"
+          >
+            {submitting ? "Scheduling..." : "Confirm Pickup Request"}
+          </button>
+        }
+      >
+        <form
+          id="pickup-form"
+          className="space-y-5"
+          onSubmit={handleCreate}
+        >
+          <div>
+            <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
+              Pickup Date
+            </div>
+            <input
+              type="date"
+              required
+              value={form.pickupDate || tomorrowStr}
+              onChange={(e) =>
+                setForm((p) => ({ ...p, pickupDate: e.target.value }))
+              }
+              className="w-full bg-[#FFF8EC] border border-[#EADFC8] rounded-xl px-4 py-3 text-[#2F3A22] font-semibold text-[13px] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 transition-all cursor-pointer"
+            />
+          </div>
+
+          <div>
+            <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
+              Time Slot
+            </div>
+            <div className="relative">
+              <select
+                value={form.timeSlot}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, timeSlot: e.target.value }))
+                }
+                className="w-full bg-[#FFF8EC] border border-[#EADFC8] rounded-xl pl-4 pr-10 py-3 text-[#2F3A22] font-semibold text-[13px] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 transition-all appearance-none cursor-pointer"
+              >
+                <option>10:00 AM – 12:00 PM</option>
+                <option>12:00 PM – 2:00 PM</option>
+                <option>2:00 PM – 4:00 PM</option>
+                <option>4:00 PM – 6:00 PM</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#546B41]">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
+              Courier Partner
+            </div>
+            <div className="relative">
+              <select
+                value={form.courierId}
+                onChange={(e) =>
+                  setForm((p) => ({ ...p, courierId: e.target.value }))
+                }
+                className="w-full bg-[#FFF8EC] border border-[#EADFC8] rounded-xl pl-4 pr-10 py-3 text-[#2F3A22] font-semibold text-[13px] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 transition-all appearance-none cursor-pointer"
+              >
+                <option value="">Auto (Assign dynamically)</option>
+                {couriers.map((c: any) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-[#546B41]">
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                >
+                  <polyline points="6 9 12 15 18 9" />
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-[10px] font-bold text-[#8A9270] uppercase tracking-widest mb-2.5">
+              Expected Package Count
+            </div>
+            <input
+              type="number"
+              min="1"
+              required
+              value={form.expectedPackageCount}
+              onChange={(e) =>
+                setForm((p) => ({
+                  ...p,
+                  expectedPackageCount: e.target.value,
+                }))
+              }
+              className="w-full bg-[#FFF8EC] border border-[#EADFC8] rounded-xl px-4 py-3 text-[#2F3A22] font-semibold text-[13px] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/10 transition-all"
+            />
+          </div>
+
+          {error && (
+            <div className="p-3 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm font-bold text-[#A84A3B]">
+              {error}
+            </div>
+          )}
+        </form>
+      </Modal>
     </div>
   );
 }

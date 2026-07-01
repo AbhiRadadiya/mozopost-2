@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { api, apiErrorMessage } from "@/lib/api";
 import { useRouter } from "next/navigation";
+import { Modal } from "@/components/ui/Modal";
 
 interface Merchant {
   id: string;
@@ -334,407 +335,402 @@ export default function SellersPage() {
       </div>
 
       {/* ===================== MODAL LAYER ===================== */}
-      {modal && (
-        <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-[#1C2110]/50 backdrop-blur-[2px]"
-          onClick={() => setModal(null)}
-        >
-          <div
-            className="bg-white border border-[#E2D4B8] rounded-[16px] overflow-hidden shadow-[0_24px_70px_rgba(40,45,20,0.4)] relative"
-            style={{
-              width:
-                modal === "seller"
-                  ? "560px"
-                  : modal === "onboard"
-                    ? "540px"
-                    : "460px",
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* ── SELLER DETAIL MODAL ── */}
-            {modal === "seller" && selectedSeller && (
-              <div>
-                <div className="bg-gradient-to-br from-[#5C7347] to-[#4A5F37] px-[24px] py-[20px] flex items-center gap-[14px] text-[#FFF8EC]">
-                  <span className="w-[44px] h-[44px] rounded-[11px] bg-white/16 flex items-center justify-center text-[16px] font-semibold font-mono-nb shrink-0">
-                    {selectedSeller.business_name.substring(0, 2).toUpperCase()}
-                  </span>
-                  <div className="flex-1">
-                    <div className="text-[17px] font-bold">
-                      {selectedSeller.business_name}
-                    </div>
-                    <div className="text-[12px] opacity-80 font-mono-nb">
-                      MZ-{selectedSeller.id.substring(0, 4).toUpperCase()} ·{" "}
-                      {selectedSeller.first_name || "Owner"}
-                    </div>
-                  </div>
-                  {selectedSeller.status === "active" && (
-                    <span className="px-[8px] py-[3px] rounded-[6px] bg-[#EDF0E4] text-[#546B41] text-[12px] font-bold">
-                      Active
-                    </span>
-                  )}
-                  {selectedSeller.status === "suspended" && (
-                    <span className="px-[8px] py-[3px] rounded-[6px] bg-[#FEE2E2] text-[#991B1B] text-[12px] font-bold">
-                      Suspended
-                    </span>
-                  )}
-                  {selectedSeller.status === "pending_kyc" && (
-                    <span className="px-[8px] py-[3px] rounded-[6px] bg-[#FFFBEB] text-[#D97706] text-[12px] font-bold">
-                      Pending
-                    </span>
-                  )}
-                  <button
-                    onClick={() => setModal(null)}
-                    className="text-[#FFF8EC] opacity-80 hover:opacity-100 ml-[6px] bg-inherit"
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
+      <Modal
+        isOpen={!!modal}
+        onClose={() => setModal(null)}
+        title={modal === "seller" ? "Seller Details" : modal === "onboard" ? "Onboard New Seller" : ""}
+        width={
+          modal === "seller"
+            ? "560px"
+            : modal === "onboard"
+              ? "540px"
+              : "460px"
+        }
+        customHeader={
+          modal === "seller" && selectedSeller ? (
+            <div className="bg-gradient-to-br from-[#5C7347] to-[#4A5F37] px-[24px] py-[20px] flex items-center gap-[14px] text-[#FFF8EC]">
+              <span className="w-[44px] h-[44px] rounded-[11px] bg-white/16 flex items-center justify-center text-[16px] font-semibold font-mono-nb shrink-0">
+                {selectedSeller.business_name.substring(0, 2).toUpperCase()}
+              </span>
+              <div className="flex-1">
+                <div className="text-[17px] font-bold">
+                  {selectedSeller.business_name}
                 </div>
-
-                <div className="p-[24px]">
-                  {statsLoading ? (
-                    <div className="py-12 text-center text-[13px] font-mono-nb text-[#8A9270] animate-pulse">
-                      Loading stats...
-                    </div>
-                  ) : (
-                    <>
-                      <div className="grid grid-cols-4 gap-[12px]">
-                        <div className="bg-[#FAF4E6] border border-[#EADFC8] rounded-[10px] px-[14px] py-[13px]">
-                          <div className="text-[10.5px] text-[#8A9270] uppercase tracking-[0.5px]">
-                            GMV (30D)
-                          </div>
-                          <div className="text-[18px] font-bold mt-[5px] font-mono-nb text-[#546B41]">
-                            ₹{((sellerStats?.gmv_30d || 0) / 100000).toFixed(1)}
-                            L
-                          </div>
-                        </div>
-                        <div className="bg-[#FAF4E6] border border-[#EADFC8] rounded-[10px] px-[14px] py-[13px]">
-                          <div className="text-[10.5px] text-[#8A9270] uppercase tracking-[0.5px]">
-                            Orders
-                          </div>
-                          <div className="text-[18px] font-bold mt-[5px] font-mono-nb text-[#2F3A22]">
-                            {parseInt(
-                              sellerStats?.orders_30d || "0",
-                            ).toLocaleString("en-IN")}
-                          </div>
-                        </div>
-                        <div className="bg-[#FAF4E6] border border-[#EADFC8] rounded-[10px] px-[14px] py-[13px]">
-                          <div className="text-[10.5px] text-[#8A9270] uppercase tracking-[0.5px]">
-                            RTO %
-                          </div>
-                          <div className="text-[18px] font-bold mt-[5px] font-mono-nb text-[#DC2626]">
-                            {sellerStats?.orders_30d > 0
-                              ? (
-                                  (sellerStats.rto_30d /
-                                    sellerStats.orders_30d) *
-                                  100
-                                ).toFixed(1)
-                              : "0"}
-                            %
-                          </div>
-                        </div>
-                        <div className="bg-[#FAF4E6] border border-[#EADFC8] rounded-[10px] px-[14px] py-[13px]">
-                          <div className="text-[10.5px] text-[#8A9270] uppercase tracking-[0.5px]">
-                            Wallet
-                          </div>
-                          <div className="text-[18px] font-bold mt-[5px] font-mono-nb text-[#546B41]">
-                            ₹
-                            {(
-                              parseFloat(selectedSeller.wallet_balance || "0") /
-                              1000
-                            ).toFixed(1)}
-                            L
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-[22px] mt-[20px]">
-                        <div>
-                          <div className="text-[11px] text-[#8A9270] uppercase tracking-[0.5px] font-semibold mb-[10px]">
-                            Business
-                          </div>
-
-                          <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
-                            <span className="text-[#8A9270]">City</span>
-                            <span className="font-medium text-[#2F3A22]">
-                              Surat, GJ
-                            </span>
-                          </div>
-                          <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
-                            <span className="text-[#8A9270]">Joined</span>
-                            <span className="font-medium text-[#2F3A22]">
-                              {sellerStats?.joined_at
-                                ? new Date(
-                                    sellerStats.joined_at,
-                                  ).toLocaleDateString("en-GB", {
-                                    month: "short",
-                                    year: "numeric",
-                                  })
-                                : "-"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
-                            <span className="text-[#8A9270]">Couriers</span>
-                            <span className="font-medium text-[#2F3A22]">
-                              {sellerStats?.active_couriers || 0} active
-                            </span>
-                          </div>
-                        </div>
-
-                        <div>
-                          <div className="text-[11px] text-[#8A9270] uppercase tracking-[0.5px] font-semibold mb-[10px]">
-                            Compliance
-                          </div>
-                          <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
-                            <span className="text-[#8A9270]">GSTIN</span>
-                            <span className="font-medium text-[#2F3A22]">
-                              {selectedSeller.gstin || "Unregistered"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
-                            <span className="text-[#8A9270]">KYC</span>
-                            <span
-                              className={`font-medium ${sellerStats?.kyc_status === "verified" ? "text-[#546B41]" : "text-[#D97706]"}`}
-                            >
-                              {sellerStats?.kyc_status === "verified"
-                                ? "Verified"
-                                : "Pending"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
-                            <span className="text-[#8A9270]">Bank A/C</span>
-                            <span
-                              className={`font-medium ${sellerStats?.bank_account_number ? "text-[#546B41]" : "text-[#D97706]"}`}
-                            >
-                              {sellerStats?.bank_account_number
-                                ? "Verified"
-                                : "Pending"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
-                            <span className="text-[#8A9270]">Agreement</span>
-                            <span className="font-medium text-[#546B41]">
-                              Signed
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                    </>
-                  )}
-                </div>
-
-                <div className="px-[24px] py-[16px] border-t border-[#EADFC8] flex gap-[10px] justify-end bg-[#FAF4E6]">
-                  <button className="border border-[#E2D4B8] rounded-[8px] px-[18px] py-[10px] text-[13px] text-[#6B7556] hover:border-[#D8CBAE] bg-white transition-colors">
-                    ↪ Login as seller
-                  </button>
-                  <button className="bg-[#B4623F] text-[#FFF8EC] rounded-[8px] px-[18px] py-[10px] text-[13px] font-semibold hover:bg-[#9A5132] transition-colors">
-                    Suspend seller
-                  </button>
+                <div className="text-[12px] opacity-80 font-mono-nb">
+                  MZ-{selectedSeller.id.substring(0, 4).toUpperCase()} ·{" "}
+                  {selectedSeller.first_name || "Owner"}
                 </div>
               </div>
-            )}
-
-            {/* ── ONBOARD SELLER MODAL ── */}
-            {modal === "onboard" && (
-              <div>
-                <div className="bg-gradient-to-br from-[#5C7347] to-[#4A5F37] px-[24px] py-[18px] flex items-center gap-[12px] text-[#FFF8EC]">
-                  <span className="w-[36px] h-[36px] rounded-[9px] bg-white/16 flex items-center justify-center text-[16px]">
-                    ＋
-                  </span>
-                  <div className="flex-1">
-                    <div className="text-[16px] font-bold">
-                      Onboard New Seller
-                    </div>
-                    <div className="text-[12px] opacity-82 mt-[2px]">
-                      Create a merchant account and send the KYC invite
-                    </div>
-                  </div>
-                  <button
-                    onClick={() => setModal(null)}
-                    className="text-[#FFF8EC] opacity-85 hover:opacity-100 bg-inherit"
-                  >
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="18" y1="6" x2="6" y2="18"></line>
-                      <line x1="6" y1="6" x2="18" y2="18"></line>
-                    </svg>
-                  </button>
+              {selectedSeller.status === "active" && (
+                <span className="px-[8px] py-[3px] rounded-[6px] bg-[#EDF0E4] text-[#546B41] text-[12px] font-bold">
+                  Active
+                </span>
+              )}
+              {selectedSeller.status === "suspended" && (
+                <span className="px-[8px] py-[3px] rounded-[6px] bg-[#FEE2E2] text-[#991B1B] text-[12px] font-bold">
+                  Suspended
+                </span>
+              )}
+              {selectedSeller.status === "pending_kyc" && (
+                <span className="px-[8px] py-[3px] rounded-[6px] bg-[#FFFBEB] text-[#D97706] text-[12px] font-bold">
+                  Pending
+                </span>
+              )}
+              <button
+                onClick={() => setModal(null)}
+                className="text-[#FFF8EC] opacity-80 hover:opacity-100 ml-[6px] bg-inherit"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          ) : modal === "onboard" ? (
+            <div className="bg-gradient-to-br from-[#5C7347] to-[#4A5F37] px-[24px] py-[18px] flex items-center gap-[12px] text-[#FFF8EC]">
+              <span className="w-[36px] h-[36px] rounded-[9px] bg-white/16 flex items-center justify-center text-[16px]">
+                ＋
+              </span>
+              <div className="flex-1">
+                <div className="text-[16px] font-bold">
+                  Onboard New Seller
                 </div>
-
-                <div className="p-[24px]">
-                  <div className="grid grid-cols-2 gap-[14px]">
-                    <div>
-                      <div className="text-[12px] text-[#8A9270] mb-[6px]">
-                        Business name
-                      </div>
-                      <input
-                        className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
-                        placeholder="e.g. Trendy Threads"
-                        value={onboardForm.businessName}
-                        onChange={(e) =>
-                          setOnboardForm({
-                            ...onboardForm,
-                            businessName: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-[12px] text-[#8A9270] mb-[6px]">
-                        Owner name
-                      </div>
-                      <input
-                        className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
-                        placeholder="e.g. Rahul Desai"
-                        value={onboardForm.ownerName}
-                        onChange={(e) =>
-                          setOnboardForm({
-                            ...onboardForm,
-                            ownerName: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-[12px] text-[#8A9270] mb-[6px]">
-                        Email
-                      </div>
-                      <input
-                        className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
-                        placeholder="e.g. founder@trendy.in"
-                        value={onboardForm.email}
-                        onChange={(e) =>
-                          setOnboardForm({
-                            ...onboardForm,
-                            email: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-[12px] text-[#8A9270] mb-[6px]">
-                        Phone
-                      </div>
-                      <input
-                        className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
-                        placeholder="e.g. +91 98250 11223"
-                        value={onboardForm.phone}
-                        onChange={(e) =>
-                          setOnboardForm({
-                            ...onboardForm,
-                            phone: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-[12px] text-[#8A9270] mb-[6px]">
-                        GSTIN (optional)
-                      </div>
-                      <input
-                        className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
-                        placeholder="e.g. 24TREND4567K1Z9"
-                        value={onboardForm.gstin}
-                        onChange={(e) =>
-                          setOnboardForm({
-                            ...onboardForm,
-                            gstin: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div>
-                      <div className="text-[12px] text-[#8A9270] mb-[6px]">
-                        City / State
-                      </div>
-                      <input
-                        className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
-                        placeholder="e.g. Surat, GJ"
-                        value={onboardForm.city}
-                        onChange={(e) =>
-                          setOnboardForm({
-                            ...onboardForm,
-                            city: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <div className="text-[12px] text-[#8A9270] mb-[6px]">
-                        Password
-                      </div>
-                      <input
-                        type="password"
-                        className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
-                        placeholder="Set a password for the seller"
-                        value={onboardForm.password}
-                        onChange={(e) =>
-                          setOnboardForm({
-                            ...onboardForm,
-                            password: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-                  </div>
-
-                  <button
-                    onClick={handleOnboardSubmit}
-                    disabled={
-                      !onboardForm.businessName ||
-                      !onboardForm.email ||
-                      !onboardForm.password ||
-                      onboardLoading
-                    }
-                    className="w-full mt-[20px] rounded-[8px] py-[12px] text-[13.5px] font-semibold text-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-[#E8DCC2] text-[#8A9270]"
-                    style={{
-                      background:
-                        onboardForm.businessName &&
-                        onboardForm.email &&
-                        onboardForm.password
-                          ? "#546B41"
-                          : "#E8DCC2",
-                      color:
-                        onboardForm.businessName &&
-                        onboardForm.email &&
-                        onboardForm.password
-                          ? "#FFF8EC"
-                          : "#8A9270",
-                    }}
-                  >
-                    {onboardLoading
-                      ? "Creating account..."
-                      : onboardForm.businessName &&
-                          onboardForm.email &&
-                          onboardForm.password
-                        ? "Create account & send invite"
-                        : "Enter business name, email & password"}
-                  </button>
+                <div className="text-[12px] opacity-82 mt-[2px]">
+                  Create a merchant account and send the KYC invite
                 </div>
               </div>
+              <button
+                onClick={() => setModal(null)}
+                className="text-[#FFF8EC] opacity-85 hover:opacity-100 bg-inherit"
+              >
+                <svg
+                  width="20"
+                  height="20"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          ) : null
+        }
+        footer={
+          modal === "seller" ? (
+            <div className="flex gap-[10px] justify-end w-full">
+              <button className="border border-[#E2D4B8] rounded-[8px] px-[18px] py-[10px] text-[13px] text-[#6B7556] hover:border-[#D8CBAE] bg-white transition-colors">
+                ↪ Login as seller
+              </button>
+              <button className="bg-[#B4623F] text-[#FFF8EC] rounded-[8px] px-[18px] py-[10px] text-[13px] font-semibold hover:bg-[#9A5132] transition-colors">
+                Suspend seller
+              </button>
+            </div>
+          ) : null
+        }
+      >
+        {/* ── SELLER DETAIL MODAL ── */}
+        {modal === "seller" && selectedSeller && (
+          <>
+            {statsLoading ? (
+              <div className="py-12 text-center text-[13px] font-mono-nb text-[#8A9270] animate-pulse">
+                Loading stats...
+              </div>
+            ) : (
+              <>
+                <div className="grid grid-cols-4 gap-[12px]">
+                  <div className="bg-[#FAF4E6] border border-[#EADFC8] rounded-[10px] px-[14px] py-[13px]">
+                    <div className="text-[10.5px] text-[#8A9270] uppercase tracking-[0.5px]">
+                      GMV (30D)
+                    </div>
+                    <div className="text-[18px] font-bold mt-[5px] font-mono-nb text-[#546B41]">
+                      ₹{((sellerStats?.gmv_30d || 0) / 100000).toFixed(1)}
+                      L
+                    </div>
+                  </div>
+                  <div className="bg-[#FAF4E6] border border-[#EADFC8] rounded-[10px] px-[14px] py-[13px]">
+                    <div className="text-[10.5px] text-[#8A9270] uppercase tracking-[0.5px]">
+                      Orders
+                    </div>
+                    <div className="text-[18px] font-bold mt-[5px] font-mono-nb text-[#2F3A22]">
+                      {parseInt(
+                        sellerStats?.orders_30d || "0",
+                      ).toLocaleString("en-IN")}
+                    </div>
+                  </div>
+                  <div className="bg-[#FAF4E6] border border-[#EADFC8] rounded-[10px] px-[14px] py-[13px]">
+                    <div className="text-[10.5px] text-[#8A9270] uppercase tracking-[0.5px]">
+                      RTO %
+                    </div>
+                    <div className="text-[18px] font-bold mt-[5px] font-mono-nb text-[#DC2626]">
+                      {sellerStats?.orders_30d > 0
+                        ? (
+                            (sellerStats.rto_30d /
+                              sellerStats.orders_30d) *
+                            100
+                          ).toFixed(1)
+                        : "0"}
+                      %
+                    </div>
+                  </div>
+                  <div className="bg-[#FAF4E6] border border-[#EADFC8] rounded-[10px] px-[14px] py-[13px]">
+                    <div className="text-[10.5px] text-[#8A9270] uppercase tracking-[0.5px]">
+                      Wallet
+                    </div>
+                    <div className="text-[18px] font-bold mt-[5px] font-mono-nb text-[#546B41]">
+                      ₹
+                      {(
+                        parseFloat(selectedSeller.wallet_balance || "0") /
+                        1000
+                      ).toFixed(1)}
+                      L
+                    </div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-[22px] mt-[20px]">
+                  <div>
+                    <div className="text-[11px] text-[#8A9270] uppercase tracking-[0.5px] font-semibold mb-[10px]">
+                      Business
+                    </div>
+
+                    <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
+                      <span className="text-[#8A9270]">City</span>
+                      <span className="font-medium text-[#2F3A22]">
+                        Surat, GJ
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
+                      <span className="text-[#8A9270]">Joined</span>
+                      <span className="font-medium text-[#2F3A22]">
+                        {sellerStats?.joined_at
+                          ? new Date(
+                              sellerStats.joined_at,
+                            ).toLocaleDateString("en-GB", {
+                              month: "short",
+                              year: "numeric",
+                            })
+                          : "-"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
+                      <span className="text-[#8A9270]">Couriers</span>
+                      <span className="font-medium text-[#2F3A22]">
+                        {sellerStats?.active_couriers || 0} active
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-[11px] text-[#8A9270] uppercase tracking-[0.5px] font-semibold mb-[10px]">
+                      Compliance
+                    </div>
+                    <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
+                      <span className="text-[#8A9270]">GSTIN</span>
+                      <span className="font-medium text-[#2F3A22]">
+                        {selectedSeller.gstin || "Unregistered"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
+                      <span className="text-[#8A9270]">KYC</span>
+                      <span
+                        className={`font-medium ${sellerStats?.kyc_status === "verified" ? "text-[#546B41]" : "text-[#D97706]"}`}
+                      >
+                        {sellerStats?.kyc_status === "verified"
+                          ? "Verified"
+                          : "Pending"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
+                      <span className="text-[#8A9270]">Bank A/C</span>
+                      <span
+                        className={`font-medium ${sellerStats?.bank_account_number ? "text-[#546B41]" : "text-[#D97706]"}`}
+                      >
+                        {sellerStats?.bank_account_number
+                          ? "Verified"
+                          : "Pending"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between py-[7px] border-b border-[#F0E8D6] text-[13px]">
+                      <span className="text-[#8A9270]">Agreement</span>
+                      <span className="font-medium text-[#546B41]">
+                        Signed
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </>
             )}
-          </div>
-        </div>
-      )}
+          </>
+        )}
+
+        {/* ── ONBOARD SELLER MODAL ── */}
+        {modal === "onboard" && (
+          <>
+            <div className="grid grid-cols-2 gap-[14px]">
+              <div>
+                <div className="text-[12px] text-[#8A9270] mb-[6px]">
+                  Business name
+                </div>
+                <input
+                  className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
+                  placeholder="e.g. Trendy Threads"
+                  value={onboardForm.businessName}
+                  onChange={(e) =>
+                    setOnboardForm({
+                      ...onboardForm,
+                      businessName: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <div className="text-[12px] text-[#8A9270] mb-[6px]">
+                  Owner name
+                </div>
+                <input
+                  className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
+                  placeholder="e.g. Rahul Desai"
+                  value={onboardForm.ownerName}
+                  onChange={(e) =>
+                    setOnboardForm({
+                      ...onboardForm,
+                      ownerName: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <div className="text-[12px] text-[#8A9270] mb-[6px]">
+                  Email
+                </div>
+                <input
+                  className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
+                  placeholder="e.g. founder@trendy.in"
+                  value={onboardForm.email}
+                  onChange={(e) =>
+                    setOnboardForm({
+                      ...onboardForm,
+                      email: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <div className="text-[12px] text-[#8A9270] mb-[6px]">
+                  Phone
+                </div>
+                <input
+                  className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
+                  placeholder="e.g. +91 98250 11223"
+                  value={onboardForm.phone}
+                  onChange={(e) =>
+                    setOnboardForm({
+                      ...onboardForm,
+                      phone: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <div className="text-[12px] text-[#8A9270] mb-[6px]">
+                  GSTIN (optional)
+                </div>
+                <input
+                  className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
+                  placeholder="e.g. 24TREND4567K1Z9"
+                  value={onboardForm.gstin}
+                  onChange={(e) =>
+                    setOnboardForm({
+                      ...onboardForm,
+                      gstin: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div>
+                <div className="text-[12px] text-[#8A9270] mb-[6px]">
+                  City / State
+                </div>
+                <input
+                  className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
+                  placeholder="e.g. Surat, GJ"
+                  value={onboardForm.city}
+                  onChange={(e) =>
+                    setOnboardForm({
+                      ...onboardForm,
+                      city: e.target.value,
+                    })
+                  }
+                />
+              </div>
+              <div className="col-span-2">
+                <div className="text-[12px] text-[#8A9270] mb-[6px]">
+                  Password
+                </div>
+                <input
+                  type="password"
+                  className="w-full bg-white border border-[#E2D4B8] rounded-[8px] px-[14px] py-[10px] text-[13px] outline-none focus:border-[#546B41]"
+                  placeholder="Set a password for the seller"
+                  value={onboardForm.password}
+                  onChange={(e) =>
+                    setOnboardForm({
+                      ...onboardForm,
+                      password: e.target.value,
+                    })
+                  }
+                />
+              </div>
+            </div>
+
+            <button
+              onClick={handleOnboardSubmit}
+              disabled={
+                !onboardForm.businessName ||
+                !onboardForm.email ||
+                !onboardForm.password ||
+                onboardLoading
+              }
+              className="w-full mt-[20px] rounded-[8px] py-[12px] text-[13.5px] font-semibold text-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed bg-[#E8DCC2] text-[#8A9270]"
+              style={{
+                background:
+                  onboardForm.businessName &&
+                  onboardForm.email &&
+                  onboardForm.password
+                    ? "#546B41"
+                    : "#E8DCC2",
+                color:
+                  onboardForm.businessName &&
+                  onboardForm.email &&
+                  onboardForm.password
+                    ? "#FFF8EC"
+                    : "#8A9270",
+              }}
+            >
+              {onboardLoading
+                ? "Creating account..."
+                : onboardForm.businessName &&
+                    onboardForm.email &&
+                    onboardForm.password
+                  ? "Create account & send invite"
+                  : "Enter business name, email & password"}
+            </button>
+          </>
+        )}
+      </Modal>
     </>
   );
 }
