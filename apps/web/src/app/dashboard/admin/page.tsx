@@ -64,7 +64,10 @@ export default function AdminDashboard() {
     );
   }
 
-  const { kpis, topSellers, attention, courierSplit } = data;
+  const kpis = data?.kpis || {};
+  const topSellers = data?.topSellers || [];
+  const attention = data?.attention || {};
+  const courierSplit = data?.courierSplit || [];
 
   const deliveredNum = parseInt(kpis.total_delivered || "0");
   const rtoNum = parseInt(kpis.total_rto || "0");
