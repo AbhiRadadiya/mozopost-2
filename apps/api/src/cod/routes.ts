@@ -104,7 +104,7 @@ adminCodRouter.patch(
          SET status = 'settled', settled_at = NOW(),
              utr_number = $1, payment_mode = $2, bank_reference = $3
          WHERE id = $4`,
-        [utrNumber.trim(), paymentMode || 'neft', bankReference || null, req.params.id],
+        [utrNumber.trim(), paymentMode || 'NEFT', bankReference || null, req.params.id],
       );
     } else {
       await query(`UPDATE cod_remittances SET status = $1 WHERE id = $2`, [status, req.params.id]);

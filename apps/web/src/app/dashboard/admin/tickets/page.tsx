@@ -1,24 +1,44 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import { api, apiErrorMessage } from "@/lib/api";
 import { Modal } from "@/components/ui/Modal";
 
 const STATUS_STYLE: Record<string, string> = {
-  open: "bg-[#FEF2F2] text-[#991B1B]",
-  in_progress: "bg-[#FEF9C3] text-[#854D0E]",
+  open: "bg-[#FEF2F2] text-[#DC2626]",
+  in_progress: "bg-[#FEF9C3] text-[#CA8A04]",
   escalated: "bg-[#FEF2F2] text-[#991B1B] border border-[#FECACA]",
-  closed: "bg-[#F1F5F9] text-[#475569]",
+  closed: "bg-[#FAF4E6] text-[#546B41]",
 };
+
+function getPriorityInfo(type: string = "") {
+  const t = type.toLowerCase();
+  if (t.includes('payment') || t.includes('dispute') || t.includes('finance') || t.includes('remittance')) {
+    return { label: 'High', style: 'border-[#FECACA] text-[#DC2626] bg-[#FEF2F2]' };
+  }
+  if (t.includes('general') || t.includes('inquiry')) {
+    return { label: 'Low', style: 'border-[#E2D4B8] text-[#8A9270] bg-[#FAF4E6]' };
+  }
+  return { label: 'Medium', style: 'border-[#FDE68A] text-[#D97706] bg-[#FFFBEB]' };
+}
+
+function timeAgo(dateString: string) {
+  const diff = Date.now() - new Date(dateString).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `${days}d ago`;
+}
 
 export default function AdminTicketsPage() {
   const [tickets, setTickets] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
   
   const [search, setSearch] = useState("");
-  const [expandedSeller, setExpandedSeller] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<"open" | "pending" | "all">("open");
 
   // Status update modal state
   const [activeTicket, setActiveTicket] = useState<any | null>(null);
@@ -27,23 +47,27 @@ export default function AdminTicketsPage() {
 
   useEffect(() => {
     const delayDebounceFn = setTimeout(() => {
-      load();
-    }, 400); // 400ms debounce for search
+      load(false);
+    }, 400);
     return () => clearTimeout(delayDebounceFn);
   }, [search]);
 
-  async function load() {
-    setLoading(true);
-    setError("");
+  useEffect(() => {
+    const interval = setInterval(() => load(true), 15000);
+    return () => clearInterval(interval);
+  }, [search]);
+
+  async function load(isPolling = false) {
+    if (!isPolling) setLoading(true);
     try {
       const qs = new URLSearchParams();
       if (search) qs.append("search", search);
       const { data } = await api.get(`/admin/tickets?${qs.toString()}`);
       setTickets(data.tickets || []);
     } catch (err) {
-      setError(apiErrorMessage(err));
+      if (!isPolling) setError(apiErrorMessage(err));
     } finally {
-      setLoading(false);
+      if (!isPolling) setLoading(false);
     }
   }
 
@@ -53,14 +77,12 @@ export default function AdminTicketsPage() {
     
     setUpdating(true);
     setError("");
-    setSuccess("");
     try {
       await api.patch(`/admin/tickets/${activeTicket.id}/status`, {
         status: statusUpdateForm.status
       });
-      setSuccess(`Ticket #${activeTicket.ticket_number} status updated to ${statusUpdateForm.status.replace("_", " ")}.`);
       setActiveTicket(null);
-      await load();
+      await load(true);
     } catch (err) {
       setError(apiErrorMessage(err));
     } finally {
@@ -68,283 +90,278 @@ export default function AdminTicketsPage() {
     }
   }
 
-  const groupedSellers = useMemo(() => {
-    const groups: Record<string, any> = {};
-    tickets.forEach((t) => {
-      if (!groups[t.seller_id]) {
-        groups[t.seller_id] = {
-          sellerId: t.seller_id,
-          businessName: t.business_name,
-          tickets: [],
-          latestDate: new Date(t.created_at).getTime(),
-          openCount: 0,
-        };
-      }
-      groups[t.seller_id].tickets.push(t);
-      if (t.status === "open" || t.status === "escalated") {
-        groups[t.seller_id].openCount++;
-      }
-      const tTime = new Date(t.created_at).getTime();
-      if (tTime > groups[t.seller_id].latestDate) {
-        groups[t.seller_id].latestDate = tTime;
-      }
-    });
-
-    return Object.values(groups).sort((a, b) => b.latestDate - a.latestDate);
-  }, [tickets]);
-
-  const openTickets = tickets.filter(t => t.status === 'open').length;
-  const escalatedTickets = tickets.filter(t => t.status === 'escalated').length;
+  const openTickets = tickets.filter(t => t.status === 'open');
+  const pendingTickets = tickets.filter(t => t.status === 'in_progress' || t.status === 'escalated');
+  
+  let displayedTickets = tickets;
+  if (activeTab === "open") displayedTickets = openTickets;
+  if (activeTab === "pending") displayedTickets = pendingTickets;
 
   return (
     <div className="animate-fade-up mx-auto space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-[#0F172A]">Support Tickets</h1>
-          <p className="text-sm text-[#64748B] mt-1">
-            Manage and resolve merchant support requests.
+          <h1 className="text-2xl font-bold text-[#2F3A22]">Support Tickets</h1>
+          <p className="text-sm text-[#8A9270] mt-1">
+            Every seller's ticket in one queue.
           </p>
         </div>
-        <div className="relative">
-          <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#94A3B8]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-            <circle cx="11" cy="11" r="8"/>
-            <path d="M21 21l-4.35-4.35"/>
-          </svg>
-          <input
-            type="text"
-            placeholder="Search merchants..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 pr-4 py-2 text-sm border border-[#E5E8EF] rounded-xl bg-white outline-none focus:border-[#4F46E5] w-[260px] shadow-sm"
-          />
-        </div>
-      </div>
-
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <div className="bg-white p-5 rounded-2xl border border-[#E5E8EF] shadow-sm">
-          <div className="text-[10px] font-bold text-[#94A3B8] uppercase tracking-widest mb-2">
-            Total Tickets
+        <div className="flex items-center gap-3">
+          <div className="relative">
+            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8A9270]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+              <circle cx="11" cy="11" r="8"/>
+              <path d="M21 21l-4.35-4.35"/>
+            </svg>
+            <input
+              type="text"
+              placeholder="Search sellers, ID..."
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="pl-9 pr-4 py-2 text-sm border border-[#E2D4B8] rounded-xl bg-white outline-none focus:border-[#546B41] w-[260px] shadow-sm text-[#2F3A22] placeholder:text-[#8A9270]"
+            />
           </div>
-          <div className="text-2xl font-bold text-[#0F172A] font-mono">
-            {tickets.length}
-          </div>
-        </div>
-        <div className="bg-[#FEF2F2] p-5 rounded-2xl border border-[#FECACA] shadow-sm">
-          <div className="text-[10px] font-bold text-[#991B1B] uppercase tracking-widest mb-2">
-            Needs Attention (Open)
-          </div>
-          <div className="text-2xl font-bold text-[#B91C1C] font-mono">
-            {openTickets}
-          </div>
-        </div>
-        <div className="bg-[#FFFBEB] p-5 rounded-2xl border border-[#FDE68A] shadow-sm">
-          <div className="text-[10px] font-bold text-[#B45309] uppercase tracking-widest mb-2">
-            Escalated Issues
-          </div>
-          <div className="text-2xl font-bold text-[#D97706] font-mono">
-            {escalatedTickets}
-          </div>
+          <button
+            onClick={() => load(false)}
+            className="px-5 py-2 text-sm border border-[#E2D4B8] text-[#546B41] font-bold rounded-xl hover:bg-[#FAF4E6] transition-colors shadow-sm bg-white"
+          >
+            ↻ Refresh
+          </button>
         </div>
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm text-[#991B1B]">
-          {error}
-        </div>
-      )}
-      {success && (
-        <div className="p-4 rounded-xl bg-[#F0FDF4] border border-[#A7F3D0] text-sm text-[#065F46]">
-          ✓ {success}
+        <div className="p-4 rounded-xl bg-[#FEF2F2] border border-[#FECACA] text-sm text-[#991B1B] font-semibold">
+          ⚠ {error}
         </div>
       )}
 
-      {/* Status Update Modal */}
-      <Modal
-        isOpen={!!activeTicket}
-        onClose={() => {
-          setActiveTicket(null);
-          setError("");
-        }}
-        width="460px"
-        title="Update Ticket Status"
-        subtitle={activeTicket ? `Ticket #${activeTicket.ticket_number} - ${activeTicket.business_name}` : ""}
-        footer={
-          <div className="flex gap-3 w-full">
-            <button
-              type="submit"
-              form="status-update-form"
-              disabled={updating || !statusUpdateForm.status}
-              className="flex-1 py-2.5 bg-[#4F46E5] text-white text-sm font-semibold rounded-xl hover:bg-[#4338CA] transition-colors disabled:opacity-50"
-            >
-              {updating ? "Updating..." : "Update Status"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTicket(null)}
-              className="px-4 py-2.5 bg-white border border-[#E5E8EF] text-[#475569] text-sm font-semibold rounded-xl hover:bg-[#F8F9FB] transition-colors"
-            >
-              Cancel
-            </button>
-          </div>
-        }
-      >
-        <form id="status-update-form" onSubmit={updateStatus} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-[#475569] mb-1.5 uppercase tracking-wide">
-              New Status
-            </label>
-            <select
-              required
-              value={statusUpdateForm.status}
-              onChange={(e) => setStatusUpdateForm({ status: e.target.value })}
-              className="w-full px-3 py-2.5 text-sm border border-[#E5E8EF] rounded-xl bg-white text-[#0F172A] outline-none focus:border-[#4F46E5] focus:ring-2 focus:ring-[#4F46E5]/10"
-            >
-              <option value="" disabled>Select a status...</option>
-              <option value="open">Open</option>
-              <option value="in_progress">In Progress</option>
-              <option value="escalated">Escalated</option>
-              <option value="closed">Closed</option>
-            </select>
-          </div>
-        </form>
-      </Modal>
+      {/* Tabs Row */}
+      <div className="flex items-center gap-8 border-b border-[#E2D4B8] pb-[1px]">
+        <button
+          onClick={() => setActiveTab("open")}
+          className={`pb-3 flex items-center gap-2 text-sm font-bold border-b-2 transition-colors ${
+            activeTab === "open"
+              ? "border-[#546B41] text-[#2F3A22]"
+              : "border-transparent text-[#8A9270] hover:text-[#2F3A22]"
+          }`}
+        >
+          Open
+          <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+            activeTab === "open" ? "bg-[#E0E7CE] text-[#546B41]" : "bg-[#F1F5F9] text-[#94A3B8]"
+          }`}>
+            {openTickets.length}
+          </span>
+        </button>
 
-      {/* Accordion List */}
-      <div className="bg-white rounded-2xl border border-[#E5E8EF] shadow-sm overflow-hidden flex flex-col divide-y divide-[#E5E8EF]">
-        {loading ? (
-          <div className="py-16 text-center text-sm text-[#94A3B8] animate-pulse">
-            Loading tickets...
+        <button
+          onClick={() => setActiveTab("pending")}
+          className={`pb-3 flex items-center gap-2 text-sm font-bold border-b-2 transition-colors ${
+            activeTab === "pending"
+              ? "border-[#546B41] text-[#2F3A22]"
+              : "border-transparent text-[#8A9270] hover:text-[#2F3A22]"
+          }`}
+        >
+          Pending
+          <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+            activeTab === "pending" ? "bg-[#E0E7CE] text-[#546B41]" : "bg-[#F1F5F9] text-[#94A3B8]"
+          }`}>
+            {pendingTickets.length}
+          </span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab("all")}
+          className={`pb-3 flex items-center gap-2 text-sm font-bold border-b-2 transition-colors ${
+            activeTab === "all"
+              ? "border-[#546B41] text-[#2F3A22]"
+              : "border-transparent text-[#8A9270] hover:text-[#2F3A22]"
+          }`}
+        >
+          All
+          <span className={`px-2 py-0.5 rounded-full text-[10px] ${
+            activeTab === "all" ? "bg-[#E0E7CE] text-[#546B41]" : "bg-[#F1F5F9] text-[#94A3B8]"
+          }`}>
+            {tickets.length}
+          </span>
+        </button>
+      </div>
+
+      {/* Flat List */}
+      <div className="bg-white rounded-[16px] border border-[#E2D4B8] shadow-sm overflow-hidden">
+        {loading && displayedTickets.length === 0 ? (
+          <div className="flex h-[300px] items-center justify-center">
+            <div className="flex flex-col items-center gap-3">
+              <div className="w-8 h-8 border-4 border-[#E2D4B8] border-t-[#546B41] rounded-full animate-spin"></div>
+              <div className="text-sm text-[#8A9270] animate-pulse">Loading tickets...</div>
+            </div>
           </div>
-        ) : groupedSellers.length === 0 ? (
-          <div className="py-16 text-center">
-            <div className="text-3xl mb-3">🎫</div>
-            <div className="text-sm font-semibold text-[#0F172A]">
+        ) : displayedTickets.length === 0 ? (
+          <div className="py-20 text-center">
+            <div className="text-4xl mb-3">🎫</div>
+            <div className="text-base font-semibold text-[#2F3A22]">
               No Tickets Found
             </div>
-            <div className="text-xs text-[#94A3B8] mt-1">
-              Either there are no tickets or your search returned no merchants.
+            <div className="text-sm text-[#8A9270] mt-1">
+              There are no tickets in this queue.
             </div>
           </div>
         ) : (
-          groupedSellers.map((seller) => {
-            const isExpanded = expandedSeller === seller.sellerId;
-            return (
-              <div key={seller.sellerId} className="flex flex-col">
-                {/* Accordion Header */}
-                <button
-                  onClick={() => setExpandedSeller(isExpanded ? null : seller.sellerId)}
-                  className="flex items-center justify-between px-6 py-4 hover:bg-[#F8F9FB] transition-colors text-left"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-[#EEF2FF] text-[#4F46E5] flex items-center justify-center font-bold text-lg">
-                      {seller.businessName.charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div className="text-[15px] font-bold text-[#0F172A]">
-                        {seller.businessName}
-                      </div>
-                      <div className="text-[11px] text-[#64748B] mt-0.5">
-                        Latest Request: {new Date(seller.latestDate).toLocaleDateString("en-IN", {
-                          day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit"
-                        })}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-6">
-                    <div className="text-right hidden sm:block">
-                      <div className="text-[11px] uppercase tracking-wider font-bold text-[#94A3B8] mb-0.5">Tickets</div>
-                      <div className="text-sm font-semibold text-[#0F172A]">{seller.tickets.length} total</div>
-                    </div>
-                    {seller.openCount > 0 ? (
-                      <div className="px-3 py-1 bg-[#FEF2F2] border border-[#FECACA] rounded-full text-[11px] font-bold text-[#991B1B]">
-                        {seller.openCount} Actionable
-                      </div>
-                    ) : (
-                      <div className="px-3 py-1 bg-[#F1F5F9] border border-[#E2E8F0] rounded-full text-[11px] font-bold text-[#475569]">
-                        All Resolved
-                      </div>
-                    )}
-                    <div className={`transform transition-transform text-[#94A3B8] ${isExpanded ? 'rotate-180' : ''}`}>
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                        <path d="M6 9l6 6 6-6"/>
-                      </svg>
-                    </div>
-                  </div>
-                </button>
-
-                {/* Accordion Body */}
-                {isExpanded && (
-                  <div className="bg-[#F8F9FB] border-t border-[#E5E8EF] p-4 sm:p-6">
-                    <div className="bg-white border border-[#E5E8EF] rounded-xl overflow-hidden shadow-sm">
-                      <div className="overflow-x-auto">
-                        <table className="w-full text-left">
-                          <thead>
-                            <tr className="bg-[#F8F9FB] border-b border-[#E5E8EF]">
-                              <th className="px-4 py-3 text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Ticket ID</th>
-                              <th className="px-4 py-3 text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Subject & Type</th>
-                              <th className="px-4 py-3 text-[10px] font-bold text-[#64748B] uppercase tracking-wider">Status</th>
-                              <th className="px-4 py-3 text-[10px] font-bold text-[#64748B] uppercase tracking-wider text-right">Action</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y divide-[#F1F5F9]">
-                            {seller.tickets.map((t: any) => (
-                              <tr key={t.id} className="hover:bg-[#F8F9FB] transition-colors">
-                                <td className="px-4 py-3">
-                                  <div className="font-mono text-[11px] font-bold text-[#4F46E5] uppercase">{t.ticket_number}</div>
-                                  <div className="text-[10px] text-[#94A3B8] mt-0.5">
-                                    {new Date(t.created_at).toLocaleDateString("en-IN", { month: "short", day: "numeric" })}
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <div className="text-sm font-semibold text-[#0F172A]">{t.subject}</div>
-                                  <div className="text-[11px] text-[#64748B] capitalize mt-0.5">{t.type.replace(/_/g, " ")}</div>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-widest ${STATUS_STYLE[t.status] || "bg-[#F1F5F9] text-[#475569]"}`}>
-                                    {t.status.replace(/_/g, " ")}
-                                  </span>
-                                </td>
-                                <td className="px-4 py-3 text-right">
-                                  <div className="flex items-center justify-end gap-2">
-                                    {t.attachment_url && (
-                                      <a
-                                        href={`${api.defaults.baseURL?.replace("/api/v1", "") || ""}${t.attachment_url}`}
-                                        target="_blank"
-                                        rel="noreferrer"
-                                        title="View Attachment"
-                                        className="inline-flex items-center justify-center w-7 h-7 rounded-md bg-[#EEF2FF] text-[#4F46E5] hover:bg-[#E0E7FF] transition-colors"
-                                      >
-                                        📎
-                                      </a>
-                                    )}
-                                    <button
-                                      onClick={() => {
-                                        setActiveTicket(t);
-                                        setStatusUpdateForm({ status: t.status });
-                                        setError("");
-                                        setSuccess("");
-                                      }}
-                                      className="px-3 py-1.5 text-[11px] font-bold bg-white border border-[#E5E8EF] text-[#475569] rounded-lg hover:bg-[#F1F5F9] transition-colors shadow-sm"
-                                    >
-                                      Update
-                                    </button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })
+          <div className="overflow-x-auto">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-[#FAF4E6] border-b border-[#E2D4B8]">
+                  <th className="px-6 py-4 text-[10px] font-bold text-[#8A9270] uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-[#8A9270] uppercase tracking-wider">Subject</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-[#8A9270] uppercase tracking-wider">Seller</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-[#8A9270] uppercase tracking-wider">Category</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-[#8A9270] uppercase tracking-wider">Priority</th>
+                  <th className="px-6 py-4 text-[10px] font-bold text-[#8A9270] uppercase tracking-wider text-right"></th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-[#E2D4B8]">
+                {displayedTickets.map((t: any) => {
+                  const priority = getPriorityInfo(t.type);
+                  return (
+                    <tr key={t.id} className="hover:bg-[#FAF4E6]/50 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="text-sm font-semibold text-[#8A9270]">
+                          {t.ticket_number}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] font-bold text-[#2F3A22]">
+                          {t.subject}
+                        </div>
+                        <div className="text-[11px] text-[#8A9270] font-medium mt-0.5">
+                          {timeAgo(t.created_at)}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] font-medium text-[#6B7556]">
+                          {t.business_name}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="text-[13px] text-[#8A9270] capitalize font-medium">
+                          {t.type.replace(/_/g, " ")}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${priority.style}`}>
+                          {priority.label}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <button
+                          onClick={() => {
+                            setActiveTicket(t);
+                            setStatusUpdateForm({ status: t.status });
+                            setError("");
+                          }}
+                          className="text-xs font-bold text-[#546B41] hover:text-[#435534] transition-colors inline-flex items-center gap-1"
+                        >
+                          Open <span className="text-[14px]">→</span>
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
         )}
       </div>
+
+      {/* Beautiful Resolution Modal */}
+      <Modal
+        title={``}
+        isOpen={!!activeTicket}
+        onClose={() => setActiveTicket(null)}
+        width="672px" // matches max-w-2xl
+        customHeader={
+          activeTicket ? (
+            <div className="flex items-center justify-between p-6 border-b border-[#E2D4B8] bg-[#FAF4E6]">
+              <div>
+                <h3 className="text-xl font-bold text-[#2F3A22] flex items-center gap-3">
+                  Ticket {activeTicket.ticket_number}
+                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${getPriorityInfo(activeTicket.type).style}`}>
+                    {getPriorityInfo(activeTicket.type).label} Priority
+                  </span>
+                </h3>
+                <p className="text-sm text-[#8A9270] mt-1 font-medium">
+                  Reported by {activeTicket.business_name} • {new Date(activeTicket.created_at).toLocaleString("en-IN")}
+                </p>
+              </div>
+              <button
+                onClick={() => setActiveTicket(null)}
+                className="w-8 h-8 flex items-center justify-center rounded-full bg-white border border-[#E2D4B8] text-[#8A9270] hover:text-[#2F3A22] hover:border-[#8A9270] transition-colors"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+              </button>
+            </div>
+          ) : null
+        }
+        bodyClassName="p-0"
+      >
+        {activeTicket && (
+          <div className="p-6 overflow-y-auto max-h-[70vh]">
+            <div className="mb-6">
+              <div className="text-xs font-bold text-[#8A9270] uppercase tracking-widest mb-2">Subject</div>
+              <div className="text-lg font-bold text-[#2F3A22] leading-tight">
+                {activeTicket.subject}
+              </div>
+            </div>
+
+            {activeTicket.message && (
+              <div className="mb-6">
+                <div className="text-xs font-bold text-[#8A9270] uppercase tracking-widest mb-2">Message Description</div>
+                <div className="bg-[#FAF4E6] border border-[#E2D4B8] rounded-2xl p-5 text-sm text-[#6B7556] leading-relaxed whitespace-pre-wrap">
+                  {activeTicket.message}
+                </div>
+              </div>
+            )}
+
+            {activeTicket.attachment_url && (
+              <div className="mb-8">
+                <div className="text-xs font-bold text-[#8A9270] uppercase tracking-widest mb-2">Attachments</div>
+                <a
+                  href={`${api.defaults.baseURL?.replace("/api/v1", "") || ""}${activeTicket.attachment_url}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-[#E2D4B8] text-[#546B41] hover:bg-[#FAF4E6] transition-colors text-sm font-bold shadow-sm"
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 01-8.49-8.49l9.19-9.19a4 4 0 015.66 5.66l-9.2 9.19a2 2 0 01-2.83-2.83l8.49-8.48"></path></svg>
+                  View Attached File
+                </a>
+              </div>
+            )}
+
+            <div className="border-t border-[#E2D4B8] pt-6">
+              <h4 className="text-sm font-bold text-[#2F3A22] mb-4">Resolve & Update Status</h4>
+              <form onSubmit={updateStatus} className="flex gap-3">
+                <select
+                  required
+                  value={statusUpdateForm.status}
+                  onChange={(e) => setStatusUpdateForm({ status: e.target.value })}
+                  className="flex-1 px-4 py-3 text-sm font-bold border border-[#E2D4B8] rounded-xl bg-[#FAF4E6] text-[#2F3A22] outline-none focus:border-[#546B41] focus:ring-2 focus:ring-[#546B41]/20 appearance-none cursor-pointer"
+                >
+                  <option value="open">Open (Needs Attention)</option>
+                  <option value="in_progress">In Progress</option>
+                  <option value="escalated">Escalated</option>
+                  <option value="closed">Closed (Resolved)</option>
+                </select>
+                <button
+                  type="submit"
+                  disabled={updating || !statusUpdateForm.status || statusUpdateForm.status === activeTicket.status}
+                  className="px-6 py-3 text-sm font-bold text-white bg-[#546B41] rounded-xl hover:bg-[#435534] transition-colors disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+                >
+                  {updating ? "Saving..." : "Update Ticket"}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   );
 }

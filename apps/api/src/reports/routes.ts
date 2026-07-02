@@ -198,6 +198,29 @@ reportsRouter.get(
   }),
 );
 
+/** GET /reports/admin/pnl/:sellerId/history  — time-series data for a specific merchant */
+reportsRouter.get(
+  '/admin/pnl/:sellerId/history',
+  requireRole('master_admin', 'super_admin'),
+  ah(async (req, res) => {
+    const { sellerId } = req.params;
+    const history = await query(
+      `SELECT TO_CHAR(created_at, 'YYYY-MM') AS month,
+              COALESCE(SUM(total_freight), 0)::float AS revenue,
+              COALESCE(SUM(margin_applied), 0)::float AS gross_profit,
+              COALESCE(SUM(total_freight) FILTER (WHERE status::text LIKE 'rto%'), 0)::float AS rto_loss,
+              COALESCE(SUM(margin_applied) - COALESCE(SUM(total_freight) FILTER (WHERE status::text LIKE 'rto%'), 0), 0)::float AS net_profit
+       FROM orders
+       WHERE seller_id = $1 AND status != 'cancelled'
+       GROUP BY month
+       ORDER BY month DESC
+       LIMIT 6`,
+      [sellerId]
+    );
+    res.json({ history });
+  })
+);
+
 /** GET /reports/admin/courier-performance */
 reportsRouter.get(
   '/admin/courier-performance',
@@ -239,6 +262,18 @@ reportsRouter.get(
        FROM sellers
        GROUP BY month ORDER BY month DESC LIMIT 12`,
     );
+    const financialGrowth = await query(
+      `SELECT TO_CHAR(o.created_at, 'YYYY-MM') AS month,
+              COALESCE(SUM(o.total_freight), 0)::float AS revenue,
+              COALESCE(SUM(o.margin_applied), 0)::float AS gross_profit,
+              COALESCE(SUM(o.total_freight) FILTER (WHERE o.status::text LIKE 'rto%'), 0)::float AS rto_loss,
+              COALESCE(SUM(o.margin_applied) - COALESCE(SUM(o.total_freight) FILTER (WHERE o.status::text LIKE 'rto%'), 0), 0)::float AS net_profit
+       FROM orders o
+       WHERE o.status != 'cancelled'
+       GROUP BY month
+       ORDER BY month DESC
+       LIMIT 12`
+    );
     const topMerchants = await query(
       `SELECT s.business_name,
               COUNT(o.id)::int AS orders,
@@ -248,7 +283,7 @@ reportsRouter.get(
        GROUP BY s.id,s.business_name
        ORDER BY revenue DESC LIMIT 10`,
     );
-    res.json({ monthly, topMerchants });
+    res.json({ monthly, financialGrowth, topMerchants });
   }),
 );
 
