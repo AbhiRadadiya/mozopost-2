@@ -348,6 +348,7 @@ export default function CodSettlementsPage() {
       <Modal
         isOpen={!!activeBatch}
         onClose={() => setActiveBatch(null)}
+        title=""
         width="420px"
         bodyClassName="p-0"
         customHeader={activeBatch ? (
